@@ -31,22 +31,22 @@ public class Utils {
                 File f = new File(targetDir, entry.getName());
                 if (entry.isDirectory()) {
                     if (!f.isDirectory() && !f.mkdirs()) {
-                        System.err.println("Failed to create directory " + f);
+                        Overimagined.LOGGER.error("Failed to create directory " + f);
                     }
                 } else {
                     File parent = f.getParentFile();
                     if (!parent.isDirectory() && !parent.mkdirs()) {
-                        System.err.println("Failed to create directory " + parent);
+                        Overimagined.LOGGER.error("Failed to create directory " + parent);
                     }
                     try (OutputStream o = Files.newOutputStream(f.toPath())) {
                         IOUtils.copy(i, o);
                     } catch (IOException e) {
-                        System.err.println("Failed to extract entry " + entry + " to " + f + ": " + e.getMessage());
+                        Overimagined.LOGGER.error("Failed to extract entry " + entry + " to " + f + ": " + e.getMessage());
                     }
                 }
             }
         } catch (Exception e) {
-            System.err.println("Failed to extract archive " + zipFile + ": " + e.getMessage());
+            Overimagined.LOGGER.error("Failed to extract archive " + zipFile + ": " + e.getMessage());
         }
     }
 
@@ -56,7 +56,7 @@ public class Utils {
         Collections.sort(filesToArchive); // ensures that the archive is deterministic
 
         if (!archive.getParentFile().exists() && !archive.getParentFile().mkdirs()) {
-            System.err.println("Failed to create archive: " + archive);
+            Overimagined.LOGGER.error("Failed to create archive: " + archive);
             return;
         }
 
@@ -74,14 +74,14 @@ public class Utils {
                     try (InputStream i = Files.newInputStream(f.toPath())) {
                         IOUtils.copy(i, o);
                     } catch (IOException e) {
-                        System.err.println("Failed to archive entry " + entry + " from " + f + ": " + e.getMessage());
+                        Overimagined.LOGGER.error("Failed to archive entry " + entry + " from " + f + ": " + e.getMessage());
                     }
                 }
                 o.closeArchiveEntry();
             }
             o.finish();
         } catch (Exception e) {
-            System.err.println("Failed to create archive: " + e.getMessage());
+            Overimagined.LOGGER.error("Failed to create archive: " + e.getMessage());
         }
     }
 }

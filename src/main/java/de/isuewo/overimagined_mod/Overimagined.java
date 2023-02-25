@@ -1,12 +1,15 @@
 package de.isuewo.overimagined_mod;
 
+import com.mojang.logging.LogUtils;
 import io.sigpipe.jbsdiff.InvalidHeaderException;
 import io.sigpipe.jbsdiff.ui.FileUI;
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.loader.api.FabricLoader;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLLoader;
+import net.minecraftforge.fml.loading.FMLPaths;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,13 +17,13 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Objects;
 
-public class Overimagined implements ModInitializer {
+@Mod(Overimagined.MODID)
+public class Overimagined {
+    public static final String MODID = "overimagined_mod";
+    public static final Logger LOGGER = LogUtils.getLogger();
 
-    @Override
-    public void onInitialize() {
-        boolean isDev = FabricLoader.getInstance().isDevelopmentEnvironment();
-
-        System.out.println("Initializing Overimagined...");
+    public Overimagined() {
+        LOGGER.info("Initializing Overimagined...");
 
         String baseName = "ComplementaryReimagined_r2.0.1";
         String baseDownloadUrl = "https://www.complementary.dev/reimagined/";
@@ -29,12 +32,12 @@ public class Overimagined implements ModInitializer {
 
         String patchName = "OverimaginedShaders-2.0-Beta1";
 
-        File shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks").toFile();
+        File shaderpacks = FMLPaths.GAMEDIR.get().resolve("shaderpacks").toFile();
 
         File patchedFile = new File(shaderpacks, patchName);
 
-        if (!isDev && patchedFile.exists()) {
-            System.out.println(patchName + " is already installed.");
+        if (patchedFile.exists()) {
+            LOGGER.info(patchName + " is already installed.");
             return;
         }
 
@@ -57,7 +60,7 @@ public class Overimagined implements ModInitializer {
             if (baseFile.exists()) {
                 baseExtracted = baseFile;
             } else {
-                System.out.println(baseName + " is needed for " + patchName + ", but couldn't be found in your shaderpacks folder. Please download it from " + baseDownloadUrl + ", place it into your shaderpacks folder and restart Minecraft.");
+                LOGGER.info(baseName + " is needed for " + patchName + ", but couldn't be found in your shaderpacks folder. Please download it from " + baseDownloadUrl + ", place it into your shaderpacks folder and restart Minecraft.");
                 return;
             }
         }
@@ -66,83 +69,54 @@ public class Overimagined implements ModInitializer {
         Utils.archive(baseExtracted, baseArchived);
 
         try {
-            if (isDev) {
-                String hash = DigestUtils.md5Hex(Files.newInputStream(baseArchived.toPath()));
-                System.out.println("Hash of " + baseName + ": " + hash);
-                System.out.println(baseArchived.length() + " bytes");
-            } else {
-                // needs to be done for compatibility with older minecraft version because they use an outdated version of commons-compress
-                byte[] fileBytes = Files.readAllBytes(baseArchived.toPath());
-                byte[] firstBytes = new byte[baseTarSize];
-                System.arraycopy(fileBytes, 0, firstBytes, 0, baseTarSize);
+            // needs to be done for compatibility with older minecraft version because they use an outdated version of commons-compress
+            byte[] fileBytes = Files.readAllBytes(baseArchived.toPath());
+            byte[] firstBytes = new byte[baseTarSize];
+            System.arraycopy(fileBytes, 0, firstBytes, 0, baseTarSize);
 
-                String hash = DigestUtils.md5Hex(firstBytes);
-                if (!hash.equals(baseTarHash)) {
-                    System.out.println("The version of " + baseName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + baseDownloadUrl + ", place it into your shaderpacks folder and restart Minecraft.");
-                    return;
-                }
+            String hash = DigestUtils.md5Hex(firstBytes);
+            if (!hash.equals(baseTarHash)) {
+                LOGGER.info("The version of " + baseName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + baseDownloadUrl + ", place it into your shaderpacks folder and restart Minecraft.");
+                return;
             }
         } catch (IOException e) {
-            System.out.println("The version of " + baseName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + baseDownloadUrl + ", place it into your shaderpacks folder and restart Minecraft.");
+            LOGGER.info("The version of " + baseName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + baseDownloadUrl + ", place it into your shaderpacks folder and restart Minecraft.");
             return;
         }
 
-        File patchFile = new File(isDev ? shaderpacks : temp, patchName + ".patch");
+        File patchFile = new File(temp, patchName + ".patch");
         File patchedArchive = new File(temp, patchName + ".tar");
 
-        if (isDev) {
-            Utils.archive(patchedFile, patchedArchive);
+
+        try (InputStream patchStream = getClass().getClassLoader().getResourceAsStream(patchName + ".patch")) {
             try {
-                FileUI.diff(baseArchived, patchedArchive, patchFile);
-            } catch (IOException | CompressorException | InvalidHeaderException e) {
-                e.printStackTrace();
-            }
-        } else {
-            try (InputStream patchStream = getClass().getClassLoader().getResourceAsStream(patchName + ".patch")) {
-                try {
-                    FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile);
-                } catch (IOException e) {
-                    System.err.println("Failed to retrieve patch file." + e.getMessage());
-                    return;
-                }
+                FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile);
             } catch (IOException e) {
-                System.err.println("Failed to retrieve patch file." + e.getMessage());
+                LOGGER.error("Failed to retrieve patch file." + e.getMessage());
                 return;
             }
-
-            try {
-                FileUI.patch(baseArchived, patchedArchive, patchFile);
-            } catch (IOException | CompressorException | InvalidHeaderException e) {
-                System.err.println("Failed to apply patch." + e.getMessage());
-                return;
-            }
-
-            Utils.extract(patchedArchive, patchedFile);
+        } catch (IOException e) {
+            LOGGER.error("Failed to retrieve patch file." + e.getMessage());
+            return;
         }
 
-        System.out.println(patchName + " was successfully installed and is ready to nuke your GPU. Enjoy! -isuewo");
+        try {
+            FileUI.patch(baseArchived, patchedArchive, patchFile);
+        } catch (IOException | CompressorException | InvalidHeaderException e) {
+            LOGGER.error("Failed to apply patch." + e.getMessage());
+            return;
+        }
 
-        // Enable installed shaderpack by default
-        if (FabricLoader.getInstance().isModLoaded("iris")) {
-            File irisProperties = FabricLoader.getInstance().getGameDir().resolve("config/iris.properties").toFile();
+        Utils.extract(patchedArchive, patchedFile);
+
+        LOGGER.info(patchName + " was successfully installed and is ready to nuke your GPU. Enjoy! -isuewo");
+
+        if (FMLLoader.getLoadingModList().getModFileById("oculus") == null) {
             try {
-                String irisPropertiesContent = FileUtils.readFileToString(irisProperties, "UTF-8");
-                irisPropertiesContent = irisPropertiesContent.replaceAll("enableShaders=false", "enableShaders=true").replaceAll("shaderPack=.*", "shaderPack=" + patchName);
-                FileUtils.writeStringToFile(irisProperties, irisPropertiesContent, "UTF-8");
-            } catch (IOException e) {
-                e.printStackTrace();
+                Class.forName("net.optifine.Config");
+            } catch (ClassNotFoundException e) {
+                System.out.println("No supported shader-loader was found. Please install either OptiFine (recommended) or Oculus.");
             }
-        } else if (FabricLoader.getInstance().isModLoaded("optifabric")) {
-            File optionsshaders = FabricLoader.getInstance().getGameDir().resolve("optionsshaders.txt").toFile();
-            try {
-                String optionsshadersContent = FileUtils.readFileToString(optionsshaders, "UTF-8");
-                optionsshadersContent = optionsshadersContent.replaceAll("shaderPack=.+", "shaderPack=" + patchName);
-                FileUtils.writeStringToFile(optionsshaders, optionsshadersContent, "UTF-8");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println("No supported shader-loader was found. Please install either Iris (recommended) or OptiFine.");
         }
     }
 }

@@ -52,13 +52,19 @@ public class Overimagined implements ModInitializer {
 
         if (baseFile.exists()) {
             Utils.extract(baseFile, baseExtracted);
-        } else { // in case the user has the source shaderpack already extracted
-            baseFile = new File(shaderpacks, baseName);
-            if (baseFile.exists()) {
-                baseExtracted = baseFile;
-            } else {
-                System.out.println(baseName + " is needed for " + patchName + ", but couldn't be found in your shaderpacks folder. Please download it from " + baseDownloadUrl + ", place it into your shaderpacks folder and restart Minecraft.");
-                return;
+        } else {
+            File[] baseFiles = shaderpacks.listFiles((dir, name) -> name.startsWith(baseName) && name.endsWith(".zip"));
+            if (baseFiles != null && baseFiles.length > 0) {
+                baseFile = baseFiles[0];
+                Utils.extract(baseFile, baseExtracted);
+            } else  { // in case the user has the source shaderpack already extracted
+                baseFile = new File(shaderpacks, baseName);
+                if (baseFile.exists()) {
+                    baseExtracted = baseFile;
+                } else {
+                    System.out.println(baseName + " is needed for " + patchName + ", but couldn't be found in your shaderpacks folder. Please download it from " + baseDownloadUrl + ", place it into your shaderpacks folder and restart Minecraft.");
+                    return;
+                }
             }
         }
 

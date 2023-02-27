@@ -6,7 +6,7 @@ plugins {
     id 'java'
 }
 
-version = '0.0.7-forge'
+version = '0.0.8-forge'
 group = 'de.isuewo' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'OverimaginedMod'
 

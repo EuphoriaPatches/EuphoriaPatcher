@@ -25,12 +25,12 @@ public class Overimagined {
     public Overimagined() {
         LOGGER.info("Initializing Overimagined...");
 
-        String baseName = "ComplementaryReimagined_r2.0.2";
+        String baseName = "ComplementaryReimagined_r2.0.3";
         String baseDownloadUrl = "https://www.complementary.dev/reimagined/";
-        String baseTarHash = "d1f5d9fba38245dec2eb0e8c1ee21a03";
+        String baseTarHash = "38a65d1d495f7ee1e7dfa2649aa26b7f";
         int baseTarSize = 786432;
 
-        String patchName = "OverimaginedShaders-2.0-Beta2";
+        String patchName = "OverimaginedShaders-2.0-Beta3";
 
         File shaderpacks = FMLPaths.GAMEDIR.get().resolve("shaderpacks").toFile();
 

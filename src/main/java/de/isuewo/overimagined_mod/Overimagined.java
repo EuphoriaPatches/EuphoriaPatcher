@@ -121,7 +121,7 @@ public class Overimagined {
             try {
                 Class.forName("net.optifine.Config");
             } catch (ClassNotFoundException e) {
-                System.out.println("No supported shader-loader was found. Please install either OptiFine (recommended) or Oculus.");
+                LOGGER.info("No supported shader-loader was found. Please install either OptiFine (recommended) or Oculus.");
             }
         }
     }

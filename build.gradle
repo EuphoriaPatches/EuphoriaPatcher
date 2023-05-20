@@ -6,9 +6,9 @@ plugins {
     id 'java'
 }
 
-version = '0.0.9-forge'
+version = '0.0.10-forge'
 group = 'de.isuewo' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = 'OverimaginedMod'
+archivesBaseName = 'EuphoriaPatcher'
 
 // Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
@@ -131,7 +131,7 @@ dependencies {
     // Specify the version of Minecraft to use. If this is any group other than 'net.minecraft', it is assumed
     // that the dep is a ForgeGradle 'patcher' dependency, and its patches will be applied.
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
-    minecraft 'net.minecraftforge:forge:1.19.4-45.0.46'
+    minecraft 'net.minecraftforge:forge:1.19.4-45.0.64'
 
     // Real mod deobf dependency examples - these get remapped to your current mappings
     // implementation fg.deobf("com.tterrag.registrate:Registrate:MC${mc_version}-${registrate_version}") // Adds registrate as a dependency

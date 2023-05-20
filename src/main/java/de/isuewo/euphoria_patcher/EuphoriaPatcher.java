@@ -1,4 +1,4 @@
-package de.isuewo.overimagined_mod;
+package de.isuewo.euphoria_patcher;
 
 import com.mojang.logging.LogUtils;
 import io.sigpipe.jbsdiff.InvalidHeaderException;
@@ -17,20 +17,20 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Objects;
 
-@Mod(Overimagined.MODID)
-public class Overimagined {
-    public static final String MODID = "overimagined_mod";
+@Mod(EuphoriaPatcher.MODID)
+public class EuphoriaPatcher {
+    public static final String MODID = "euphoria_patcher";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public Overimagined() {
-        LOGGER.info("Initializing Overimagined...");
+    public EuphoriaPatcher() {
+        LOGGER.info("Initializing Euphoria Patcher...");
 
         String baseName = "ComplementaryReimagined_r2.1";
         String baseDownloadUrl = "https://www.complementary.dev/reimagined/";
         String baseTarHash = "15687f9a4612a87775e998e683375dd6";
         int baseTarSize = 835584;
 
-        String patchName = "OverimaginedShaders-2.0-Beta4";
+        String patchName = "ComplementaryReimagined r2.1 + Euphoria Patches B5";
 
         File shaderpacks = FMLPaths.GAMEDIR.get().resolve("shaderpacks").toFile();
 

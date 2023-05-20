@@ -1,4 +1,4 @@
-package de.isuewo.overimagined_mod;
+package de.isuewo.euphoria_patcher;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -31,22 +31,22 @@ public class Utils {
                 File f = new File(targetDir, entry.getName());
                 if (entry.isDirectory()) {
                     if (!f.isDirectory() && !f.mkdirs()) {
-                        Overimagined.LOGGER.error("Failed to create directory " + f);
+                        EuphoriaPatcher.LOGGER.error("Failed to create directory " + f);
                     }
                 } else {
                     File parent = f.getParentFile();
                     if (!parent.isDirectory() && !parent.mkdirs()) {
-                        Overimagined.LOGGER.error("Failed to create directory " + parent);
+                        EuphoriaPatcher.LOGGER.error("Failed to create directory " + parent);
                     }
                     try (OutputStream o = Files.newOutputStream(f.toPath())) {
                         IOUtils.copy(i, o);
                     } catch (IOException e) {
-                        Overimagined.LOGGER.error("Failed to extract entry " + entry + " to " + f + ": " + e.getMessage());
+                        EuphoriaPatcher.LOGGER.error("Failed to extract entry " + entry + " to " + f + ": " + e.getMessage());
                     }
                 }
             }
         } catch (Exception e) {
-            Overimagined.LOGGER.error("Failed to extract archive " + zipFile + ": " + e.getMessage());
+            EuphoriaPatcher.LOGGER.error("Failed to extract archive " + zipFile + ": " + e.getMessage());
         }
     }
 
@@ -56,7 +56,7 @@ public class Utils {
         Collections.sort(filesToArchive); // ensures that the archive is deterministic
 
         if (!archive.getParentFile().exists() && !archive.getParentFile().mkdirs()) {
-            Overimagined.LOGGER.error("Failed to create archive: " + archive);
+            EuphoriaPatcher.LOGGER.error("Failed to create archive: " + archive);
             return;
         }
 
@@ -74,14 +74,14 @@ public class Utils {
                     try (InputStream i = Files.newInputStream(f.toPath())) {
                         IOUtils.copy(i, o);
                     } catch (IOException e) {
-                        Overimagined.LOGGER.error("Failed to archive entry " + entry + " from " + f + ": " + e.getMessage());
+                        EuphoriaPatcher.LOGGER.error("Failed to archive entry " + entry + " from " + f + ": " + e.getMessage());
                     }
                 }
                 o.closeArchiveEntry();
             }
             o.finish();
         } catch (Exception e) {
-            Overimagined.LOGGER.error("Failed to create archive: " + e.getMessage());
+            EuphoriaPatcher.LOGGER.error("Failed to create archive: " + e.getMessage());
         }
     }
 }

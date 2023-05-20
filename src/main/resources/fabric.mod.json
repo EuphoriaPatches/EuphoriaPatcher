@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "id": "overimagined_mod",
+  "id": "euphoria_patcher",
   "version": "${version}",
 
-  "name": "OverimaginedMod",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "name": "Euphoria Patcher",
+  "description": "A mod that applies the Euphoria Patches to Complementary Reimagined.",
   "authors": [
     "isuewo"
   ],
   "contact": {
     "homepage": "https://discord.gg/A6faFYt",
-    "sources": "https://github.com/OverimaginedShaders"
+    "sources": "https://github.com/EuphoriaPatches"
   },
 
   "license": "MPL-2.0",
-  "icon": "assets/overimagined/icon.jpg",
+  "icon": "assets/euphoria_patcher/icon.jpg",
 
   "environment": "*",
   "entrypoints": {
     "main": [
-      "de.isuewo.overimagined_mod.Overimagined"
+      "de.isuewo.euphoria_patcher.EuphoriaPatcher"
     ]
   },
 

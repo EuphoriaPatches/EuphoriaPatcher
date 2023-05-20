@@ -1,4 +1,4 @@
-package de.isuewo.overimagined_mod;
+package de.isuewo.euphoria_patcher;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;

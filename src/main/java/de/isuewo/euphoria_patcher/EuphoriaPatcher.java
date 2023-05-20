@@ -1,4 +1,4 @@
-package de.isuewo.overimagined_mod;
+package de.isuewo.euphoria_patcher;
 
 import io.sigpipe.jbsdiff.InvalidHeaderException;
 import io.sigpipe.jbsdiff.ui.FileUI;
@@ -14,20 +14,20 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Objects;
 
-public class Overimagined implements ModInitializer {
+public class EuphoriaPatcher implements ModInitializer {
 
     @Override
     public void onInitialize() {
         boolean isDev = FabricLoader.getInstance().isDevelopmentEnvironment();
 
-        System.out.println("Initializing Overimagined...");
+        System.out.println("Initializing Euphoria Patcher...");
 
         String baseName = "ComplementaryReimagined_r2.1";
         String baseDownloadUrl = "https://www.complementary.dev/reimagined/";
         String baseTarHash = "15687f9a4612a87775e998e683375dd6";
         int baseTarSize = 835584;
 
-        String patchName = "OverimaginedShaders-2.0-Beta4";
+        String patchName = "ComplementaryReimagined r2.1 + Euphoria Patches B5";
 
         File shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks").toFile();
 

@@ -30,7 +30,7 @@ public class EuphoriaPatcher {
         String baseTarHash = "15687f9a4612a87775e998e683375dd6";
         int baseTarSize = 835584;
 
-        String patchName = "ComplementaryReimagined r2.1 + Euphoria Patches B5";
+        String patchName = "ComplementaryReimagined r2.1 + Euphoria Patches B6";
 
         File shaderpacks = FMLPaths.GAMEDIR.get().resolve("shaderpacks").toFile();
 

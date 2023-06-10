@@ -1,30 +1,26 @@
 {
-  "schemaVersion": 1,
-  "id": "euphoria_patcher",
-  "version": "${version}",
-
-  "name": "Euphoria Patcher",
-  "description": "A mod that applies the Euphoria Patches to Complementary Reimagined.",
-  "authors": [
-    "isuewo"
-  ],
-  "contact": {
-    "homepage": "https://discord.gg/A6faFYt",
-    "sources": "https://github.com/EuphoriaPatches"
-  },
-
-  "license": "MPL-2.0",
-  "icon": "assets/euphoria_patcher/icon.jpg",
-
-  "environment": "*",
-  "entrypoints": {
-    "main": [
-      "de.isuewo.euphoria_patcher.EuphoriaPatcher"
-    ]
-  },
-
-  "depends": {
-    "minecraft": ">=1.14.0",
-    "fabricloader": ">=0.14.10"
-  }
+	"schemaVersion": 1,
+	"id": "euphoria_patcher",
+	"version": "${version}",
+	"name": "Euphoria Patcher",
+	"description": "A mod that applies the Euphoria Patches to Complementary Reimagined.",
+	"authors": [
+		"isuewo"
+	],
+	"contact": {
+		"homepage": "https://discord.gg/A6faFYt",
+		"sources": "https://github.com/EuphoriaPatches"
+	},
+	"license": "MPL-2.0",
+	"icon": "assets/euphoria_patcher/icon.jpg",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"de.isuewo.euphoria_patcher.EuphoriaPatcher"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.14.10",
+		"minecraft": ">=1.14.0"
+	}
 }

@@ -22,7 +22,7 @@ public class EuphoriaPatcher implements ModInitializer {
 
         System.out.println("Initializing Euphoria Patcher...");
 
-        String baseName = "ComplementaryReimagined_r2.2";
+        String baseName = "ComplementaryReimagined_r2.2.1";
         String baseDownloadUrl = "https://www.complementary.dev/reimagined/";
         String baseTarHash = "9ddea5a6425b687e6871aecdfbc0b3af";
         int baseTarSize = 858112;

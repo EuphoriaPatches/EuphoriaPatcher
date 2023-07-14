@@ -25,12 +25,12 @@ public class EuphoriaPatcher {
     public EuphoriaPatcher() {
         LOGGER.info("Initializing Euphoria Patcher...");
 
-        String baseName = "ComplementaryReimagined_r2.2";
+        String baseName = "ComplementaryReimagined_r2.2.1";
         String baseDownloadUrl = "https://www.complementary.dev/reimagined/";
-        String baseTarHash = "9ddea5a6425b687e6871aecdfbc0b3af";
-        int baseTarSize = 858112;
+        String baseTarHash = "5e4a4422c163be6b50c24c1f08f2595d";
+        int baseTarSize = 858624;
 
-        String patchName = "ComplementaryReimagined r2.2 + Euphoria Patches B7";
+        String patchName = "ComplementaryReimagined r2.2.1 + Euphoria Patches B8";
 
         File shaderpacks = FMLPaths.GAMEDIR.get().resolve("shaderpacks").toFile();
 

@@ -22,12 +22,12 @@ public class EuphoriaPatcher implements ModInitializer {
 
         System.out.println("Initializing Euphoria Patcher...");
 
-        String baseName = "ComplementaryReimagined_r2.2.1";
+        String baseName = "ComplementaryReimagined_r2.3";
         String baseDownloadUrl = "https://www.complementary.dev/reimagined/";
-        String baseTarHash = "5e4a4422c163be6b50c24c1f08f2595d";
-        int baseTarSize = 858624;
+        String baseTarHash = "0e00a94ab1f8fbe490d1db692eb99f67";
+        int baseTarSize = 1037824;
 
-        String patchName = "ComplementaryReimagined r2.2.1 + Euphoria Patches B8";
+        String patchName = "ComplementaryReimagined r2.3 + Euphoria Patches B9";
 
         File shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks").toFile();
 

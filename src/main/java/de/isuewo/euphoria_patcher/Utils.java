@@ -1,6 +1,7 @@
 package de.isuewo.euphoria_patcher;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -13,52 +14,54 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 public class Utils {
 
     public static File createTempDir() {
-        return new File(FileUtils.getTempDirectoryPath() + File.separator + UUID.randomUUID());
+        try {
+            return Files.createTempDirectory("euphoria-patcher-").toFile();
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static void extract(File zipFile, File targetDir) {
-        try (ArchiveInputStream i = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(Files.newInputStream(zipFile.toPath())))) {
+    public static void extract(File input, File targetDir) {
+        try {
+            ArchiveInputStream i = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(Files.newInputStream(input.toPath())));
             ArchiveEntry entry;
             while ((entry = i.getNextEntry()) != null) {
                 if (!i.canReadEntryData(entry)) {
                     continue;
                 }
-                File f = new File(targetDir, entry.getName());
+                File f = targetDir.toPath().resolve(entry.getName()).toFile();
                 if (entry.isDirectory()) {
                     if (!f.isDirectory() && !f.mkdirs()) {
-                        System.err.println("Failed to create directory " + f);
+                        System.err.println("failed to create directory " + f);
                     }
                 } else {
                     File parent = f.getParentFile();
                     if (!parent.isDirectory() && !parent.mkdirs()) {
-                        System.err.println("Failed to create directory " + parent);
+                        System.err.println("failed to create directory " + parent);
                     }
                     try (OutputStream o = Files.newOutputStream(f.toPath())) {
                         IOUtils.copy(i, o);
-                    } catch (IOException e) {
-                        System.err.println("Failed to extract entry " + entry + " to " + f + ": " + e.getMessage());
                     }
                 }
             }
-        } catch (Exception e) {
-            System.err.println("Failed to extract archive " + zipFile + ": " + e.getMessage());
+        } catch (IOException | ArchiveException e) {
+            throw new RuntimeException(e);
         }
     }
 
     public static void archive(File sourceDir, File archive) {
-        List<File> filesToArchive = new ArrayList<>(FileUtils.listFiles(sourceDir, null, true));
-
-        Collections.sort(filesToArchive); // ensures that the archive is deterministic
-
         if (!archive.getParentFile().exists() && !archive.getParentFile().mkdirs()) {
             System.err.println("Failed to create archive: " + archive);
             return;
         }
+
+        List<File> filesToArchive = new ArrayList<>(FileUtils.listFiles(sourceDir, null, true));
+        Collections.sort(filesToArchive); // ensures that the archive is deterministic
 
         try (TarArchiveOutputStream o = new TarArchiveOutputStream(new BufferedOutputStream(Files.newOutputStream(archive.toPath())))) {
             for (File f : filesToArchive) {
@@ -73,15 +76,13 @@ public class Utils {
                 if (f.isFile()) {
                     try (InputStream i = Files.newInputStream(f.toPath())) {
                         IOUtils.copy(i, o);
-                    } catch (IOException e) {
-                        System.err.println("Failed to archive entry " + entry + " from " + f + ": " + e.getMessage());
                     }
                 }
                 o.closeArchiveEntry();
             }
             o.finish();
-        } catch (Exception e) {
-            System.err.println("Failed to create archive: " + e.getMessage());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }

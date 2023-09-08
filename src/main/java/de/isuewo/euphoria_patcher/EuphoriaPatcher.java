@@ -12,89 +12,131 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Objects;
 
 public class EuphoriaPatcher implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        boolean isDev = FabricLoader.getInstance().isDevelopmentEnvironment();
-
+        final boolean isDev = FabricLoader.getInstance().isDevelopmentEnvironment();
+        final File shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks").toFile();
         System.out.println("Initializing Euphoria Patcher...");
 
-        String baseName = "ComplementaryReimagined_r2.3";
-        String baseDownloadUrl = "https://www.complementary.dev/reimagined/";
-        String baseTarHash = "0e00a94ab1f8fbe490d1db692eb99f67";
-        int baseTarSize = 1037824;
+        final String downloadURL = "https://www.complementary.dev/";
+        final String brandName = "ComplementaryShaders";
+        final String version = "_r5.0";
+        final String patchName = "EuphoriaPatches";
+        final String patchVersion = "_1.0";
+        final String commonLocation = "shaders/lib/common.glsl";
 
-        String patchName = "ComplementaryReimagined r2.3 + Euphoria Patches B9";
-
-        File shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks").toFile();
-
-        File patchedFile = new File(shaderpacks, patchName);
-
-        if (!isDev && patchedFile.exists()) {
-            System.out.println(patchName + " is already installed.");
-            return;
-        }
-
-        File temp = Utils.createTempDir();
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                FileUtils.deleteDirectory(temp);
-            } catch (IOException e) {
-                e.printStackTrace();
+        // Detect which version(s) of Complementary Shaders the user has installed
+        final File[] potentialFiles = shaderpacks.listFiles((dir, name) -> name.matches("Complementary.+?(?=" + version + ")" + version + ".*"));
+        File baseFile = null;
+        boolean styleReimagined = false;
+        boolean styleUnbound = false;
+        if (potentialFiles != null) {
+            ArrayList<File> zipFiles = new ArrayList<>();
+            for (File potentialFile : Objects.requireNonNull(potentialFiles)) {
+                if (potentialFile.getName().endsWith(".zip")) {
+                    zipFiles.add(potentialFile);
+                }
             }
-        }));
-
-        File baseFile = new File(shaderpacks, baseName + ".zip");
-        File baseExtracted = new File(temp, baseName);
-
-        if (baseFile.exists()) {
-            Utils.extract(baseFile, baseExtracted);
-        } else {
-            File[] baseFiles = shaderpacks.listFiles((dir, name) -> name.startsWith(baseName) && name.endsWith(".zip"));
-            if (baseFiles != null && baseFiles.length > 0) {
-                baseFile = baseFiles[0];
-                Utils.extract(baseFile, baseExtracted);
-            } else  { // in case the user has the source shaderpack already extracted
-                baseFile = new File(shaderpacks, baseName);
-                if (baseFile.exists()) {
-                    baseExtracted = baseFile;
-                } else {
-                    System.out.println(baseName + " is needed for " + patchName + ", but couldn't be found in your shaderpacks folder. Please download it from " + baseDownloadUrl + ", place it into your shaderpacks folder and restart Minecraft.");
-                    return;
+            if (zipFiles.size() > 0) {
+                for (File zipFile : zipFiles) {
+                    if (zipFile.getName().contains("Reimagined")) {
+                        styleReimagined = true;
+                        if (baseFile == null) {
+                            baseFile = zipFile;
+                        }
+                    } else if (zipFile.getName().contains("Unbound")) {
+                        styleUnbound = true;
+                        if (baseFile == null) {
+                            baseFile = zipFile;
+                        }
+                    }
+                    if (baseFile != null && new File(shaderpacks, baseFile.getName().replace(".zip", "") + " + " + patchName + patchVersion).exists()) {
+                        //baseFile = null;
+                    }
+                    if (styleReimagined && styleUnbound) {
+                        break;
+                    }
+                }
+            }
+            if (!styleReimagined && !styleUnbound) {
+                for (File f : potentialFiles) {
+                    if (f.isDirectory() && !f.getName().contains(patchName)) {
+                        if (f.getName().contains("Reimagined")) {
+                            styleReimagined = true;
+                            if (baseFile == null) {
+                                baseFile = f;
+                            }
+                        } else if (f.getName().contains("Unbound")) {
+                            styleUnbound = true;
+                            if (baseFile == null) {
+                                baseFile = f;
+                            }
+                        }
+                    }
+                    if (styleReimagined && styleUnbound) {
+                        break;
+                    }
                 }
             }
         }
+        if (baseFile == null) {
+            System.out.println(patchName + " have already been applied or you need to have a version of " + brandName + " installed. Please download it from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
+            return;
+        }
 
-        File baseArchived = new File(temp, baseName + ".tar");
+        final File temp = Utils.createTempDir();
+        final String baseName = baseFile.getName().replace(".zip", "");
+        final String patchedName = baseName + " + " + patchName + patchVersion;
+
+        File baseExtracted = new File(temp, baseName);
+        if (!baseFile.isDirectory()) {
+            Utils.extract(baseFile, baseExtracted);
+        } else {
+            baseExtracted = baseFile;
+        }
+
+        try {
+            final File commons = new File(baseExtracted, commonLocation);
+            final String config = FileUtils.readFileToString(commons, "UTF-8").replaceFirst("SHADER_STYLE [14]", "SHADER_STYLE 1");
+            FileUtils.writeStringToFile(commons, config, "UTF-8");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        final String baseTarHash = "13ae1fe7fcdf6fcce98276cd72e433bf";
+        final int baseTarSize = 1090048;
+        final File baseArchived = new File(temp, baseName + ".tar");
         Utils.archive(baseExtracted, baseArchived);
 
+        final File patchedFile = new File(shaderpacks, patchedName);
         try {
             if (isDev) {
                 String hash = DigestUtils.md5Hex(Files.newInputStream(baseArchived.toPath()));
                 System.out.println("Hash of " + baseName + ": " + hash);
                 System.out.println(baseArchived.length() + " bytes");
             } else {
-                // needs to be done for compatibility with older minecraft version because they use an outdated version of commons-compress
+                // for compatibility with older minecraft version because they use an outdated version of commons-compress
                 byte[] fileBytes = Files.readAllBytes(baseArchived.toPath());
                 byte[] firstBytes = new byte[baseTarSize];
                 System.arraycopy(fileBytes, 0, firstBytes, 0, baseTarSize);
 
                 String hash = DigestUtils.md5Hex(firstBytes);
                 if (!hash.equals(baseTarHash)) {
-                    System.out.println("The version of " + baseName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + baseDownloadUrl + ", place it into your shaderpacks folder and restart Minecraft.");
-                    return;
+                    throw new IOException();
                 }
             }
         } catch (IOException e) {
-            System.out.println("The version of " + baseName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + baseDownloadUrl + ", place it into your shaderpacks folder and restart Minecraft.");
+            System.out.println("The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
             return;
         }
 
-        File patchFile = new File(isDev ? shaderpacks : temp, patchName + ".patch");
-        File patchedArchive = new File(temp, patchName + ".tar");
+        final File patchedArchive = new File(temp, patchedName + ".tar");
+        final File patchFile = new File(isDev ? shaderpacks : temp, patchedName + ".patch");
 
         if (isDev) {
             Utils.archive(patchedFile, patchedArchive);
@@ -103,52 +145,52 @@ public class EuphoriaPatcher implements ModInitializer {
             } catch (IOException | CompressorException | InvalidHeaderException e) {
                 e.printStackTrace();
             }
+            return;
         } else {
-            try (InputStream patchStream = getClass().getClassLoader().getResourceAsStream(patchName + ".patch")) {
-                try {
-                    FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile);
-                } catch (IOException e) {
-                    System.err.println("Failed to retrieve patch file." + e.getMessage());
-                    return;
-                }
+            try (InputStream patchStream = getClass().getClassLoader().getResourceAsStream(patchName + patchVersion + ".patch")) {
+                FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile);
             } catch (IOException e) {
                 System.err.println("Failed to retrieve patch file." + e.getMessage());
                 return;
             }
-
             try {
                 FileUI.patch(baseArchived, patchedArchive, patchFile);
             } catch (IOException | CompressorException | InvalidHeaderException e) {
                 System.err.println("Failed to apply patch." + e.getMessage());
-                return;
             }
-
             Utils.extract(patchedArchive, patchedFile);
+        }
+
+        if (styleUnbound) {
+            try {
+                final File commons = new File(patchedFile, commonLocation);
+                final String UnboundConfig = FileUtils.readFileToString(commons, "UTF-8").replaceFirst("SHADER_STYLE 1", "SHADER_STYLE 4");
+                if (!styleReimagined) {
+                    FileUtils.writeStringToFile(commons, UnboundConfig, "UTF-8");
+                } else if (baseName.contains("Reimagined")) {
+                    final File unbound = new File(shaderpacks, patchedName.replace("Reimagined", "Unbound"));
+                    FileUtils.copyDirectory(patchedFile, unbound);
+                    FileUtils.writeStringToFile(new File(unbound, commonLocation), UnboundConfig, "UTF-8");
+                } else {
+                    final File reimagined = new File(shaderpacks, patchedName.replace("Unbound", "Reimagined"));
+                    FileUtils.copyDirectory(patchedFile, reimagined);
+                    FileUtils.writeStringToFile(commons, UnboundConfig, "UTF-8");
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         System.out.println(patchName + " was successfully installed and is ready to nuke your GPU. Enjoy! -isuewo");
 
         // Enable installed shaderpack by default
-        if (FabricLoader.getInstance().isModLoaded("iris")) {
-            File irisProperties = FabricLoader.getInstance().getGameDir().resolve("config/iris.properties").toFile();
-            try {
-                String irisPropertiesContent = FileUtils.readFileToString(irisProperties, "UTF-8");
-                irisPropertiesContent = irisPropertiesContent.replaceAll("enableShaders=false", "enableShaders=true").replaceAll("shaderPack=.*", "shaderPack=" + patchName);
-                FileUtils.writeStringToFile(irisProperties, irisPropertiesContent, "UTF-8");
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            if (FabricLoader.getInstance().isModLoaded("iris")) {
+                final File configFile = FabricLoader.getInstance().getGameDir().resolve("config/iris.properties").toFile();
+                final String config = FileUtils.readFileToString(configFile, "UTF-8").replaceFirst("enableShaders=false", "enableShaders=true").replaceFirst("shaderPack=.*", "shaderPack=" + patchedName);
+                FileUtils.writeStringToFile(configFile, config, "UTF-8");
             }
-        } else if (FabricLoader.getInstance().isModLoaded("optifabric")) {
-            File optionsshaders = FabricLoader.getInstance().getGameDir().resolve("optionsshaders.txt").toFile();
-            try {
-                String optionsshadersContent = FileUtils.readFileToString(optionsshaders, "UTF-8");
-                optionsshadersContent = optionsshadersContent.replaceAll("shaderPack=.+", "shaderPack=" + patchName);
-                FileUtils.writeStringToFile(optionsshaders, optionsshadersContent, "UTF-8");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println("No supported shader-loader was found. Please install either Iris (recommended) or OptiFine.");
+        } catch (IOException ignored) {
         }
     }
 }

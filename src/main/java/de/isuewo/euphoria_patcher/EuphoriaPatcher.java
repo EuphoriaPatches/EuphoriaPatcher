@@ -31,7 +31,7 @@ public class EuphoriaPatcher implements ModInitializer {
         final String commonLocation = "shaders/lib/common.glsl";
 
         // Detect which version(s) of Complementary Shaders the user has installed
-        final File[] potentialFiles = shaderpacks.listFiles((dir, name) -> name.matches("Complementary.+?(?=" + version + ")" + version + ".*"));
+        final File[] potentialFiles = shaderpacks.listFiles((dir, name) -> name.matches("Complementary.+?(?=" + version + ")" + version + "(?!\\.[0-9]).*"));
         File baseFile = null;
         boolean styleReimagined = false;
         boolean styleUnbound = false;

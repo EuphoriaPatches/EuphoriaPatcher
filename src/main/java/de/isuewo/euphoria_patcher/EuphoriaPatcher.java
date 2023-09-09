@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class EuphoriaPatcher implements ModInitializer {
@@ -121,13 +122,10 @@ public class EuphoriaPatcher implements ModInitializer {
                 System.out.println(baseArchived.length() + " bytes");
             } else {
                 // for compatibility with older minecraft version because they use an outdated version of commons-compress
-                byte[] fileBytes = Files.readAllBytes(baseArchived.toPath());
-                byte[] firstBytes = new byte[baseTarSize];
-                System.arraycopy(fileBytes, 0, firstBytes, 0, baseTarSize);
-
-                String hash = DigestUtils.md5Hex(firstBytes);
+                String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived.toPath()), baseTarSize));
                 if (!hash.equals(baseTarHash)) {
-                    throw new IOException();
+                    System.out.println("The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
+                    return;
                 }
             }
         } catch (IOException e) {

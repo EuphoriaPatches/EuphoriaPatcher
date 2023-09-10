@@ -26,9 +26,9 @@ public class EuphoriaPatcher implements ModInitializer {
 
         final String downloadURL = "https://www.complementary.dev/";
         final String brandName = "ComplementaryShaders";
-        final String version = "_r5.0";
+        final String version = "_r5.0.1";
         final String patchName = "EuphoriaPatches";
-        final String patchVersion = "_1.0";
+        final String patchVersion = "_1.0.1";
         final String commonLocation = "shaders/lib/common.glsl";
 
         // Detect which version(s) of Complementary Shaders the user has installed
@@ -106,7 +106,7 @@ public class EuphoriaPatcher implements ModInitializer {
             final String config = FileUtils.readFileToString(commons, "UTF-8").replaceFirst("SHADER_STYLE [14]", "SHADER_STYLE 1");
             FileUtils.writeStringToFile(commons, config, "UTF-8");
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println("Failed to extract style information from " + baseName + e.getMessage());
         }
 
         final String baseTarHash = "13ae1fe7fcdf6fcce98276cd72e433bf";
@@ -129,7 +129,7 @@ public class EuphoriaPatcher implements ModInitializer {
                 }
             }
         } catch (IOException e) {
-            System.out.println("The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
+            System.out.println("The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft." + e.getMessage());
             return;
         }
 
@@ -175,7 +175,7 @@ public class EuphoriaPatcher implements ModInitializer {
                     FileUtils.writeStringToFile(commons, UnboundConfig, "UTF-8");
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                System.err.println("Failed to apply style settings." + e.getMessage());
             }
         }
 

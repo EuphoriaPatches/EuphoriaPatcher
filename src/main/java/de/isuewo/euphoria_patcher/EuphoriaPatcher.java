@@ -109,7 +109,7 @@ public class EuphoriaPatcher implements ModInitializer {
             System.err.println("Failed to extract style information from " + baseName + e.getMessage());
         }
 
-        final String baseTarHash = "13ae1fe7fcdf6fcce98276cd72e433bf";
+        final String baseTarHash = "58b4ada3bfc505185ad1dd107a17eacc";
         final int baseTarSize = 1090048;
         final File baseArchived = new File(temp, baseName + ".tar");
         Utils.archive(baseExtracted, baseArchived);

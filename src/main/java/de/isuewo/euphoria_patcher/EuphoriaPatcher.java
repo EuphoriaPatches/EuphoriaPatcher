@@ -17,12 +17,31 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public class EuphoriaPatcher implements ModInitializer {
+    private static boolean isSodiumLoaded;
+
+    static void log(int messageLevel, String message) {
+        if (isSodiumLoaded) {
+            SodiumConsole.logMessage(messageLevel, message);
+        }
+        if (messageLevel == 2) {
+            System.err.println(message);
+        } else {
+            System.out.println(message);
+        }
+    }
 
     @Override
     public void onInitialize() {
+        try {
+            Class.forName("me.jellysquid.mods.sodium.client.gui.console.Console");
+            isSodiumLoaded = true;
+        } catch (ClassNotFoundException e) {
+            isSodiumLoaded = false;
+        }
+
         final boolean isDev = FabricLoader.getInstance().isDevelopmentEnvironment();
         final File shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks").toFile();
-        System.out.println("Initializing Euphoria Patcher...");
+        log(0, "Initializing Euphoria Patcher...");
 
         final String downloadURL = "https://www.complementary.dev/";
         final String brandName = "ComplementaryShaders";
@@ -36,6 +55,7 @@ public class EuphoriaPatcher implements ModInitializer {
         File baseFile = null;
         boolean styleReimagined = false;
         boolean styleUnbound = false;
+        boolean isAlreadyInstalled = false;
         if (potentialFiles != null) {
             ArrayList<File> zipFiles = new ArrayList<>();
             for (File potentialFile : Objects.requireNonNull(potentialFiles)) {
@@ -56,8 +76,11 @@ public class EuphoriaPatcher implements ModInitializer {
                             baseFile = zipFile;
                         }
                     }
-                    if (baseFile != null && new File(shaderpacks, baseFile.getName().replace(".zip", "") + " + " + patchName + patchVersion).exists()) {
-                        baseFile = null;
+                    if (baseFile != null) {
+                        if (new File(shaderpacks, baseFile.getName().replace(".zip", "") + " + " + patchName + patchVersion).exists()) {
+                            baseFile = null;
+                            isAlreadyInstalled = true;
+                        }
                     }
                     if (styleReimagined && styleUnbound) {
                         break;
@@ -86,7 +109,11 @@ public class EuphoriaPatcher implements ModInitializer {
             }
         }
         if (baseFile == null) {
-            System.out.println(patchName + " have already been applied or you need to have a version of " + brandName + " installed. Please download it from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
+            if (isAlreadyInstalled) {
+                log(0, patchName + " is already installed.");
+            } else {
+                log(1, "You need to have a version of " + brandName + " installed. Please download it from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
+            }
             return;
         }
 
@@ -106,7 +133,7 @@ public class EuphoriaPatcher implements ModInitializer {
             final String config = FileUtils.readFileToString(commons, "UTF-8").replaceFirst("SHADER_STYLE [14]", "SHADER_STYLE 1");
             FileUtils.writeStringToFile(commons, config, "UTF-8");
         } catch (IOException e) {
-            System.err.println("Failed to extract style information from " + baseName + e.getMessage());
+            log(2, "Failed to extract style information from " + baseName + e.getMessage());
         }
 
         final String baseTarHash = "58b4ada3bfc505185ad1dd107a17eacc";
@@ -118,18 +145,18 @@ public class EuphoriaPatcher implements ModInitializer {
         try {
             if (isDev) {
                 String hash = DigestUtils.md5Hex(Files.newInputStream(baseArchived.toPath()));
-                System.out.println("Hash of " + baseName + ": " + hash);
-                System.out.println(baseArchived.length() + " bytes");
+                log(0, "Hash of " + baseName + ": " + hash);
+                log(0,baseArchived.length() + " bytes");
             } else {
                 // for compatibility with older minecraft version because they use an outdated version of commons-compress
                 String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived.toPath()), baseTarSize));
                 if (!hash.equals(baseTarHash)) {
-                    System.out.println("The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
+                    log(1, "The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
                     return;
                 }
             }
         } catch (IOException e) {
-            System.out.println("The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft." + e.getMessage());
+            log(1,"The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft." + e.getMessage());
             return;
         }
 
@@ -148,13 +175,13 @@ public class EuphoriaPatcher implements ModInitializer {
             try (InputStream patchStream = getClass().getClassLoader().getResourceAsStream(patchName + patchVersion + ".patch")) {
                 FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile);
             } catch (IOException e) {
-                System.err.println("Failed to retrieve patch file." + e.getMessage());
+                log(2,"Failed to retrieve patch file." + e.getMessage());
                 return;
             }
             try {
                 FileUI.patch(baseArchived, patchedArchive, patchFile);
             } catch (IOException | CompressorException | InvalidHeaderException e) {
-                System.err.println("Failed to apply patch." + e.getMessage());
+                log(2,"Failed to apply patch." + e.getMessage());
             }
             Utils.extract(patchedArchive, patchedFile);
         }
@@ -175,10 +202,10 @@ public class EuphoriaPatcher implements ModInitializer {
                     FileUtils.writeStringToFile(commons, UnboundConfig, "UTF-8");
                 }
             } catch (IOException e) {
-                System.err.println("Failed to apply style settings." + e.getMessage());
+                log(2,"Failed to apply style settings." + e.getMessage());
             }
         }
 
-        System.out.println(patchName + " was successfully installed and is ready to nuke your GPU. Enjoy! -isuewo");
+        log(0,patchName + " was successfully installed and is ready to nuke your GPU. Enjoy! -isuewo");
     }
 }

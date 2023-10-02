@@ -180,15 +180,5 @@ public class EuphoriaPatcher implements ModInitializer {
         }
 
         System.out.println(patchName + " was successfully installed and is ready to nuke your GPU. Enjoy! -isuewo");
-
-        // Enable installed shaderpack by default
-        try {
-            if (FabricLoader.getInstance().isModLoaded("iris")) {
-                final File configFile = FabricLoader.getInstance().getGameDir().resolve("config/iris.properties").toFile();
-                final String config = FileUtils.readFileToString(configFile, "UTF-8").replaceFirst("enableShaders=false", "enableShaders=true").replaceFirst("shaderPack=.*", "shaderPack=" + patchedName);
-                FileUtils.writeStringToFile(configFile, config, "UTF-8");
-            }
-        } catch (IOException ignored) {
-        }
     }
 }

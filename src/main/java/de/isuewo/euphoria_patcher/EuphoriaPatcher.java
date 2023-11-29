@@ -29,9 +29,9 @@ public class EuphoriaPatcher {
 
         final String downloadURL = "https://www.complementary.dev/";
         final String brandName = "ComplementaryShaders";
-        final String version = "_r5.0.1";
+        final String version = "_r5.1";
         final String patchName = "EuphoriaPatches";
-        final String patchVersion = "_1.0.1";
+        final String patchVersion = "_1.1";
         final String commonLocation = "shaders/lib/common.glsl";
 
         // Detect which version(s) of Complementary Shaders the user has installed
@@ -112,8 +112,8 @@ public class EuphoriaPatcher {
             LOGGER.error("Failed to extract style information from " + baseName + e.getMessage());
         }
 
-        final String baseTarHash = "58b4ada3bfc505185ad1dd107a17eacc";
-        final int baseTarSize = 1090048;
+        final String baseTarHash = "10462174dae7344fec6f086ef23ab122";
+        final int baseTarSize = 1134592;
         final File baseArchived = new File(temp, baseName + ".tar");
         Utils.archive(baseExtracted, baseArchived);
 

@@ -45,7 +45,7 @@ public class EuphoriaPatcher implements ModInitializer {
 
         final String downloadURL = "https://www.complementary.dev/";
         final String brandName = "ComplementaryShaders";
-        final String version = "_r5.1";
+        final String version = "_r5.1.1";
         final String patchName = "EuphoriaPatches";
         final String patchVersion = "_1.1";
         final String commonLocation = "shaders/lib/common.glsl";
@@ -136,7 +136,7 @@ public class EuphoriaPatcher implements ModInitializer {
             log(2, "Failed to extract style information from " + baseName + e.getMessage());
         }
 
-        final String baseTarHash = "10462174dae7344fec6f086ef23ab122";
+        final String baseTarHash = "b5493f3d688e26814a04c6b1708adeb0";
         final int baseTarSize = 1134592;
         final File baseArchived = new File(temp, baseName + ".tar");
         Utils.archive(baseExtracted, baseArchived);

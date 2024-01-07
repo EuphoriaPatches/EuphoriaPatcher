@@ -25,13 +25,12 @@ public class EuphoriaPatcher {
 
     public EuphoriaPatcher() {
         final File shaderpacks = FMLPaths.GAMEDIR.get().resolve("shaderpacks").toFile();
-        LOGGER.info("Initializing Euphoria Patcher...");
 
         final String downloadURL = "https://www.complementary.dev/";
         final String brandName = "ComplementaryShaders";
         final String version = "_r5.1.1";
         final String patchName = "EuphoriaPatches";
-        final String patchVersion = "_1.1";
+        final String patchVersion = "_1.2";
         final String commonLocation = "shaders/lib/common.glsl";
 
         // Detect which version(s) of Complementary Shaders the user has installed
@@ -39,14 +38,15 @@ public class EuphoriaPatcher {
         File baseFile = null;
         boolean styleReimagined = false;
         boolean styleUnbound = false;
+        boolean isAlreadyInstalled = false;
         if (potentialFiles != null) {
             ArrayList<File> zipFiles = new ArrayList<>();
-            for (File potentialFile : Objects.requireNonNull(potentialFiles)) {
+            for (File potentialFile : potentialFiles) {
                 if (potentialFile.getName().endsWith(".zip")) {
                     zipFiles.add(potentialFile);
                 }
             }
-            if (zipFiles.size() > 0) {
+            if (!zipFiles.isEmpty()) {
                 for (File zipFile : zipFiles) {
                     if (zipFile.getName().contains("Reimagined")) {
                         styleReimagined = true;
@@ -61,6 +61,7 @@ public class EuphoriaPatcher {
                     }
                     if (baseFile != null && new File(shaderpacks, baseFile.getName().replace(".zip", "") + " + " + patchName + patchVersion).exists()) {
                         baseFile = null;
+                        isAlreadyInstalled = true;
                     }
                     if (styleReimagined && styleUnbound) {
                         break;
@@ -89,7 +90,9 @@ public class EuphoriaPatcher {
             }
         }
         if (baseFile == null) {
-            LOGGER.info(patchName + " have already been applied or you need to have a version of " + brandName + " installed. Please download it from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
+            if (!isAlreadyInstalled) {
+                LOGGER.info("You need to have " + brandName + version + " installed. Please download it from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
+            }
             return;
         }
 
@@ -122,17 +125,16 @@ public class EuphoriaPatcher {
             // for compatibility with older minecraft version because they use an outdated version of commons-compress
             String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived.toPath()), baseTarSize));
             if (!hash.equals(baseTarHash)) {
-                LOGGER.info("The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
+                LOGGER.info("The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download " + brandName + version + " from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
                 return;
             }
         } catch (IOException e) {
-            LOGGER.info("The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft." + e.getMessage());
+            LOGGER.info("The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download " + brandName + version + " from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft." + e.getMessage());
             return;
         }
 
         final File patchedArchive = new File(temp, patchedName + ".tar");
         final File patchFile = new File(temp, patchedName + ".patch");
-
 
         try (InputStream patchStream = getClass().getClassLoader().getResourceAsStream(patchName + patchVersion + ".patch")) {
             FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile);
@@ -146,7 +148,6 @@ public class EuphoriaPatcher {
             LOGGER.error("Failed to apply patch." + e.getMessage());
         }
         Utils.extract(patchedArchive, patchedFile);
-
 
         if (styleUnbound) {
             try {
@@ -168,6 +169,6 @@ public class EuphoriaPatcher {
             }
         }
 
-        LOGGER.info(patchName + " was successfully installed and is ready to nuke your GPU. Enjoy! -isuewo");
+        LOGGER.info(patchName + " was successfully installed. Enjoy! -SpacEagle17 & isuewo");
     }
 }

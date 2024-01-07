@@ -5,21 +5,23 @@ import io.sigpipe.jbsdiff.ui.FileUI;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
-import java.util.ArrayList;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Objects;
 
 public class EuphoriaPatcher implements ModInitializer {
     private static boolean isSodiumLoaded;
 
-    static void log(int messageLevel, String message) {
+    private static void log(int messageLevel, String message) {
         if (isSodiumLoaded) {
             SodiumConsole.logMessage(messageLevel, message);
         }
@@ -40,7 +42,8 @@ public class EuphoriaPatcher implements ModInitializer {
         }
 
         final boolean isDev = FabricLoader.getInstance().isDevelopmentEnvironment();
-        final File shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks").toFile();
+
+        final Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
 
         final String downloadURL = "https://www.complementary.dev/";
         final String brandName = "ComplementaryShaders";
@@ -50,32 +53,29 @@ public class EuphoriaPatcher implements ModInitializer {
         final String commonLocation = "shaders/lib/common.glsl";
 
         // Detect which version(s) of Complementary Shaders the user has installed
-        final File[] potentialFiles = shaderpacks.listFiles((dir, name) -> name.matches("Complementary.+?(?=" + version + ")" + version + "(?!\\.[0-9]).*"));
-        File baseFile = null;
+        Path baseFile = null;
         boolean styleReimagined = false;
         boolean styleUnbound = false;
         boolean isAlreadyInstalled = false;
-        if (potentialFiles != null) {
-            ArrayList<File> zipFiles = new ArrayList<>();
-            for (File potentialFile : potentialFiles) {
-                if (potentialFile.getName().endsWith(".zip")) {
-                    zipFiles.add(potentialFile);
-                }
-            }
-            if (!zipFiles.isEmpty()) {
-                for (File zipFile : zipFiles) {
-                    if (zipFile.getName().contains("Reimagined")) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, path -> {
+            String name = path.getFileName().toString();
+            return name.matches("Complementary.+?(?=" + version + ")" + version + "(?!\\.[0-9]).*") && name.endsWith(".zip") && !name.contains(patchName);
+        })) {
+            for (Path potentialFile : stream) {
+                String name = potentialFile.getFileName().toString();
+                if (name.endsWith(".zip")) {
+                    if (name.contains("Reimagined")) {
                         styleReimagined = true;
                         if (baseFile == null) {
-                            baseFile = zipFile;
+                            baseFile = potentialFile;
                         }
-                    } else if (zipFile.getName().contains("Unbound")) {
+                    } else if (name.contains("Unbound")) {
                         styleUnbound = true;
                         if (baseFile == null) {
-                            baseFile = zipFile;
+                            baseFile = potentialFile;
                         }
                     }
-                    if (baseFile != null && new File(shaderpacks, baseFile.getName().replace(".zip", "") + " + " + patchName + patchVersion).exists() && !isDev) {
+                    if (baseFile != null && Files.exists(shaderpacks.resolve(baseFile.getFileName().toString().replace(".zip", "") + " + " + patchName + patchVersion)) && !isDev) {
                         baseFile = null;
                         isAlreadyInstalled = true;
                     }
@@ -85,25 +85,32 @@ public class EuphoriaPatcher implements ModInitializer {
                 }
             }
             if (!styleReimagined && !styleUnbound) {
-                for (File f : potentialFiles) {
-                    if (f.isDirectory() && !f.getName().contains(patchName)) {
-                        if (f.getName().contains("Reimagined")) {
+                try (DirectoryStream<Path> stream2 = Files.newDirectoryStream(shaderpacks, path -> {
+                    String name = path.getFileName().toString();
+                    return name.matches("Complementary.+?(?=" + version + ")" + version + "(?!\\.[0-9]).*") && Files.isDirectory(path) && !name.contains(patchName);
+                })) {
+                    for (Path potentialFile : stream2) {
+                        String name = potentialFile.getFileName().toString();
+                        if (name.contains("Reimagined")) {
                             styleReimagined = true;
                             if (baseFile == null) {
-                                baseFile = f;
+                                baseFile = potentialFile;
                             }
-                        } else if (f.getName().contains("Unbound")) {
+                        } else if (name.contains("Unbound")) {
                             styleUnbound = true;
                             if (baseFile == null) {
-                                baseFile = f;
+                                baseFile = potentialFile;
                             }
                         }
-                    }
-                    if (styleReimagined && styleUnbound) {
-                        break;
+                        if (styleReimagined && styleUnbound) {
+                            break;
+                        }
                     }
                 }
             }
+        } catch (IOException e) {
+            log(2, "Error reading shaderpacks directory" + e.getMessage());
+            return;
         }
         if (baseFile == null) {
             if (!isAlreadyInstalled) {
@@ -112,39 +119,56 @@ public class EuphoriaPatcher implements ModInitializer {
             return;
         }
 
-        final File temp = Utils.createTempDir();
-        final String baseName = baseFile.getName().replace(".zip", "");
+        final Path temp;
+        try {
+            temp = Files.createTempDirectory("euphoria-patcher-");
+        } catch (IOException e) {
+            log(2, "Error creating temporary directory" + e.getMessage());
+            return;
+        }
+        final String baseName = baseFile.getFileName().toString().replace(".zip", "");
         final String patchedName = baseName + " + " + patchName + patchVersion;
 
-        File baseExtracted = new File(temp, baseName);
-        if (!baseFile.isDirectory()) {
-            Utils.extract(baseFile, baseExtracted);
+        Path baseExtracted = temp.resolve(baseName);
+        if (!Files.isDirectory(baseFile)) {
+            try {
+                ArchiveUtils.extract(baseFile, baseExtracted);
+            } catch (IOException | ArchiveException e) {
+                log(2, "Error extracting shaderpack" + e.getMessage());
+                return;
+            }
         } else {
             baseExtracted = baseFile;
         }
 
         try {
-            final File commons = new File(baseExtracted, commonLocation);
-            final String config = FileUtils.readFileToString(commons, "UTF-8").replaceFirst("SHADER_STYLE [14]", "SHADER_STYLE 1");
-            FileUtils.writeStringToFile(commons, config, "UTF-8");
+            final Path commons = baseExtracted.resolve(commonLocation);
+            final String config = FileUtils.readFileToString(commons.toFile(), "UTF-8").replaceFirst("SHADER_STYLE [14]", "SHADER_STYLE 1");
+            FileUtils.writeStringToFile(commons.toFile(), config, "UTF-8");
         } catch (IOException e) {
-            log(2, "Failed to extract style information from " + baseName + e.getMessage());
+            log(2, "Error extracting style information from " + baseName + e.getMessage());
+            return;
         }
 
         final String baseTarHash = "b5493f3d688e26814a04c6b1708adeb0";
         final int baseTarSize = 1134592;
-        final File baseArchived = new File(temp, baseName + ".tar");
-        Utils.archive(baseExtracted, baseArchived);
+        final Path baseArchived = temp.resolve(baseName + ".tar");
+        try {
+            ArchiveUtils.archive(baseExtracted, baseArchived);
+        } catch (IOException e) {
+            log(1, "Error archiving shaderpack" + e.getMessage());
+            return;
+        }
 
-        final File patchedFile = new File(shaderpacks, patchedName);
+        final Path patchedFile = shaderpacks.resolve(patchedName);
         try {
             if (isDev) {
-                String hash = DigestUtils.md5Hex(Files.newInputStream(baseArchived.toPath()));
+                String hash = DigestUtils.md5Hex(Files.newInputStream(baseArchived));
                 log(0, "Hash of " + baseName + ": " + hash);
-                log(0,baseArchived.length() + " bytes");
+                log(0,FileUtils.sizeOf(baseArchived.toFile()) + " bytes");
             } else {
                 // for compatibility with older minecraft version because they use an outdated version of commons-compress
-                String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived.toPath()), baseTarSize));
+                String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived), baseTarSize));
                 if (!hash.equals(baseTarHash)) {
                     log(1, "The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download " + brandName + version + " from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
                     return;
@@ -155,49 +179,45 @@ public class EuphoriaPatcher implements ModInitializer {
             return;
         }
 
-        final File patchedArchive = new File(temp, patchedName + ".tar");
-        final File patchFile = new File(isDev ? shaderpacks : temp, patchedName + ".patch");
+        final Path patchedArchive = temp.resolve(patchedName + ".tar");
+        final Path patchFile = (isDev ? shaderpacks : temp).resolve(patchedName + ".patch");
 
         if (isDev) {
-            Utils.archive(patchedFile, patchedArchive);
             try {
-                FileUI.diff(baseArchived, patchedArchive, patchFile);
-            } catch (IOException | CompressorException | InvalidHeaderException e) {
-                e.printStackTrace();
+                ArchiveUtils.archive(patchedFile, patchedArchive);
+                FileUI.diff(baseArchived.toFile(), patchedArchive.toFile(), patchFile.toFile());
+            } catch (CompressorException | IOException | InvalidHeaderException e) {
+                throw new RuntimeException(e);
             }
-            return;
         } else {
             try (InputStream patchStream = getClass().getClassLoader().getResourceAsStream(patchName + patchVersion + ".patch")) {
-                FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile);
-            } catch (IOException e) {
-                log(2,"Failed to retrieve patch file." + e.getMessage());
+                FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile.toFile());
+                FileUI.patch(baseArchived.toFile(), patchedArchive.toFile(), patchFile.toFile());
+                ArchiveUtils.extract(patchedArchive, patchedFile);
+            } catch (IOException | CompressorException | InvalidHeaderException | ArchiveException e) {
+                log(2,"Error applying patch file." + e.getMessage());
                 return;
             }
-            try {
-                FileUI.patch(baseArchived, patchedArchive, patchFile);
-            } catch (IOException | CompressorException | InvalidHeaderException e) {
-                log(2,"Failed to apply patch." + e.getMessage());
-            }
-            Utils.extract(patchedArchive, patchedFile);
         }
 
         if (styleUnbound) {
             try {
-                final File commons = new File(patchedFile, commonLocation);
+                final File commons = new File(patchedFile.toFile(), commonLocation);
                 final String UnboundConfig = FileUtils.readFileToString(commons, "UTF-8").replaceFirst("SHADER_STYLE 1", "SHADER_STYLE 4");
                 if (!styleReimagined) {
                     FileUtils.writeStringToFile(commons, UnboundConfig, "UTF-8");
                 } else if (baseName.contains("Reimagined")) {
-                    final File unbound = new File(shaderpacks, patchedName.replace("Reimagined", "Unbound"));
-                    FileUtils.copyDirectory(patchedFile, unbound);
+                    final File unbound = new File(shaderpacks.toFile(), patchedName.replace("Reimagined", "Unbound"));
+                    FileUtils.copyDirectory(patchedFile.toFile(), unbound);
                     FileUtils.writeStringToFile(new File(unbound, commonLocation), UnboundConfig, "UTF-8");
                 } else {
-                    final File reimagined = new File(shaderpacks, patchedName.replace("Unbound", "Reimagined"));
-                    FileUtils.copyDirectory(patchedFile, reimagined);
+                    final File reimagined = new File(shaderpacks.toFile(), patchedName.replace("Unbound", "Reimagined"));
+                    FileUtils.copyDirectory(patchedFile.toFile(), reimagined);
                     FileUtils.writeStringToFile(commons, UnboundConfig, "UTF-8");
                 }
             } catch (IOException e) {
-                log(2,"Failed to apply style settings." + e.getMessage());
+                log(2,"Error applying style settings." + e.getMessage());
+                return;
             }
         }
 

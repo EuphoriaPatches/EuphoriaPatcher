@@ -150,7 +150,7 @@ public class EuphoriaPatcher {
         final Path patchedFile = shaderpacks.resolve(patchedName);
         try {
             // for compatibility with older minecraft version because they use an outdated version of commons-compress
-            String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived.toPath()), baseTarSize));
+            String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived), baseTarSize));
             if (!hash.equals(baseTarHash)) {
                 LOGGER.info("The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download " + brandName + version + " from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
                 return;

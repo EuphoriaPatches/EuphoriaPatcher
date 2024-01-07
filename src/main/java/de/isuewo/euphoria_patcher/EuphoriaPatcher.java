@@ -74,8 +74,10 @@ public class EuphoriaPatcher {
                 })) {
                     for (Path potentialFile : stream2) {
                         String name = potentialFile.getFileName().toString();
-                        if (name.contains(patchName + patchVersion)) {
-                            isAlreadyInstalled = true;
+                        if (name.contains(patchName)) {
+                            if(name.contains(patchName + patchVersion)) {
+                                isAlreadyInstalled = true;
+                            }
                             continue;
                         }
                         if (name.contains("Reimagined")) {

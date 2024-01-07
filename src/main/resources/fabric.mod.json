@@ -3,7 +3,7 @@
 	"id": "euphoria_patcher",
 	"version": "${version}",
 	"name": "Euphoria Patcher",
-	"description": "A mod that applies the Euphoria Patches to Complementary Reimagined.",
+	"description": "A mod that applies the Euphoria Patches to Complementary Shaders.",
 	"authors": [
 		"isuewo"
 	],

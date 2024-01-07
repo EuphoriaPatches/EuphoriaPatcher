@@ -41,13 +41,12 @@ public class EuphoriaPatcher implements ModInitializer {
 
         final boolean isDev = FabricLoader.getInstance().isDevelopmentEnvironment();
         final File shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks").toFile();
-        log(0, "Initializing Euphoria Patcher...");
 
         final String downloadURL = "https://www.complementary.dev/";
         final String brandName = "ComplementaryShaders";
         final String version = "_r5.1.1";
         final String patchName = "EuphoriaPatches";
-        final String patchVersion = "_1.1";
+        final String patchVersion = "_1.2";
         final String commonLocation = "shaders/lib/common.glsl";
 
         // Detect which version(s) of Complementary Shaders the user has installed
@@ -58,12 +57,12 @@ public class EuphoriaPatcher implements ModInitializer {
         boolean isAlreadyInstalled = false;
         if (potentialFiles != null) {
             ArrayList<File> zipFiles = new ArrayList<>();
-            for (File potentialFile : Objects.requireNonNull(potentialFiles)) {
+            for (File potentialFile : potentialFiles) {
                 if (potentialFile.getName().endsWith(".zip")) {
                     zipFiles.add(potentialFile);
                 }
             }
-            if (zipFiles.size() > 0) {
+            if (!zipFiles.isEmpty()) {
                 for (File zipFile : zipFiles) {
                     if (zipFile.getName().contains("Reimagined")) {
                         styleReimagined = true;
@@ -76,11 +75,9 @@ public class EuphoriaPatcher implements ModInitializer {
                             baseFile = zipFile;
                         }
                     }
-                    if (baseFile != null) {
-                        if (new File(shaderpacks, baseFile.getName().replace(".zip", "") + " + " + patchName + patchVersion).exists() && !isDev) {
+                    if (baseFile != null && new File(shaderpacks, baseFile.getName().replace(".zip", "") + " + " + patchName + patchVersion).exists() && !isDev) {
                             baseFile = null;
                             isAlreadyInstalled = true;
-                        }
                     }
                     if (styleReimagined && styleUnbound) {
                         break;
@@ -109,10 +106,8 @@ public class EuphoriaPatcher implements ModInitializer {
             }
         }
         if (baseFile == null) {
-            if (isAlreadyInstalled) {
-                log(0, patchName + " is already installed.");
-            } else {
-                log(1, "You need to have a version of " + brandName + " installed. Please download it from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
+            if (!isAlreadyInstalled) {
+                log(1, "You need to have " + brandName + version + " installed. Please download it from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
             }
             return;
         }
@@ -151,12 +146,12 @@ public class EuphoriaPatcher implements ModInitializer {
                 // for compatibility with older minecraft version because they use an outdated version of commons-compress
                 String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived.toPath()), baseTarSize));
                 if (!hash.equals(baseTarHash)) {
-                    log(1, "The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
+                    log(1, "The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download " + brandName + version + " from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
                     return;
                 }
             }
         } catch (IOException e) {
-            log(1,"The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download it again from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft." + e.getMessage());
+            log(1,"The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download " + brandName + version + " from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft." + e.getMessage());
             return;
         }
 
@@ -206,6 +201,6 @@ public class EuphoriaPatcher implements ModInitializer {
             }
         }
 
-        log(0,patchName + " was successfully installed and is ready to nuke your GPU. Enjoy! -isuewo");
+        log(0,patchName + " was successfully installed. Enjoy! -SpacEagle17 & isuewo");
     }
 }

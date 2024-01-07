@@ -87,10 +87,14 @@ public class EuphoriaPatcher implements ModInitializer {
             if (!styleReimagined && !styleUnbound) {
                 try (DirectoryStream<Path> stream2 = Files.newDirectoryStream(shaderpacks, path -> {
                     String name = path.getFileName().toString();
-                    return name.matches("Complementary.+?(?=" + version + ")" + version + "(?!\\.[0-9]).*") && Files.isDirectory(path) && !name.contains(patchName);
+                    return name.matches("Complementary.+?(?=" + version + ")" + version + "(?!\\.[0-9]).*") && Files.isDirectory(path);
                 })) {
                     for (Path potentialFile : stream2) {
                         String name = potentialFile.getFileName().toString();
+                        if (name.contains(patchName + patchVersion)) {
+                            isAlreadyInstalled = true;
+                            continue;
+                        }
                         if (name.contains("Reimagined")) {
                             styleReimagined = true;
                             if (baseFile == null) {

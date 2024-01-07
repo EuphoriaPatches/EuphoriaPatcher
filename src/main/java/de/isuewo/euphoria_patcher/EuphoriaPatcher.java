@@ -76,8 +76,8 @@ public class EuphoriaPatcher implements ModInitializer {
                         }
                     }
                     if (baseFile != null && new File(shaderpacks, baseFile.getName().replace(".zip", "") + " + " + patchName + patchVersion).exists() && !isDev) {
-                            baseFile = null;
-                            isAlreadyInstalled = true;
+                        baseFile = null;
+                        isAlreadyInstalled = true;
                     }
                     if (styleReimagined && styleUnbound) {
                         break;

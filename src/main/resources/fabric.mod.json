@@ -13,7 +13,7 @@
 	},
 	"license": "MPL-2.0",
 	"icon": "assets/euphoria_patcher/icon.jpg",
-	"environment": "*",
+	"environment": "client",
 	"entrypoints": {
 		"main": [
 			"de.isuewo.euphoria_patcher.EuphoriaPatcher"

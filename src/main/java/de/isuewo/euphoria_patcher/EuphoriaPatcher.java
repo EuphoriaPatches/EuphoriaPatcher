@@ -5,7 +5,6 @@ import io.sigpipe.jbsdiff.ui.FileUI;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
 
@@ -137,12 +136,7 @@ public class EuphoriaPatcher implements ModInitializer {
 
         Path baseExtracted = temp.resolve(baseName);
         if (!Files.isDirectory(baseFile)) {
-            try {
-                ArchiveUtils.extract(baseFile, baseExtracted);
-            } catch (IOException | ArchiveException e) {
-                log(2, "Error extracting shaderpack" + e.getMessage());
-                return;
-            }
+            ArchiveUtils.extract(baseFile, baseExtracted);
         } else {
             baseExtracted = baseFile;
         }
@@ -159,12 +153,7 @@ public class EuphoriaPatcher implements ModInitializer {
         final String baseTarHash = "b5493f3d688e26814a04c6b1708adeb0";
         final int baseTarSize = 1134592;
         final Path baseArchived = temp.resolve(baseName + ".tar");
-        try {
-            ArchiveUtils.archive(baseExtracted, baseArchived);
-        } catch (IOException e) {
-            log(1, "Error archiving shaderpack" + e.getMessage());
-            return;
-        }
+        ArchiveUtils.archive(baseExtracted, baseArchived);
 
         final Path patchedFile = shaderpacks.resolve(patchedName);
         try {
@@ -200,7 +189,7 @@ public class EuphoriaPatcher implements ModInitializer {
                 FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile.toFile());
                 FileUI.patch(baseArchived.toFile(), patchedArchive.toFile(), patchFile.toFile());
                 ArchiveUtils.extract(patchedArchive, patchedFile);
-            } catch (IOException | CompressorException | InvalidHeaderException | ArchiveException e) {
+            } catch (IOException | CompressorException | InvalidHeaderException e) {
                 log(2,"Error applying patch file." + e.getMessage());
                 return;
             }

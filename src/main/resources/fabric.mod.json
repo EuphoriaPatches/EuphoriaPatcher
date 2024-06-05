@@ -12,7 +12,7 @@
 		"sources": "https://github.com/EuphoriaPatches"
 	},
 	"license": "MPL-2.0",
-	"icon": "assets/euphoria_patcher/icon.jpg",
+	"icon": "assets/euphoria_patcher/icon.png",
 	"environment": "client",
 	"entrypoints": {
 		"main": [

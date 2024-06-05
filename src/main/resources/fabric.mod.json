@@ -8,8 +8,11 @@
 		"isuewo"
 	],
 	"contact": {
-		"homepage": "https://discord.gg/A6faFYt",
-		"sources": "https://github.com/EuphoriaPatches"
+		"homepage": "https://discord.com/invite/985QQxVQZF",
+		"sources": "https://github.com/EuphoriaPatches",
+		"discord": "https://discord.com/invite/985QQxVQZF",
+		"modrinth": "https://modrinth.com/mod/euphoria-patches",
+		"curseforge": "https://www.curseforge.com/minecraft/mc-mods/euphoria-patches"
 	},
 	"license": "MPL-2.0",
 	"icon": "assets/euphoria_patcher/icon.png",

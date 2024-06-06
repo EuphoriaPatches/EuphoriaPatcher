@@ -40,10 +40,9 @@ public class EuphoriaPatcher implements ModInitializer {
             isSodiumLoaded = false;
         }
 
-        final boolean isDev = FabricLoader.getInstance().isDevelopmentEnvironment();
+        final boolean isDev = false;
 
         final Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
-        System.out.println("Shaderpacks folder: " + shaderpacks);
 
         final String downloadURL = "https://www.complementary.dev/";
         final String brandName = "ComplementaryShaders";
@@ -63,7 +62,6 @@ public class EuphoriaPatcher implements ModInitializer {
         })) {
             for (Path potentialFile : stream) {
                 String name = potentialFile.getFileName().toString();
-                System.out.println("Checking file for Complementary: " + name);
                 if (name.endsWith(".zip")) {
                     if (name.contains("Reimagined")) {
                         styleReimagined = true;
@@ -92,7 +90,6 @@ public class EuphoriaPatcher implements ModInitializer {
                 })) {
                     for (Path potentialFile : stream2) {
                         String name = potentialFile.getFileName().toString();
-                        System.out.println("Checking Directory for Complementary: " + name);
                         if (name.contains(patchName)) {
                             if(name.contains(patchName + patchVersion)) {
                                 isAlreadyInstalled = true;
@@ -126,20 +123,16 @@ public class EuphoriaPatcher implements ModInitializer {
             }
             return;
         }
-        System.out.println("BaseFile: " + baseFile);
 
         final Path temp;
         try {
             temp = Files.createTempDirectory("euphoria-patcher-");
-            System.out.println("Temp: " + temp);
         } catch (IOException e) {
             log(2, "Error creating temporary directory" + e.getMessage());
             return;
         }
         final String baseName = baseFile.getFileName().toString().replace(".zip", "");
-        System.out.println("BaseName: " + baseName);
         final String patchedName = baseName + " + " + patchName + patchVersion;
-        System.out.println("BaseName: " + patchedName);
 
         Path baseExtracted = temp.resolve(baseName);
         if (!Files.isDirectory(baseFile)) {
@@ -147,11 +140,9 @@ public class EuphoriaPatcher implements ModInitializer {
         } else {
             baseExtracted = baseFile;
         }
-        System.out.println("baseExtracted: " + baseExtracted);
 
         try {
             final Path commons = baseExtracted.resolve(commonLocation);
-            System.out.println("commons: " + baseExtracted);
             final String config = FileUtils.readFileToString(commons.toFile(), "UTF-8").replaceFirst("SHADER_STYLE [14]", "SHADER_STYLE 1");
             FileUtils.writeStringToFile(commons.toFile(), config, "UTF-8");
         } catch (IOException e) {
@@ -159,14 +150,12 @@ public class EuphoriaPatcher implements ModInitializer {
             return;
         }
 
-        final String baseTarHash = "2e8d709e172ef054ed2cba837e039e3e";
-        final int baseTarSize = 1255424;
+        final String baseTarHash = "a15f22c5d917b0af3fdbc695217afb92";
+        final int baseTarSize = 1270272;
         final Path baseArchived = temp.resolve(baseName + ".tar");
-        System.out.println("baseArchived:" + baseArchived);
         ArchiveUtils.archive(baseExtracted, baseArchived);
 
         final Path patchedFile = shaderpacks.resolve(patchedName);
-        System.out.println("patchedFile:" + patchedFile);
         try {
             if (isDev) {
                 String hash = DigestUtils.md5Hex(Files.newInputStream(baseArchived));
@@ -176,8 +165,6 @@ public class EuphoriaPatcher implements ModInitializer {
             } else {
                 // for compatibility with older minecraft version because they use an outdated version of commons-compress
                 String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived), baseTarSize));
-                System.out.println("hash:" + hash);
-                System.out.println("baseTarHash:" + baseTarHash);
                 if (!hash.equals(baseTarHash)) {
                     log(1, "The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download " + brandName + version + " from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft.");
                     return;

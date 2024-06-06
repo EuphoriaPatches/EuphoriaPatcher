@@ -30,7 +30,7 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-	modImplementation "maven.modrinth:sodium:mc1.20.6-0.5.8"
+	modImplementation "maven.modrinth:sodium:mc1.20.4-0.5.8"
 
 	implementation 'io.sigpipe:jbsdiff:1.0'
 	include 'io.sigpipe:jbsdiff:1.0'

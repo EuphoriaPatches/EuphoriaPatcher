@@ -14,7 +14,7 @@ repositories {
 }
 
 base {
-    archivesName = mod_id
+    archivesName = "EuphoriaPatcher"
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)

@@ -48,7 +48,7 @@ public class EuphoriaPatcher implements ModInitializer {
         final String brandName = "ComplementaryShaders";
         final String version = "_r5.2.1";
         final String patchName = "EuphoriaPatches";
-        final String patchVersion = "_1.3";
+        final String patchVersion = "_1.3.1";
         final String commonLocation = "shaders/lib/common.glsl";
 
         // Detect which version(s) of Complementary Shaders the user has installed

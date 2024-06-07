@@ -11,17 +11,12 @@ import org.apache.commons.compress.utils.IOUtils;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Comparator;
+import java.util.stream.Stream;
 
 public class ArchiveUtils {
-    public static void extract(Path in, Path out) throws IOException, ArchiveException {
-        if (!Files.exists(out)) {
-            Files.createDirectory(out);
-        }
-
-        try (ArchiveInputStream ai = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(Files.newInputStream(in, StandardOpenOption.READ)))) {
+    public static void extract(Path in, Path out) {
+        try (ArchiveInputStream ai = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(Files.newInputStream(in)))) {
             ArchiveEntry entry;
             while ((entry = ai.getNextEntry()) != null) {
                 if (!ai.canReadEntryData(entry)) {
@@ -29,44 +24,48 @@ public class ArchiveUtils {
                 }
                 Path targetFilePath = out.resolve(entry.getName());
                 if (entry.isDirectory()) {
-                    Files.createDirectory(targetFilePath);
+                    Files.createDirectories(targetFilePath);
                 } else {
-                    Path parent = targetFilePath.getParent();
-                    if (!Files.exists(parent)) {
-                        Files.createDirectories(parent);
-                    }
-                    try (OutputStream o = Files.newOutputStream(targetFilePath, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
+                    Files.createDirectories(targetFilePath.getParent());
+                    try (OutputStream o = Files.newOutputStream(targetFilePath)) {
                         IOUtils.copy(ai, o);
                     }
                 }
             }
+        } catch (IOException | ArchiveException e) {
+            e.printStackTrace();
         }
     }
 
-    public static void archive(Path sourceDir, Path archive) throws IOException {
-        List<Path> filesToArchive = Files.walk(sourceDir)
-                .filter(Files::isRegularFile)
-                .sorted() //ensures that the archive is deterministic
-                .collect(Collectors.toList());
-
-        try (TarArchiveOutputStream o = new TarArchiveOutputStream(new BufferedOutputStream(Files.newOutputStream(archive, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)))) {
-            for (Path f : filesToArchive) {
-                TarArchiveEntry entry = new TarArchiveEntry(f.toFile(), sourceDir.relativize(f).toString());
-
-                // also ensures that the archive is deterministic
-                entry.setModTime(0);
-                entry.setIds(0, 0);
-                entry.setNames("", "");
-
-                o.putArchiveEntry(entry);
-                if (Files.isRegularFile(f)) {
-                    try (InputStream i = Files.newInputStream(f, StandardOpenOption.READ)) {
-                        IOUtils.copy(i, o);
-                    }
-                }
-                o.closeArchiveEntry();
+    public static void archive(Path sourceDir, Path archive) {
+        try (TarArchiveOutputStream o = new TarArchiveOutputStream(Files.newOutputStream(archive))) {
+            try (Stream<Path> walk = Files.walk(sourceDir)) {
+                walk.sorted(Comparator.comparing(Path::toUri)) // platform-independent order
+                        .forEach(f -> {
+                            String fileName = sourceDir.relativize(f).toString().replace(File.separatorChar, '/'); // fixes weird issues with Lunar client
+                            TarArchiveEntry entry = new TarArchiveEntry(f.toFile(), fileName);
+                            // flags for deterministic archives
+                            entry.setModTime(0);
+                            entry.setIds(0, 0);
+                            entry.setNames("", "");
+                            try {
+                                o.putArchiveEntry(entry);
+                                if (Files.isRegularFile(f)) {
+                                    try (InputStream i = Files.newInputStream(f)) {
+                                        IOUtils.copy(i, o);
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                o.closeArchiveEntry();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        });
             }
             o.finish();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

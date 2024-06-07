@@ -6,7 +6,6 @@ import io.sigpipe.jbsdiff.ui.FileUI;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLPaths;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -20,19 +19,19 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Objects;
 
-@Mod(EuphoriaPatcher.MODID)
-public class EuphoriaPatcher {
-    public static final String MODID = "euphoria_patcher";
-    public static final Logger LOGGER = LogUtils.getLogger();
+@Mod("euphoria_patcher")
+public class EuphoriaPatcher
+{
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     public EuphoriaPatcher() {
         final Path shaderpacks = FMLPaths.GAMEDIR.get().resolve("shaderpacks");
 
         final String downloadURL = "https://www.complementary.dev/";
         final String brandName = "ComplementaryShaders";
-        final String version = "_r5.1.1";
+        final String version = "_r5.2.1";
         final String patchName = "EuphoriaPatches";
-        final String patchVersion = "_1.2";
+        final String patchVersion = "_1.3.1";
         final String commonLocation = "shaders/lib/common.glsl";
 
         // Detect which version(s) of Complementary Shaders the user has installed
@@ -98,7 +97,7 @@ public class EuphoriaPatcher {
                 }
             }
         } catch (IOException e) {
-            LOGGER.error("Error reading shaderpacks directory" + e.getMessage());
+            LOGGER.error("Error reading shaderpacks directory {}", e.getMessage());
             return;
         }
         if (baseFile == null) {
@@ -112,7 +111,7 @@ public class EuphoriaPatcher {
         try {
             temp = Files.createTempDirectory("euphoria-patcher-");
         } catch (IOException e) {
-            LOGGER.error("Error creating temporary directory" + e.getMessage());
+            LOGGER.error("Error creating temporary directory {}", e.getMessage());
             return;
         }
         final String baseName = baseFile.getFileName().toString().replace(".zip", "");
@@ -120,12 +119,7 @@ public class EuphoriaPatcher {
 
         Path baseExtracted = temp.resolve(baseName);
         if (!Files.isDirectory(baseFile)) {
-            try {
-                ArchiveUtils.extract(baseFile, baseExtracted);
-            } catch (IOException | ArchiveException e) {
-                LOGGER.error("Error extracting shaderpack" + e.getMessage());
-                return;
-            }
+            ArchiveUtils.extract(baseFile, baseExtracted);
         } else {
             baseExtracted = baseFile;
         }
@@ -135,19 +129,14 @@ public class EuphoriaPatcher {
             final String config = FileUtils.readFileToString(commons.toFile(), "UTF-8").replaceFirst("SHADER_STYLE [14]", "SHADER_STYLE 1");
             FileUtils.writeStringToFile(commons.toFile(), config, "UTF-8");
         } catch (IOException e) {
-            LOGGER.error("Error extracting style information from " + baseName + e.getMessage());
+            LOGGER.error("Error extracting style information from {} {}", baseName, e.getMessage());
             return;
         }
 
-        final String baseTarHash = "b5493f3d688e26814a04c6b1708adeb0";
-        final int baseTarSize = 1134592;
+        final String baseTarHash = "0385e8a5496263612aa1f27ec3418e39";
+        final int baseTarSize = 1270272;
         final Path baseArchived = temp.resolve(baseName + ".tar");
-        try {
-            ArchiveUtils.archive(baseExtracted, baseArchived);
-        } catch (IOException e) {
-            LOGGER.info("Error archiving shaderpack" + e.getMessage());
-            return;
-        }
+        ArchiveUtils.archive(baseExtracted, baseArchived);
 
         final Path patchedFile = shaderpacks.resolve(patchedName);
         try {
@@ -158,23 +147,21 @@ public class EuphoriaPatcher {
                 return;
             }
         } catch (IOException e) {
-            LOGGER.info("The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download " + brandName + version + " from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft." + e.getMessage());
+            LOGGER.info("The version of " + brandName + " that was found in your shaderpacks can't be used as a base for " + patchName + ". Please download " + brandName + version + " from " + downloadURL + ", place it into your shaderpacks folder and restart Minecraft. {}", e.getMessage());
             return;
         }
 
         final Path patchedArchive = temp.resolve(patchedName + ".tar");
         final Path patchFile = (temp).resolve(patchedName + ".patch");
 
-
         try (InputStream patchStream = getClass().getClassLoader().getResourceAsStream(patchName + patchVersion + ".patch")) {
             FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile.toFile());
             FileUI.patch(baseArchived.toFile(), patchedArchive.toFile(), patchFile.toFile());
             ArchiveUtils.extract(patchedArchive, patchedFile);
-        } catch (IOException | CompressorException | InvalidHeaderException | ArchiveException e) {
-            LOGGER.error("Error applying patch file." + e.getMessage());
+        } catch (IOException | CompressorException | InvalidHeaderException e) {
+            LOGGER.error("Error applying patch file. {}", e.getMessage());
             return;
         }
-
 
         if (styleUnbound) {
             try {
@@ -192,7 +179,7 @@ public class EuphoriaPatcher {
                     FileUtils.writeStringToFile(commons, UnboundConfig, "UTF-8");
                 }
             } catch (IOException e) {
-                LOGGER.error("Error applying style settings." + e.getMessage());
+                LOGGER.error("Error applying style settings. {}", e.getMessage());
                 return;
             }
         }

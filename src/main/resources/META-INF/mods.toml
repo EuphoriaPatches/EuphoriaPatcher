@@ -11,7 +11,7 @@ loaderVersion="${loader_version_range}" #mandatory This is typically bumped ever
 # Review your options at https://choosealicense.com/. All rights reserved is the default copyright stance, and is thus the default here.
 license="${mod_license}"
 # A URL to refer people to when problems occur with this mod
-issueTrackerURL="https://discord.com/invite/985QQxVQZF #optional
+issueTrackerURL="https://discord.com/invite/985QQxVQZF" #optional
 # If your mod is purely client-side and has no multiplayer functionality (be it dedicated servers or Open to LAN),
 # set this to true, and Forge will set the correct displayTest for you and skip loading your mod on dedicated servers.
 clientSideOnly=true #optional - defaults to false if absent

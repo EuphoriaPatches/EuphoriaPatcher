@@ -36,9 +36,9 @@ public class EuphoriaPatcher
 
         final String downloadURL = "https://www.complementary.dev/";
         final String brandName = "ComplementaryShaders";
-        final String version = "_r5.2.1";
+        final String version = "_r5.2.2";
         final String patchName = "EuphoriaPatches";
-        final String patchVersion = "_1.3.1";
+        final String patchVersion = "_1.3.2";
         final String commonLocation = "shaders/lib/common.glsl";
 
         // Detect which version(s) of Complementary Shaders the user has installed
@@ -140,8 +140,8 @@ public class EuphoriaPatcher
             return;
         }
 
-        final String baseTarHash = "0385e8a5496263612aa1f27ec3418e39";
-        final int baseTarSize = 1270272;
+        final String baseTarHash = "46a2fb63646e22cea56b2f8fa5815ac2";
+        final int baseTarSize = 1274880;
         final Path baseArchived = temp.resolve(baseName + ".tar");
         ArchiveUtils.archive(baseExtracted, baseArchived);
 

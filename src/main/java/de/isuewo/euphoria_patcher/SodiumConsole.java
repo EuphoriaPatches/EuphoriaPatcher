@@ -10,11 +10,11 @@ public class SodiumConsole {
 
     public static void logMessage(int level, String message) {
         if (level == 0) {
-            CONSOLE.logMessage(MessageLevel.INFO, Text.of(message), 10.0);
+            CONSOLE.logMessage(MessageLevel.INFO, Text.of(message), 5.0);
         } else if (level == 1) {
-            CONSOLE.logMessage(MessageLevel.WARN, Text.of(message), 60.0);
+            CONSOLE.logMessage(MessageLevel.WARN, Text.of(message), 15.0);
         } else if (level == 2) {
-            CONSOLE.logMessage(MessageLevel.SEVERE, Text.of(message), 60.0);
+            CONSOLE.logMessage(MessageLevel.SEVERE, Text.of(message), 15.0);
         }
     }
 }

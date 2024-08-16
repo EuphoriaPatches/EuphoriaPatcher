@@ -8,9 +8,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,6 +41,7 @@ public class EuphoriaPatcher implements ModInitializer {
         final boolean isDev = false;
 
         final Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
+        final Path irisConfig = FabricLoader.getInstance().getConfigDir().resolve("iris.properties");
 
         final String downloadURL = "https://www.complementary.dev/";
         final String brandName = "ComplementaryShaders";
@@ -50,6 +49,8 @@ public class EuphoriaPatcher implements ModInitializer {
         final String patchName = "EuphoriaPatches";
         final String patchVersion = "_1.3.2";
         final String commonLocation = "shaders/lib/common.glsl";
+        final String baseTarHash = "46a2fb63646e22cea56b2f8fa5815ac2";
+        final int baseTarSize = 1274880;
 
         // Detect which version(s) of Complementary Shaders the user has installed
         Path baseFile = null;
@@ -150,12 +151,11 @@ public class EuphoriaPatcher implements ModInitializer {
             return;
         }
 
-        final String baseTarHash = "46a2fb63646e22cea56b2f8fa5815ac2";
-        final int baseTarSize = 1274880;
         final Path baseArchived = temp.resolve(baseName + ".tar");
         ArchiveUtils.archive(baseExtracted, baseArchived);
 
         final Path patchedFile = shaderpacks.resolve(patchedName);
+//        final Path patchedFilePath = shaderpacks.resolve(patchedName + ".patch"); // For Testing .txt deletion
         try {
             if (isDev) {
                 String hash = DigestUtils.md5Hex(Files.newInputStream(baseArchived));
@@ -187,9 +187,13 @@ public class EuphoriaPatcher implements ModInitializer {
             }
         } else {
             try (InputStream patchStream = getClass().getClassLoader().getResourceAsStream(patchName + patchVersion + ".patch")) {
-                FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile.toFile());
-                FileUI.patch(baseArchived.toFile(), patchedArchive.toFile(), patchFile.toFile());
-                ArchiveUtils.extract(patchedArchive, patchedFile);
+                if (patchStream != null) {
+//                    if (!patchFile.toString().endsWith(".txt")) {
+                        FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile.toFile());
+                        FileUI.patch(baseArchived.toFile(), patchedArchive.toFile(), patchFile.toFile());
+                        ArchiveUtils.extract(patchedArchive, patchedFile); // I think this line causes the .txt deletion
+//                    }
+                }
             } catch (IOException | CompressorException | InvalidHeaderException e) {
                 log(2,"Error applying patch file." + e.getMessage());
                 return;
@@ -218,5 +222,86 @@ public class EuphoriaPatcher implements ModInitializer {
         }
 
         log(0,patchName + " was successfully installed. Enjoy! -SpacEagle17 & isuewo");
+
+        // Code to update the config file to the latest version
+        Path textFilePath = null;
+        try (DirectoryStream<Path> textStream = Files.newDirectoryStream(shaderpacks, path -> { // shaderpack config txt file finder
+            String nameText = path.getFileName().toString();
+            return nameText.matches("Complementary.*") && nameText.endsWith(".txt") && nameText.contains(patchName);
+        })) {
+            for (Path potentialTextFile : textStream) { // First find the latest .txt file the user used
+                String name = potentialTextFile.getFileName().toString();
+                if (name.endsWith(".txt")) {
+                    textFilePath = potentialTextFile; // This is the path to the correct txt file
+                    // Files are automatically sorted alphabetically, meaning latest version overwrites the previous ones in the loop - no need to sort version numbers
+                    if (name.contains(patchVersion)) { // Prevent it updating already updated config files
+                        textFilePath = null;
+                    }
+                }
+            }
+            if (textFilePath != null) { // Now with the info of the latest .txt file rename it to the latest version
+                String style = styleUnbound ? "Unbound" : "Reimagined";
+
+                String newName = "Complementary" + style + version + " + " + patchName + patchVersion + ".txt";
+                try{
+                    Files.move(textFilePath, textFilePath.resolveSibling(newName)); // rename a file in the directory of the path
+                    log(0, "Successfully updated shader config file to the latest version!");
+                } catch (IOException e) {
+                    log(2, "Could not rename the config file" + e.getMessage());
+                    return;
+                }
+            }
+//            try { // Test to rename the EP folder so .txt does not get deleted - did not work sadly
+//                Files.move(patchedFilePath, patchedFilePath.resolveSibling(patchedName)); // rename a folder in the directory of the path
+//            } catch (IOException e) {
+//                log(2, "Could not rename the EP folder" + e.getMessage());
+//                return;
+//            }
+        } catch (IOException e) {
+            log(2, "Error reading shaderpacks directory" + e.getMessage());
+            return;
+        }
+
+        if (Files.exists(irisConfig)) {
+            File fileToBeModified = new File(String.valueOf(irisConfig));
+            StringBuilder oldContent = new StringBuilder();
+            BufferedReader reader = null;
+            FileWriter writer = null;
+            boolean writeToFile = false;
+
+            try {
+                reader = new BufferedReader(new FileReader(fileToBeModified));
+                String line = reader.readLine();
+
+                while (line != null) { // Reading all the lines of input text file into oldContent
+                    oldContent.append(line).append(System.lineSeparator());
+                    line = reader.readLine();
+                }
+                writeToFile = oldContent.toString().contains(patchName) && !oldContent.toString().contains(patchVersion); // Failsafe
+
+                if (writeToFile) {
+                    String style = styleUnbound ? "Unbound" : "Reimagined";
+                    String newName = "Complementary" + style + version + " + " + patchName + patchVersion;
+                    String newContent = oldContent.toString().replaceAll("shaderPack=.*", "shaderPack=" + newName); // Replace using regex
+
+                    writer = new FileWriter(fileToBeModified); //Rewriting the input text file with newContent
+                    writer.write(newContent);
+                    log(0, "Successfully applied new version with iris!");
+                }
+            } catch (IOException e) {
+                log(2, "Error reading or writing to iris config file" + e.getMessage());
+            } finally {
+                try {
+                    assert reader != null;
+                    reader.close(); //Closing the resources
+                    if (writeToFile) {
+                        assert writer != null;
+                        writer.close();
+                    }
+                } catch (IOException e) {
+                    log(2, "Error closing iris config reader or writer" + e.getMessage());
+                }
+            }
+        }
     }
 }

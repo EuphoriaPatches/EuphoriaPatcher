@@ -286,7 +286,7 @@ public class EuphoriaPatcher implements ModInitializer {
                 FileUI.patch(baseArchived.toFile(), patchedArchive.toFile(), patchFile.toFile());
                 ArchiveUtils.extract(patchedArchive, patchedFile);
                 applyStyleSettings(patchedFile, styleUnbound, styleReimagined);
-                log(1, PATCH_NAME + " was successfully installed. Enjoy! -SpacEagle17 & isuewo");
+                log(1, PATCH_NAME + " was successfully installed. Enjoy! -SpacEagle17");
                 return true;
             }
         } catch (IOException | CompressorException | InvalidHeaderException e) {

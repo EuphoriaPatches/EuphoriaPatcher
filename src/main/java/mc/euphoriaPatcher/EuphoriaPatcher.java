@@ -345,7 +345,7 @@ public class EuphoriaPatcher implements ModInitializer {
                 String style = styleUnbound ? "Unbound" : "Reimagined";
                 String newName = "Complementary" + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION + ".txt";
                 try {
-                    Files.move(oldShaderConfigFilePath, oldShaderConfigFilePath.resolveSibling(newName));
+                    Files.copy(oldShaderConfigFilePath, oldShaderConfigFilePath.resolveSibling(newName)); // Copy old config and rename it to current PATCH_VERSION
                     log(0, "Successfully updated shader config file to the latest version!");
                 } catch (IOException e) {
                     log(3, "Could not rename the config file: " + e.getMessage());

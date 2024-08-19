@@ -78,8 +78,6 @@ public class ArchiveUtils {
         if (txtContent != null) {
             Files.write(txtFilePath, txtContent.getBytes(StandardCharsets.UTF_8));
             EuphoriaPatcher.log(0, "Restored .txt file: " + txtFilePath);
-        } else {
-            EuphoriaPatcher.log(0, "No .txt file to restore");
         }
     }
 

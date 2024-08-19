@@ -9,10 +9,13 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.utils.IOUtils;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.stream.Stream;
+
+import static de.isuewo.euphoria_patcher.EuphoriaPatcher.log;
 
 public class ArchiveUtils {
 
@@ -21,37 +24,64 @@ public class ArchiveUtils {
      *
      * @param in  Path to the input archive file.
      * @param out Path to the output directory where files should be extracted.
+     * @throws IOException if there's an issue with file operations
+     * @throws ArchiveException if there's an issue with archive processing
      */
-    public static void extract(Path in, Path out) {
-        // Use try-with-resources to automatically close resources
+
+    public static void extract(Path in, Path out) throws IOException, ArchiveException {
+        // Create the output directory if it doesn't exist
+        Files.createDirectories(out);
+
+        // Construct the path for the .txt file (assuming it has the same name as the output directory)
+        Path txtFilePath = out.resolve(out.getFileName() + ".txt");
+        String txtContent = null;
+
+        // Check if the .txt file exists and backup its content
+        if (Files.exists(txtFilePath)) {
+            txtContent = new String(Files.readAllBytes(txtFilePath), StandardCharsets.UTF_8);
+        }
+
+        // Start the extraction process
         try (ArchiveInputStream archiveInputStream = new ArchiveStreamFactory().createArchiveInputStream(
                 new BufferedInputStream(Files.newInputStream(in)))) {
 
             ArchiveEntry entry;
-            // Process each entry in the archive
+            // Iterate through each entry in the archive
             while ((entry = archiveInputStream.getNextEntry()) != null) {
+                // Skip entries that can't be read
                 if (!archiveInputStream.canReadEntryData(entry)) {
-                    continue;  // Skip entries that cannot be read
+                    continue;
                 }
 
-                // Resolve the target path for this entry
-                Path targetFilePath = out.resolve(entry.getName());
+                // Resolve the target path for the current entry
+                Path targetFilePath = out.resolve(entry.getName()).normalize();
+
+                // Security check to prevent path traversal attacks
+                if (targetFilePath.toString().contains("..")) {
+                    throw new IOException("Potentially malicious entry detected: " + entry.getName());
+                }
 
                 if (entry.isDirectory()) {
-                    // Create directories as needed
+                    // Create directory if the entry is a directory
                     Files.createDirectories(targetFilePath);
                 } else {
-                    // Ensure parent directories exist before writing file
+                    // Create parent directories for the file
                     Files.createDirectories(targetFilePath.getParent());
+
+                    // Extract the file
                     try (OutputStream outputStream = Files.newOutputStream(targetFilePath)) {
-                        // Copy the file content from the archive to the target file
                         IOUtils.copy(archiveInputStream, outputStream);
                     }
                 }
             }
-        } catch (IOException | ArchiveException e) {
-            // Handle exceptions by printing the stack trace (consider more sophisticated error handling)
-            e.printStackTrace();
+        }
+
+        // After extraction, restore the .txt file if it existed before
+        if (txtContent != null) {
+            Files.write(txtFilePath, txtContent.getBytes(StandardCharsets.UTF_8));
+            log(0, "Restored .txt file: " + txtFilePath);
+        } else {
+            log(0, "No .txt file to restore");
         }
     }
 
@@ -60,22 +90,17 @@ public class ArchiveUtils {
      *
      * @param sourceDir Path to the directory to be archived.
      * @param archive   Path to the output TAR archive file.
+     * @throws IOException if there's an issue with file operations
      */
-    public static void archive(Path sourceDir, Path archive) {
+    public static void archive(Path sourceDir, Path archive) throws IOException {
         // Use try-with-resources to automatically close the output stream
         try (TarArchiveOutputStream tarOutputStream = new TarArchiveOutputStream(Files.newOutputStream(archive))) {
-
             // Walk through the file tree of the source directory
             try (Stream<Path> fileStream = Files.walk(sourceDir)) {
                 // Sort files to ensure a platform-independent order
-                fileStream.sorted(Comparator.comparing(Path::toUri))
-                        .forEach(filePath -> addFileToArchive(tarOutputStream, sourceDir, filePath));
+                fileStream.sorted(Comparator.comparing(Path::toUri)).forEach(filePath -> addFileToArchive(tarOutputStream, sourceDir, filePath));
             }
-
-            // Finalize the archive by writing any necessary end-of-file information
             tarOutputStream.finish();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -88,29 +113,23 @@ public class ArchiveUtils {
      */
     private static void addFileToArchive(TarArchiveOutputStream tarOutputStream, Path sourceDir, Path filePath) {
         try {
-            // Compute the relative file name and normalize it for the TAR format
             String fileName = sourceDir.relativize(filePath).toString().replace(File.separatorChar, '/'); // fixes weird issues with Lunar client
-
-            // Create a TAR entry for the file or directory
-            TarArchiveEntry tarEntry = new TarArchiveEntry(filePath.toFile(), fileName);
+            TarArchiveEntry tarEntry = new TarArchiveEntry(filePath.toFile(), fileName); // Create a TAR entry for the file or directory
 
             // Set deterministic flags for the archive entry
-            tarEntry.setModTime(0);   // Set modification time to zero for deterministic archives
-            tarEntry.setIds(0, 0);    // Set user and group IDs to zero
-            tarEntry.setNames("", ""); // Clear user and group names
+            tarEntry.setModTime(0);
+            tarEntry.setIds(0, 0);
+            tarEntry.setNames("", "");
 
-            // Add the entry to the archive
             tarOutputStream.putArchiveEntry(tarEntry);
 
-            // If the entry is a regular file, write its contents to the archive
-            if (Files.isRegularFile(filePath)) {
+            if (Files.isRegularFile(filePath)) { // If the entry is a regular file, write its contents to the archive
                 try (InputStream inputStream = Files.newInputStream(filePath)) {
                     IOUtils.copy(inputStream, tarOutputStream);
                 }
             }
 
-            // Close the current entry in the archive
-            tarOutputStream.closeArchiveEntry();
+            tarOutputStream.closeArchiveEntry(); // Close the current entry in the archive
         } catch (IOException e) {
             e.printStackTrace();
         }

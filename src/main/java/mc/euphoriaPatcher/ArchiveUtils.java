@@ -127,7 +127,7 @@ public class ArchiveUtils {
 
             tarOutputStream.closeArchiveEntry(); // Close the current entry in the archive
         } catch (IOException e) {
-            e.printStackTrace();
+            EuphoriaPatcher.log(3, "Could not add files to TAR Archive: " + e.getMessage());
         }
     }
 }

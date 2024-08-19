@@ -8,6 +8,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.nio.file.DirectoryStream;
@@ -73,12 +74,12 @@ public class EuphoriaPatcher implements ModInitializer {
 
         // Process and patch shaders
         if (!processAndPatchShaders(shaderInfo, temp, shaderpacks)) return;
-        
+
         // Update .txt shader config file
-        updateShaderTxtConfigFile(shaderpacks, shaderInfo.styleUnbound);
+        updateShaderTxtConfigFile(shaderpacks, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
 
         // Update Iris config
-        updateIrisConfig(irisConfig, shaderInfo.styleUnbound);
+        updateIrisConfig(irisConfig, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
     }
 
     private void isSodiumInstalled(String className) {
@@ -337,17 +338,35 @@ public class EuphoriaPatcher implements ModInitializer {
     }
 
     // Update config file
-    private void updateShaderTxtConfigFile(Path shaderpacks, boolean styleUnbound) {
-        try (DirectoryStream<Path> textStream = Files.newDirectoryStream(shaderpacks, this::isConfigFile)) {
-            Path textFilePath = findLatestConfigFile(textStream);
-            if (textFilePath != null) {
+    private void updateShaderTxtConfigFile(Path shaderpacks, boolean styleUnbound, boolean styleReimagined) {
+        try (DirectoryStream<Path> oldConfigTextStream = Files.newDirectoryStream(shaderpacks, this::isConfigFile)) {
+            Path oldShaderConfigFilePath = findShaderConfigFile(oldConfigTextStream, true);
+            if (oldShaderConfigFilePath != null) {
                 String style = styleUnbound ? "Unbound" : "Reimagined";
                 String newName = "Complementary" + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION + ".txt";
                 try {
-                    Files.move(textFilePath, textFilePath.resolveSibling(newName));
+                    Files.move(oldShaderConfigFilePath, oldShaderConfigFilePath.resolveSibling(newName));
                     log(0, "Successfully updated shader config file to the latest version!");
                 } catch (IOException e) {
                     log(3, "Could not rename the config file: " + e.getMessage());
+                }
+                if (styleUnbound && styleReimagined) {
+                    log(0, "Both shader styles detected!");
+                    try (DirectoryStream<Path> latestConfigTextStream = Files.newDirectoryStream(shaderpacks, this::isConfigFile)) { // Create a new DirectoryStream - The iterator of Files.newDirectoryStream can only be used once
+                        Path latestShaderConfigFilePath = findShaderConfigFile(latestConfigTextStream, false);
+                        if (latestShaderConfigFilePath != null) {
+                            style = latestShaderConfigFilePath.toString().contains("Unbound") ? "Reimagined" : "Unbound"; // Detect what the previously renamed (oldShaderConfigFilePath) .txt contains
+                            newName = "Complementary" + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION + ".txt";
+                            try { // Now copy and past the renamed .txt file with a new name - 2 identical.txt files with different style names are now in the shaderpacks folder
+                                Files.copy(latestShaderConfigFilePath, latestShaderConfigFilePath.resolveSibling(newName));
+                                log(0, "Successfully copied shader config file and renamed it!");
+                            } catch (IOException e) {
+                                log(3, "Could not copy and rename the config file: " + e.getMessage());
+                            }
+                        }
+                    } catch (IOException e) {
+                        log(3, "Error reading shaderpacks directory: " + e.getMessage());
+                    }
                 }
             }
         } catch (IOException e) {
@@ -362,22 +381,22 @@ public class EuphoriaPatcher implements ModInitializer {
     }
 
     // Find the latest config file
-    private Path findLatestConfigFile(DirectoryStream<Path> textStream) {
-        Path latestFile = null;
+    private Path findShaderConfigFile(DirectoryStream<Path> textStream, boolean searchOldConfigs) {
+        Path lastestRequestedConfig = null;
         for (Path potentialTextFile : textStream) {
             String name = potentialTextFile.getFileName().toString();
             if (name.endsWith(".txt")) {
-                latestFile = potentialTextFile;
+                lastestRequestedConfig = potentialTextFile;
                 if (name.contains(PATCH_VERSION)) {
-                    return null; // Prevent updating already updated config files
+                    return searchOldConfigs ? null : lastestRequestedConfig; // by default return null if contains PATCH_VERSION only return with PATCH_VERSION if Reimagined AND Unbound both installed
                 }
             }
         }
-        return latestFile;
+        return lastestRequestedConfig;
     }
 
     // Update Iris config
-    private void updateIrisConfig(Path irisConfig, boolean styleUnbound) {
+    private void updateIrisConfig(Path irisConfig, boolean styleUnbound, boolean styleReimagined) {
         if (!Files.exists(irisConfig)) return;
 
         File fileToBeModified = irisConfig.toFile();
@@ -391,18 +410,25 @@ public class EuphoriaPatcher implements ModInitializer {
             boolean writeToFile = oldContent.toString().contains(PATCH_NAME) && !oldContent.toString().contains(PATCH_VERSION);
 
             if (writeToFile) {
-                String style = styleUnbound ? "Unbound" : "Reimagined";
-                String newName = "Complementary" + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION;
-                String newContent = oldContent.toString().replaceAll("shaderPack=.*", "shaderPack=" + newName);
+                String newContent = setNewIrisSelectedPackName(oldContent, styleUnbound, styleReimagined);
 
                 try (FileWriter writer = new FileWriter(fileToBeModified)) {
                     writer.write(newContent);
                 }
-                log(0, "Successfully applied new version with iris!");
+                log(0, "Successfully applied new version in iris.properties config file!");
             }
         } catch (IOException e) {
             log(3, "Error reading or writing to iris config file: " + e.getMessage());
         }
+    }
+
+    private static @NotNull String setNewIrisSelectedPackName(StringBuilder oldContent, boolean styleUnbound, boolean styleReimagined) {
+        String style = styleUnbound ? "Unbound" : "Reimagined";
+        if (styleUnbound && styleReimagined) { // Both styles installed
+            style = oldContent.toString().contains(PATCH_NAME) && !oldContent.toString().contains(PATCH_VERSION) && oldContent.toString().contains("Unbound") ? "Unbound" : "Reimagined";
+        }
+        String newName = "Complementary" + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION;
+        return oldContent.toString().replaceAll("shaderPack=.*", "shaderPack=" + newName);
     }
 
     // Helper class to store shader information

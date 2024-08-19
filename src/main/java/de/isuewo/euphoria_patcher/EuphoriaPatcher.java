@@ -51,7 +51,7 @@ public class EuphoriaPatcher implements ModInitializer {
         // Check if Sodium is loaded
 
         isSodiumInstalled("me.jellysquid.mods.sodium.client.gui.console.Console");
-        if(!isSodiumLoaded) isSodiumInstalled("me.jellysquid.mods.sodium.client.console.Console"); // Newer sodium versions
+        if(!isSodiumLoaded) isSodiumInstalled("net.caffeinemc.mods.sodium.client.console.Console"); // Newer sodium versions
 
         // Get necessary paths
         Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");

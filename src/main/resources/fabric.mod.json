@@ -5,12 +5,14 @@
 	"name": "Euphoria Patcher",
 	"description": "A mod that applies the Euphoria Patches to Complementary Shaders.",
 	"authors": [
-		"isuewo"
+		"isuewo",
+		"SpacEagle17"
 	],
 	"contact": {
 		"homepage": "https://discord.com/invite/985QQxVQZF",
 		"sources": "https://github.com/EuphoriaPatches",
-		"discord": "https://discord.com/invite/985QQxVQZF",
+		"discord": "https://discord.gg/5N45SAsC3X",
+		"patreon": "https://www.patreon.com/SpacEagle17",
 		"modrinth": "https://modrinth.com/mod/euphoria-patches",
 		"curseforge": "https://www.curseforge.com/minecraft/mc-mods/euphoria-patches"
 	},
@@ -19,7 +21,7 @@
 	"environment": "client",
 	"entrypoints": {
 		"main": [
-			"de.isuewo.euphoria_patcher.EuphoriaPatcher"
+			"mc.euphoriaPatcher.EuphoriaPatcher"
 		]
 	},
 	"depends": {

@@ -9,10 +9,7 @@ public class SodiumConsole {
     private static final ConsoleSink CONSOLE = Console.instance();
 
     public static void logMessage(int level, String message) {
-        if (level == 0) {
-//            System.out.println(message);
-            CONSOLE.logMessage(MessageLevel.INFO, Text.of(message), 0.0);
-        } else if (level == 1) {
+        if (level == 1) {
             CONSOLE.logMessage(MessageLevel.INFO, Text.of(message), 5.0);
         } else if (level == 2) {
             CONSOLE.logMessage(MessageLevel.WARN, Text.of(message), 15.0);

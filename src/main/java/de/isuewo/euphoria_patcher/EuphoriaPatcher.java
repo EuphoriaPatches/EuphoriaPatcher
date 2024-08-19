@@ -5,6 +5,7 @@ import io.sigpipe.jbsdiff.ui.FileUI;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
 
@@ -33,27 +34,24 @@ public class EuphoriaPatcher implements ModInitializer {
     private static final int BASE_TAR_SIZE = 1274880;
 
     // Logging method (unchanged)
-    private static void log(int messageLevel, String message) {
+    public static void log(int messageLevel, String message) {
+        String loggingMessage = "EuphoriaPatcher: " + message;
         if (isSodiumLoaded) {
-            SodiumConsole.logMessage(messageLevel, message);
+            SodiumConsole.logMessage(messageLevel, loggingMessage);
+        }
+        if (messageLevel == 3) {
+            System.err.println(loggingMessage);
         } else {
-            if (messageLevel == 3) {
-                System.err.println(message);
-            } else {
-                System.out.println(message);
-            }
+            System.out.println(loggingMessage);
         }
     }
 
     @Override
     public void onInitialize() {
         // Check if Sodium is loaded
-        try {
-            Class.forName("me.jellysquid.mods.sodium.client.gui.console.Console");
-            isSodiumLoaded = true;
-        } catch (ClassNotFoundException e) {
-            isSodiumLoaded = false;
-        }
+
+        isSodiumInstalled("me.jellysquid.mods.sodium.client.gui.console.Console");
+        if(!isSodiumLoaded) isSodiumInstalled("me.jellysquid.mods.sodium.client.console.Console"); // Newer sodium versions
 
         // Get necessary paths
         Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
@@ -77,10 +75,21 @@ public class EuphoriaPatcher implements ModInitializer {
         if (!processAndPatchShaders(shaderInfo, temp, shaderpacks)) return;
         
         // Update .txt shader config file
-//        updateShaderTxtConfigFile(shaderpacks, shaderInfo.styleUnbound); // Commented out for now as it causes .txt file overwriting for some reason
+        updateShaderTxtConfigFile(shaderpacks, shaderInfo.styleUnbound);
 
         // Update Iris config
         updateIrisConfig(irisConfig, shaderInfo.styleUnbound);
+    }
+
+    private void isSodiumInstalled(String className) {
+        try {
+            Class.forName(className);
+            isSodiumLoaded = true;
+            log(0, "Sodium found, using Sodium logging!");
+        } catch (ClassNotFoundException e) {
+            isSodiumLoaded = false;
+            log(0, "Sodium not found, using default logging: " + e.getMessage());
+        }
     }
 
     // Detect installed Complementary Shaders versions
@@ -202,7 +211,11 @@ public class EuphoriaPatcher implements ModInitializer {
     private Path extractBase(Path baseFile, Path temp, String baseName) {
         Path baseExtracted = temp.resolve(baseName);
         if (!Files.isDirectory(baseFile)) {
-            ArchiveUtils.extract(baseFile, baseExtracted);
+            try {
+                ArchiveUtils.extract(baseFile, baseExtracted);
+            } catch (IOException | ArchiveException e) {
+                log(2, "Error extracting archive: " + e.getMessage());
+            }
         } else {
             baseExtracted = baseFile;
         }
@@ -225,7 +238,12 @@ public class EuphoriaPatcher implements ModInitializer {
     // Archive base shader
     private Path archiveBase(Path baseExtracted, Path temp, String baseName) {
         Path baseArchived = temp.resolve(baseName + ".tar");
-        ArchiveUtils.archive(baseExtracted, baseArchived);
+        try {
+            ArchiveUtils.archive(baseExtracted, baseArchived);
+        } catch (IOException e) {
+            log(2, "Error extracting archive: " + e.getMessage());
+            // Handle the error appropriately
+        }
         return baseArchived;
     }
 
@@ -284,7 +302,11 @@ public class EuphoriaPatcher implements ModInitializer {
             if (patchStream != null) {
                 FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile.toFile());
                 FileUI.patch(baseArchived.toFile(), patchedArchive.toFile(), patchFile.toFile());
-                ArchiveUtils.extract(patchedArchive, patchedFile);
+                try {
+                    ArchiveUtils.extract(patchedArchive, patchedFile);
+                } catch (IOException | ArchiveException e) {
+                    log(2, "Error extracting archive: " + e.getMessage());
+                }
                 applyStyleSettings(patchedFile, styleUnbound, styleReimagined);
                 log(1, PATCH_NAME + " was successfully installed. Enjoy! -SpacEagle17");
                 return true;

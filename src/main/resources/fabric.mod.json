@@ -21,7 +21,7 @@
 	"environment": "client",
 	"entrypoints": {
 		"main": [
-			"mc.euphoriaPatcher.EuphoriaPatcher"
+          		"mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher"
 		]
 	},
 	"depends": {

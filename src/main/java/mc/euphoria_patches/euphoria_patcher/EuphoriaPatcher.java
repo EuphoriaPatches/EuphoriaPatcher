@@ -8,6 +8,8 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -19,8 +21,8 @@ import java.util.Objects;
 
 public class EuphoriaPatcher implements ModInitializer {
     private static boolean isSodiumLoaded = false;
-
-    // Constants
+    public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
+    
     private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
 
     // Get necessary paths
@@ -98,10 +100,20 @@ public class EuphoriaPatcher implements ModInitializer {
         if (isSodiumLoaded) {
             SodiumConsole.logMessage(messageLevel, loggingMessage);
         }
-        if (messageLevel == 3) {
-            System.err.println(loggingMessage);
-        } else {
-            System.out.println(loggingMessage);
+        switch (messageLevel) {
+            case 0:
+            case 1:
+                LOGGER.info(loggingMessage);
+                break;
+            case 2:
+                LOGGER.warn(loggingMessage);
+                break;
+            case 3:
+                LOGGER.error(loggingMessage);
+                break;
+            default:
+                System.out.println(loggingMessage);
+                break;
         }
     }
 
@@ -213,7 +225,6 @@ public class EuphoriaPatcher implements ModInitializer {
         if (!updateCommonFile(baseExtracted)) return false;
 
         Path baseArchived = archiveBase(baseExtracted, temp, baseName);
-        if (baseArchived == null) return false;
 
         if (!verifyBaseArchive(baseArchived)) return false;
 

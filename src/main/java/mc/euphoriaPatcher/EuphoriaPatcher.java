@@ -18,7 +18,8 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public class EuphoriaPatcher implements ModInitializer {
-    private static boolean isSodiumLoaded;
+    private static boolean isSodiumLoaded = false;
+    private static boolean shaderLoaderConfigFound = false;
 
     // Constants
     private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
@@ -34,7 +35,7 @@ public class EuphoriaPatcher implements ModInitializer {
     private static final String BASE_TAR_HASH = "46a2fb63646e22cea56b2f8fa5815ac2";
     private static final int BASE_TAR_SIZE = 1274880;
 
-    // Logging method (unchanged)
+    // Logging method
     public static void log(int messageLevel, String message) {
         String loggingMessage = "EuphoriaPatcher: " + message;
         if (isSodiumLoaded) {
@@ -49,14 +50,15 @@ public class EuphoriaPatcher implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        // Check if Sodium is loaded
 
+        // Check if Sodium is loaded
         isSodiumInstalled("me.jellysquid.mods.sodium.client.gui.console.Console");
         if(!isSodiumLoaded) isSodiumInstalled("net.caffeinemc.mods.sodium.client.console.Console"); // Newer sodium versions
 
         // Get necessary paths
         Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
-        Path irisConfig = FabricLoader.getInstance().getConfigDir().resolve("iris.properties");
+        Path shaderLoaderConfig = getShaderLoaderPath("iris.properties");
+        if(!shaderLoaderConfigFound) shaderLoaderConfig = getShaderLoaderPath("oculus.properties");
 
         // Detect installed Complementary Shaders versions
         ShaderInfo shaderInfo = detectInstalledShaders(shaderpacks);
@@ -78,8 +80,8 @@ public class EuphoriaPatcher implements ModInitializer {
         // Update .txt shader config file
         updateShaderTxtConfigFile(shaderpacks, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
 
-        // Update Iris config
-        updateIrisConfig(irisConfig, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
+        // Update shader loader (iris) config
+        updateShaderLoaderConfig(shaderLoaderConfig, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
     }
 
     private void isSodiumInstalled(String className) {
@@ -91,6 +93,16 @@ public class EuphoriaPatcher implements ModInitializer {
             isSodiumLoaded = false;
             log(0, "Sodium not found, using default logging: " + e.getMessage());
         }
+    }
+
+    private Path getShaderLoaderPath(String fileName){
+        Path loaderPath = FabricLoader.getInstance().getConfigDir().resolve(fileName);
+        if (Files.exists(loaderPath)) {
+            shaderLoaderConfigFound = true;
+        } else {
+            loaderPath = null;
+        }
+        return loaderPath;
     }
 
     // Detect installed Complementary Shaders versions
@@ -350,7 +362,7 @@ public class EuphoriaPatcher implements ModInitializer {
                 } catch (IOException e) {
                     log(3, "Could not rename the config file: " + e.getMessage());
                 }
-                if (styleUnbound && styleReimagined) {
+                if (styleUnbound && styleReimagined) { // Yeah, this makes things unnecessarily complex lol
                     log(0, "Both shader styles detected!");
                     try (DirectoryStream<Path> latestConfigTextStream = Files.newDirectoryStream(shaderpacks, this::isConfigFile)) { // Create a new DirectoryStream - The iterator of Files.newDirectoryStream can only be used once
                         Path latestShaderConfigFilePath = findShaderConfigFile(latestConfigTextStream, false);
@@ -395,11 +407,16 @@ public class EuphoriaPatcher implements ModInitializer {
         return lastestRequestedConfig;
     }
 
-    // Update Iris config
-    private void updateIrisConfig(Path irisConfig, boolean styleUnbound, boolean styleReimagined) {
-        if (!Files.exists(irisConfig)) return;
+    // Update shader loader (iris) config
+    private void updateShaderLoaderConfig(Path shaderLoaderConfig, boolean styleUnbound, boolean styleReimagined) {
+        if (shaderLoaderConfig == null) {
+            log(0, "No shader loader config found");
+            return;
+        }
 
-        File fileToBeModified = irisConfig.toFile();
+        String shaderLoaderName = shaderLoaderConfig.toString().contains("iris") ? "iris" : "oculus";
+
+        File fileToBeModified = shaderLoaderConfig.toFile();
         StringBuilder oldContent = new StringBuilder();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(fileToBeModified))) {
@@ -407,22 +424,23 @@ public class EuphoriaPatcher implements ModInitializer {
             while ((line = reader.readLine()) != null) {
                 oldContent.append(line).append(System.lineSeparator());
             }
-            boolean writeToFile = oldContent.toString().contains(PATCH_NAME) && !oldContent.toString().contains(PATCH_VERSION);
 
-            if (writeToFile) {
-                String newContent = setNewIrisSelectedPackName(oldContent, styleUnbound, styleReimagined);
+            if (oldContent.toString().contains(PATCH_NAME) && !oldContent.toString().contains(PATCH_VERSION)) {
+                String newContent = setNewShaderLoaderSelectedPackName(oldContent, styleUnbound, styleReimagined);
 
                 try (FileWriter writer = new FileWriter(fileToBeModified)) {
                     writer.write(newContent);
+                } catch (IOException e) {
+                    log(3, "Error writing to " + shaderLoaderName + " config file: " + e.getMessage());
                 }
-                log(0, "Successfully applied new version in iris.properties config file!");
+                log(0, "Successfully applied new version in " + shaderLoaderName + ".properties config file!");
             }
         } catch (IOException e) {
-            log(3, "Error reading or writing to iris config file: " + e.getMessage());
+            log(3, "Error reading or writing to " + shaderLoaderName + " config file: " + e.getMessage());
         }
     }
 
-    private static @NotNull String setNewIrisSelectedPackName(StringBuilder oldContent, boolean styleUnbound, boolean styleReimagined) {
+    private static @NotNull String setNewShaderLoaderSelectedPackName(StringBuilder oldContent, boolean styleUnbound, boolean styleReimagined) {
         String style = styleUnbound ? "Unbound" : "Reimagined";
         if (styleUnbound && styleReimagined) { // Both styles installed
             style = oldContent.toString().contains(PATCH_NAME) && !oldContent.toString().contains(PATCH_VERSION) && oldContent.toString().contains("Unbound") ? "Unbound" : "Reimagined";

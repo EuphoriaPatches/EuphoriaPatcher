@@ -405,17 +405,17 @@ public class EuphoriaPatcher implements ModInitializer {
 
     // Find the latest config file
     private Path findShaderConfigFile(DirectoryStream<Path> textStream, boolean searchOldConfigs) {
-        Path lastestRequestedConfig = null;
+        Path latestRequestedConfig = null;
         for (Path potentialTextFile : textStream) {
             String name = potentialTextFile.getFileName().toString();
             if (name.endsWith(".txt")) {
-                lastestRequestedConfig = potentialTextFile;
+                latestRequestedConfig = potentialTextFile;
                 if (name.contains(PATCH_VERSION)) {
-                    return searchOldConfigs ? null : lastestRequestedConfig; // by default return null if contains PATCH_VERSION only return with PATCH_VERSION if Reimagined AND Unbound both installed
+                    return searchOldConfigs ? null : latestRequestedConfig; // by default return null if contains PATCH_VERSION only return with PATCH_VERSION if Reimagined AND Unbound both installed
                 }
             }
         }
-        return lastestRequestedConfig;
+        return latestRequestedConfig;
     }
 
     // Update shader loader (iris) config

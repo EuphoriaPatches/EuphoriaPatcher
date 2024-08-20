@@ -19,7 +19,6 @@ import java.util.Objects;
 
 public class EuphoriaPatcher implements ModInitializer {
     private static boolean isSodiumLoaded = false;
-    private static boolean shaderLoaderConfigFound = false;
 
     // Constants
     private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
@@ -57,8 +56,7 @@ public class EuphoriaPatcher implements ModInitializer {
 
         // Get necessary paths
         Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
-        Path shaderLoaderConfig = getShaderLoaderPath("iris.properties");
-        if(!shaderLoaderConfigFound) shaderLoaderConfig = getShaderLoaderPath("oculus.properties");
+        Path configDirectory = FabricLoader.getInstance().getConfigDir();
 
         // Detect installed Complementary Shaders versions
         ShaderInfo shaderInfo = detectInstalledShaders(shaderpacks);
@@ -81,7 +79,7 @@ public class EuphoriaPatcher implements ModInitializer {
         updateShaderTxtConfigFile(shaderpacks, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
 
         // Update shader loader (iris) config
-        updateShaderLoaderConfig(shaderLoaderConfig, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
+        updateShaderLoaderConfig(configDirectory, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
     }
 
     private void isSodiumInstalled(String className) {
@@ -95,14 +93,16 @@ public class EuphoriaPatcher implements ModInitializer {
         }
     }
 
-    private Path getShaderLoaderPath(String fileName){
-        Path loaderPath = FabricLoader.getInstance().getConfigDir().resolve(fileName);
-        if (Files.exists(loaderPath)) {
-            shaderLoaderConfigFound = true;
-        } else {
-            loaderPath = null;
-        }
-        return loaderPath;
+    private Path getShaderLoaderPath(Path configDirectory){
+        Path shaderLoaderConfig = getCorrectShaderLoaderPath(configDirectory ,"iris.properties");
+        if(!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = getCorrectShaderLoaderPath(configDirectory,"oculus.properties");
+        if (!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = null;
+        return shaderLoaderConfig;
+    }
+
+
+    private Path getCorrectShaderLoaderPath(Path configDirectory, String fileName){
+        return configDirectory.resolve(fileName);
     }
 
     // Detect installed Complementary Shaders versions
@@ -408,7 +408,8 @@ public class EuphoriaPatcher implements ModInitializer {
     }
 
     // Update shader loader (iris) config
-    private void updateShaderLoaderConfig(Path shaderLoaderConfig, boolean styleUnbound, boolean styleReimagined) {
+    private void updateShaderLoaderConfig(Path configDirectory, boolean styleUnbound, boolean styleReimagined) {
+        Path shaderLoaderConfig = getShaderLoaderPath(configDirectory);
         if (shaderLoaderConfig == null) {
             log(0, "No shader loader config found");
             return;

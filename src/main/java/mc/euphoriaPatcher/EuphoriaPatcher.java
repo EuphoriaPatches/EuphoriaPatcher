@@ -89,8 +89,8 @@ public class EuphoriaPatcher implements ModInitializer {
 
     private static void isSodiumInstalled() {
         String[] sodiumVersions = {
-                "me.jellysquid.mods.sodium.client.gui.console.Console",
-                "net.caffeinemc.mods.sodium.client.console.Console" // Newer Sodium versions
+                "me.jellysquid.mods.sodium.client.gui.console.Console"
+//                "net.caffeinemc.mods.sodium.client.console.Console" // Newer Sodium versions // Crashes the game if used - import classes are different in SodiumConsole.java
         };
         for (String str1 : sodiumVersions){
             try {

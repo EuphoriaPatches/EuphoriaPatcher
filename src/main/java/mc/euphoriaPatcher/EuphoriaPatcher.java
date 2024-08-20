@@ -23,6 +23,10 @@ public class EuphoriaPatcher implements ModInitializer {
     // Constants
     private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
 
+    // Get necessary paths
+    public static Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
+    public static Path configDirectory = FabricLoader.getInstance().getConfigDir();
+
     private static final String DOWNLOAD_URL = "https://www.complementary.dev/";
     private static final String COMMON_LOCATION = "shaders/lib/common.glsl";
 
@@ -34,27 +38,10 @@ public class EuphoriaPatcher implements ModInitializer {
     private static final String BASE_TAR_HASH = "46a2fb63646e22cea56b2f8fa5815ac2";
     private static final int BASE_TAR_SIZE = 1274880;
 
-    // Logging method
-    public static void log(int messageLevel, String message) {
-        String loggingMessage = "EuphoriaPatcher: " + message;
-        if (isSodiumLoaded) {
-            SodiumConsole.logMessage(messageLevel, loggingMessage);
-        }
-        if (messageLevel == 3) {
-            System.err.println(loggingMessage);
-        } else {
-            System.out.println(loggingMessage);
-        }
-    }
-
     @Override
     public void onInitialize() {
         // Check if Sodium is loaded
         isSodiumInstalled();
-
-        // Get necessary paths
-        Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
-        Path configDirectory = FabricLoader.getInstance().getConfigDir();
 
         // Detect installed Complementary Shaders versions
         ShaderInfo shaderInfo = detectInstalledShaders(shaderpacks);
@@ -87,7 +74,7 @@ public class EuphoriaPatcher implements ModInitializer {
         return shaderLoaderConfig;
     }
 
-    private static void isSodiumInstalled() {
+    private void isSodiumInstalled() {
         String[] sodiumVersions = {
                 "me.jellysquid.mods.sodium.client.gui.console.Console"
 //                "net.caffeinemc.mods.sodium.client.console.Console" // Newer Sodium versions // Crashes the game if used - import classes are different in SodiumConsole.java
@@ -103,6 +90,19 @@ public class EuphoriaPatcher implements ModInitializer {
             }
         }
         if (!isSodiumLoaded) log(0,"Sodium not found, using default logging: ");
+    }
+
+    // Logging method
+    public static void log(int messageLevel, String message) {
+        String loggingMessage = "EuphoriaPatcher: " + message;
+        if (isSodiumLoaded) {
+            SodiumConsole.logMessage(messageLevel, loggingMessage);
+        }
+        if (messageLevel == 3) {
+            System.err.println(loggingMessage);
+        } else {
+            System.out.println(loggingMessage);
+        }
     }
 
     // Detect installed Complementary Shaders versions

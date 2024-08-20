@@ -49,10 +49,8 @@ public class EuphoriaPatcher implements ModInitializer {
 
     @Override
     public void onInitialize() {
-
         // Check if Sodium is loaded
-        isSodiumInstalled("me.jellysquid.mods.sodium.client.gui.console.Console");
-        if(!isSodiumLoaded) isSodiumInstalled("net.caffeinemc.mods.sodium.client.console.Console"); // Newer sodium versions
+        isSodiumInstalled();
 
         // Get necessary paths
         Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
@@ -61,12 +59,12 @@ public class EuphoriaPatcher implements ModInitializer {
         // Detect installed Complementary Shaders versions
         ShaderInfo shaderInfo = detectInstalledShaders(shaderpacks);
 
-        if (shaderInfo.baseFile == null) {
-            if (!shaderInfo.isAlreadyInstalled) {
+        if(!shaderInfo.isAlreadyInstalled) {
+            if (shaderInfo.baseFile == null){
                 log(2, "You need to have " + BRAND_NAME + VERSION + " installed. Please download it from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft.");
+                return;
             }
-            return;
-        }
+        } else return;
 
         // Create temporary directory
         Path temp = createTempDirectory();
@@ -82,27 +80,29 @@ public class EuphoriaPatcher implements ModInitializer {
         updateShaderLoaderConfig(configDirectory, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
     }
 
-    private void isSodiumInstalled(String className) {
-        try {
-            Class.forName(className);
-            isSodiumLoaded = true;
-            log(0, "Sodium found, using Sodium logging!");
-        } catch (ClassNotFoundException e) {
-            isSodiumLoaded = false;
-            log(0, "Sodium not found, using default logging: " + e.getMessage());
-        }
-    }
-
     private Path getShaderLoaderPath(Path configDirectory){
-        Path shaderLoaderConfig = getCorrectShaderLoaderPath(configDirectory ,"iris.properties");
-        if(!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = getCorrectShaderLoaderPath(configDirectory,"oculus.properties");
+        Path shaderLoaderConfig = configDirectory.resolve("iris.properties");
+        if(!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = configDirectory.resolve("oculus.properties");
         if (!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = null;
         return shaderLoaderConfig;
     }
 
-
-    private Path getCorrectShaderLoaderPath(Path configDirectory, String fileName){
-        return configDirectory.resolve(fileName);
+    private static void isSodiumInstalled() {
+        String[] sodiumVersions = {
+                "me.jellysquid.mods.sodium.client.gui.console.Console",
+                "net.caffeinemc.mods.sodium.client.console.Console" // Newer Sodium versions
+        };
+        for (String str1 : sodiumVersions){
+            try {
+                Class.forName(str1);
+                isSodiumLoaded = true;
+                log(0,"Sodium found, using Sodium logging!");
+                break;
+            } catch (ClassNotFoundException e) {
+                log(0,"Class not found: " + e.getMessage());
+            }
+        }
+        if (!isSodiumLoaded) log(0,"Sodium not found, using default logging: ");
     }
 
     // Detect installed Complementary Shaders versions

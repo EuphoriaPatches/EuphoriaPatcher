@@ -1,4 +1,4 @@
-package mc.euphoriaPatcher;
+package mc.euphoria_patches.euphoria_patcher;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;

@@ -3,6 +3,9 @@ package mc.euphoriaPatcher;
 import me.jellysquid.mods.sodium.client.gui.console.Console;
 import me.jellysquid.mods.sodium.client.gui.console.ConsoleSink;
 import me.jellysquid.mods.sodium.client.gui.console.message.MessageLevel;
+//import net.caffeinemc.mods.sodium.client.console.Console; // Idk how to do this correctly is mixin a better approach?
+//import net.caffeinemc.mods.sodium.client.console.ConsoleSink;
+//import net.caffeinemc.mods.sodium.client.console.message.MessageLevel;
 import net.minecraft.text.Text;
 
 public class SodiumConsole {

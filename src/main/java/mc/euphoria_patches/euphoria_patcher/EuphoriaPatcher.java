@@ -1,7 +1,10 @@
 package mc.euphoria_patches.euphoria_patcher;
 
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLPaths;
+
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.fml.loading.FMLPaths;
 
 import io.sigpipe.jbsdiff.InvalidHeaderException;
 import io.sigpipe.jbsdiff.ui.FileUI;
@@ -47,6 +50,10 @@ public class EuphoriaPatcher {
     private static final int BASE_TAR_SIZE = 1274880;
 
     public EuphoriaPatcher() {
+        if(FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
+            log(3,"The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
+            return;
+        }
         configStuff();
 
         // Check if Sodium is loaded

@@ -28,8 +28,8 @@ public class Config {
                 EuphoriaPatcher.log(0, "Successfully wrote to config file: " + option + "=" + value);
             }
             try (OutputStream out = Files.newOutputStream(CONFIG_PATH)) {
-                String initialConfig = " This file stores configuration options for the Euphoria Patcher mod\n"
-                        + " Thank you for using Euphoria Patches - SpacEagle17";
+                String initialConfig = "This file stores configuration options for the Euphoria Patcher mod\n"
+                        + "Thank you for using Euphoria Patches - SpacEagle17";
                 properties.store(out, initialConfig);
             }
         } catch (IOException e) {

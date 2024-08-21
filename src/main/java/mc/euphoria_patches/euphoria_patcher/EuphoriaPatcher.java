@@ -33,7 +33,7 @@ public class EuphoriaPatcher {
 
     // Get necessary paths
     public static Path shaderpacks = FMLPaths.GAMEDIR.get().resolve("shaderpacks");
-    public static Path configDirectory = FabricLoader.getInstance().getConfigDir();
+    public static Path configDirectory = FMLPaths.CONFIGDIR.get();
 
     private static final String DOWNLOAD_URL = "https://www.complementary.dev/";
     private static final String COMMON_LOCATION = "shaders/lib/common.glsl";

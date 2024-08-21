@@ -20,10 +20,14 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public class EuphoriaPatcher implements ModInitializer {
-    private static boolean isSodiumLoaded = false;
-    public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
     
     private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
+
+    private static boolean isSodiumLoaded = false;
+    public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
+
+    // Config Options
+    public static boolean doSodiumLogging;
 
     // Get necessary paths
     public static Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
@@ -42,8 +46,10 @@ public class EuphoriaPatcher implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        configStuff();
+
         // Check if Sodium is loaded
-        isSodiumInstalled();
+        if(doSodiumLogging) isSodiumInstalled();
 
         // Detect installed Complementary Shaders versions
         ShaderInfo shaderInfo = detectInstalledShaders(shaderpacks);
@@ -53,7 +59,10 @@ public class EuphoriaPatcher implements ModInitializer {
                 log(2, "You need to have " + BRAND_NAME + VERSION + " installed. Please download it from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft.");
                 return;
             }
-        } else return;
+        } else {
+            thankYouMessage();
+            return;
+        }
 
         // Create temporary directory
         Path temp = createTempDirectory();
@@ -67,6 +76,8 @@ public class EuphoriaPatcher implements ModInitializer {
 
         // Update shader loader (iris) config
         updateShaderLoaderConfig(configDirectory, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
+
+        thankYouMessage();
     }
 
     private Path getShaderLoaderPath(Path configDirectory){
@@ -76,22 +87,19 @@ public class EuphoriaPatcher implements ModInitializer {
         return shaderLoaderConfig;
     }
 
+    private void configStuff(){
+        doSodiumLogging = Boolean.parseBoolean(Config.readWriteConfig("doSodiumLogging", "true"));
+    }
+
     private void isSodiumInstalled() {
-        String[] sodiumVersions = {
-                "me.jellysquid.mods.sodium.client.gui.console.Console"
-//                "net.caffeinemc.mods.sodium.client.console.Console" // Newer Sodium versions // Crashes the game if used - import classes are different in SodiumConsole.java
-        };
-        for (String str1 : sodiumVersions){
-            try {
-                Class.forName(str1);
-                isSodiumLoaded = true;
-                log(0,"Sodium found, using Sodium logging!");
-                break;
-            } catch (ClassNotFoundException e) {
-                log(0,"Class not found: " + e.getMessage());
-            }
+        String sodiumVersion = "me.jellysquid.mods.sodium.client.gui.console.Console"; // "net.caffeinemc.mods.sodium.client.console.Console" // Newer Sodium versions // Crashes the game if used - import classes are different in SodiumConsole.java
+        try {
+            Class.forName(sodiumVersion);
+            isSodiumLoaded = true;
+            log(0,"Sodium found, using Sodium logging!");
+        } catch (ClassNotFoundException e) {
+            log(0,"Sodium not found, using default logging: " + e.getMessage());
         }
-        if (!isSodiumLoaded) log(0,"Sodium not found, using default logging: ");
     }
 
     // Logging method
@@ -164,6 +172,10 @@ public class EuphoriaPatcher implements ModInitializer {
             info.isAlreadyInstalled = true;
             log(0, PATCH_NAME + PATCH_VERSION + " is already installed.");
         }
+    }
+
+    private void thankYouMessage(){
+        log(0,"Thank you for using Euphoria Patches - SpacEagle17");
     }
 
     // Detect installed directories

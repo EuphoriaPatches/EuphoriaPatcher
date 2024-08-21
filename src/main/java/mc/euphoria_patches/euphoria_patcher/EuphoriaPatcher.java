@@ -1,6 +1,5 @@
 package mc.euphoria_patches.euphoria_patcher;
 
-
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;

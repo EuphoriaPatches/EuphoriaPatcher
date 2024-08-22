@@ -36,6 +36,7 @@ public class EuphoriaPatcher {
     // Get necessary paths
     public static Path shaderpacks = FMLPaths.GAMEDIR.get().resolve("shaderpacks");
     public static Path configDirectory = FMLPaths.CONFIGDIR.get();
+    public static Path resourcesBuildDir = shaderpacks.getParent().getParent().resolve("build/resources/main");
 
     private static final String DOWNLOAD_URL = "https://www.complementary.dev/";
     private static final String COMMON_LOCATION = "shaders/lib/common.glsl";
@@ -59,7 +60,7 @@ public class EuphoriaPatcher {
         if(doSodiumLogging) isSodiumInstalled();
 
         // Detect installed Complementary Shaders versions
-        ShaderInfo shaderInfo = detectInstalledShaders(shaderpacks);
+        ShaderInfo shaderInfo = detectInstalledShaders();
 
         if(!shaderInfo.isAlreadyInstalled) {
             if (shaderInfo.baseFile == null){
@@ -76,13 +77,13 @@ public class EuphoriaPatcher {
         if (temp == null) return;
 
         // Process and patch shaders
-        if (!processAndPatchShaders(shaderInfo, temp, shaderpacks)) return;
+        if (!processAndPatchShaders(shaderInfo, temp)) return;
 
         // Update .txt shader config file
-        updateShaderTxtConfigFile(shaderpacks, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
+        updateShaderTxtConfigFile(shaderInfo.styleUnbound, shaderInfo.styleReimagined);
 
         // Update shader loader (iris) config
-        updateShaderLoaderConfig(configDirectory, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
+        updateShaderLoaderConfig(shaderInfo.styleUnbound, shaderInfo.styleReimagined);
 
         thankYouMessage();
     }
@@ -133,7 +134,7 @@ public class EuphoriaPatcher {
     }
 
     // Detect installed Complementary Shaders versions
-    private ShaderInfo detectInstalledShaders(Path shaderpacks) {
+    private ShaderInfo detectInstalledShaders() {
         ShaderInfo info = new ShaderInfo();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, this::isComplementaryShader)) {
             for (Path potentialFile : stream) {
@@ -141,7 +142,7 @@ public class EuphoriaPatcher {
                 if (info.styleReimagined && info.styleUnbound) break;
             }
             if (!info.styleReimagined && !info.styleUnbound) {
-                detectInstalledDirectories(shaderpacks, info);
+                detectInstalledDirectories(info);
             }
         } catch (IOException e) {
             log(3, "Error reading shaderpacks directory: " + e.getMessage());
@@ -186,7 +187,7 @@ public class EuphoriaPatcher {
     }
 
     // Detect installed directories
-    private void detectInstalledDirectories(Path shaderpacks, ShaderInfo info) throws IOException {
+    private void detectInstalledDirectories(ShaderInfo info) throws IOException {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, this::isComplementaryShaderDirectory)) {
             for (Path potentialFile : stream) {
                 processShaderDirectory(potentialFile, info);
@@ -234,7 +235,7 @@ public class EuphoriaPatcher {
     }
 
     // Process and patch shaders
-    private boolean processAndPatchShaders(ShaderInfo info, Path temp, Path shaderpacks) {
+    private boolean processAndPatchShaders(ShaderInfo info, Path temp) {
         String baseName = info.baseFile.getFileName().toString().replace(".zip", "");
         String patchedName = baseName + " + " + PATCH_NAME + PATCH_VERSION;
 
@@ -247,7 +248,7 @@ public class EuphoriaPatcher {
 
         if (!verifyBaseArchive(baseArchived)) return false;
 
-        return applyPatch(baseArchived, temp, patchedName, shaderpacks, info.styleUnbound, info.styleReimagined);
+        return applyPatch(baseArchived, temp, patchedName, info.styleUnbound, info.styleReimagined);
     }
 
     // Extract base shader
@@ -314,9 +315,9 @@ public class EuphoriaPatcher {
     }
 
     // Apply patch
-    private boolean applyPatch(Path baseArchived, Path temp, String patchedName, Path shaderpacks, boolean styleUnbound, boolean styleReimagined) {
+    private boolean applyPatch(Path baseArchived, Path temp, String patchedName, boolean styleUnbound, boolean styleReimagined) {
         Path patchedArchive = temp.resolve(patchedName + ".tar");
-        Path patchFile = (IS_DEV ? shaderpacks : temp).resolve(patchedName + ".patch");
+        Path patchFile = (IS_DEV ? resourcesBuildDir : temp).resolve((IS_DEV ? PATCH_NAME + PATCH_VERSION : patchedName) + ".patch");
         Path patchedFile = shaderpacks.resolve(patchedName);
 
         if (IS_DEV) {
@@ -380,7 +381,7 @@ public class EuphoriaPatcher {
     }
 
     // Update config file
-    private void updateShaderTxtConfigFile(Path shaderpacks, boolean styleUnbound, boolean styleReimagined) {
+    private void updateShaderTxtConfigFile(boolean styleUnbound, boolean styleReimagined) {
         try (DirectoryStream<Path> oldConfigTextStream = Files.newDirectoryStream(shaderpacks, this::isConfigFile)) {
             Path oldShaderConfigFilePath = findShaderConfigFile(oldConfigTextStream, true);
             if (oldShaderConfigFilePath != null) {
@@ -438,7 +439,7 @@ public class EuphoriaPatcher {
     }
 
     // Update shader loader (iris) config
-    private void updateShaderLoaderConfig(Path configDirectory, boolean styleUnbound, boolean styleReimagined) {
+    private void updateShaderLoaderConfig(boolean styleUnbound, boolean styleReimagined) {
         Path shaderLoaderConfig = getShaderLoaderPath(configDirectory);
         if (shaderLoaderConfig == null) {
             log(0, "No shader loader config found");

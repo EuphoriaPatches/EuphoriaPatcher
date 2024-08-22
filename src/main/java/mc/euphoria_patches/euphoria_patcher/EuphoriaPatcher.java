@@ -22,7 +22,7 @@ import java.util.Objects;
 
 public class EuphoriaPatcher implements ModInitializer {
     
-    private static final boolean IS_DEV = true; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
+    private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
 
     private static boolean isSodiumLoaded = false;
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");

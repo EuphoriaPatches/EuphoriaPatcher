@@ -22,7 +22,7 @@ import java.util.Objects;
 
 public class EuphoriaPatcher implements ModInitializer {
     
-    private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
+    private static final boolean IS_DEV = true; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
 
     private static boolean isSodiumLoaded = false;
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
@@ -33,7 +33,7 @@ public class EuphoriaPatcher implements ModInitializer {
     // Get necessary paths
     public static Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
     public static Path configDirectory = FabricLoader.getInstance().getConfigDir();
-    public static Path resourcesBuildDir = shaderpacks.getParent().getParent().resolve("build/resources/main");
+    public static Path resourcesBuildDir = shaderpacks.getParent().getParent().resolve("build");
 
     private static final String DOWNLOAD_URL = "https://www.complementary.dev/";
     private static final String COMMON_LOCATION = "shaders/lib/common.glsl";
@@ -311,13 +311,34 @@ public class EuphoriaPatcher implements ModInitializer {
     // Apply patch
     private boolean applyPatch(Path baseArchived, Path temp, String patchedName, boolean styleUnbound, boolean styleReimagined) {
         Path patchedArchive = temp.resolve(patchedName + ".tar");
-        Path patchFile = (IS_DEV ? resourcesBuildDir : temp).resolve((IS_DEV ? PATCH_NAME + PATCH_VERSION : patchedName) + ".patch");
         Path patchedFile = shaderpacks.resolve(patchedName);
-
-        if (IS_DEV) {
-            return createDevPatch(baseArchived, patchedFile, patchedArchive, patchFile);
+        Path patchFile;
+        if (IS_DEV){
+             // All this code to generate the .patch file in the forge and fabric build dir for less copy-paste action
+            Path fabricBuildDir = resourcesBuildDir.resolve("resources/main");
+            Path forgeBuildDir = resourcesBuildDir.resolve("sourcesSets/main");
+            return devPatchFilePrep(fabricBuildDir, baseArchived, patchedFile, patchedArchive) &&
+                    devPatchFilePrep(forgeBuildDir, baseArchived, patchedFile, patchedArchive);
         } else {
+            patchFile = temp.resolve(patchedName + ".patch");
             return applyProductionPatch(baseArchived, patchedArchive, patchFile, patchedFile, styleUnbound, styleReimagined);
+        }
+    }
+
+    private boolean devPatchFilePrep(Path buildDir, Path baseArchived, Path patchedFile, Path patchedArchive){
+        checkBuildPath(buildDir);
+        Path patchFile = buildDir.resolve(PATCH_NAME + PATCH_VERSION + ".patch");
+        return createDevPatch(baseArchived, patchedFile, patchedArchive, patchFile);
+    }
+
+    private void checkBuildPath(Path buildDir){
+        if (!Files.exists(buildDir)){
+            try {
+                Files.createDirectories(buildDir);
+                log(2,"Build directory created successfully: " + buildDir);
+            } catch (IOException e) {
+                log(3,"Failed to create directory: " + e.getMessage());
+            }
         }
     }
 
@@ -326,7 +347,7 @@ public class EuphoriaPatcher implements ModInitializer {
         try {
             ArchiveUtils.archive(patchedFile, patchedArchive);
             FileUI.diff(baseArchived.toFile(), patchedArchive.toFile(), patchFile.toFile());
-            log(0, ".patch file successfully created!");
+            log(0, ".patch file successfully created in " + patchFile + "!");
             return true;
         } catch (CompressorException | IOException | InvalidHeaderException e) {
             log(3, "Error creating dev patch: " + e.getMessage());

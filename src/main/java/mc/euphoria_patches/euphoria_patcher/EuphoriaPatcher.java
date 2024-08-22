@@ -25,9 +25,6 @@ public class EuphoriaPatcher {
     
     private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
 
-    private static boolean isSodiumLoaded = false;
-    public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
-
     // Config Options
     public static boolean doSodiumLogging;
 
@@ -47,11 +44,10 @@ public class EuphoriaPatcher {
     private static final String BASE_TAR_HASH = "46a2fb63646e22cea56b2f8fa5815ac2";
     private static final int BASE_TAR_SIZE = 1274880;
 
+    public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
+
     public EuphoriaPatcher() {
         configStuff();
-
-        // Check if Sodium is loaded
-        if(doSodiumLogging) isSodiumInstalled();
 
         // Detect installed Complementary Shaders versions
         ShaderInfo shaderInfo = detectInstalledShaders();
@@ -93,21 +89,22 @@ public class EuphoriaPatcher {
         doSodiumLogging = Boolean.parseBoolean(Config.readWriteConfig("doSodiumLogging", "true"));
     }
 
-    private void isSodiumInstalled() {
+    private static boolean isSodiumInstalled() {
         String sodiumVersion = "me.jellysquid.mods.sodium.client.gui.console.Console"; // "net.caffeinemc.mods.sodium.client.console.Console" // Newer Sodium versions // Crashes the game if used - import classes are different in SodiumConsole.java
         try {
             Class.forName(sodiumVersion);
-            isSodiumLoaded = true;
-            log(0,"Sodium found, using Sodium logging!");
+            log(0, "Sodium found, using Sodium logging!");
+            return true;
         } catch (ClassNotFoundException e) {
-            log(0,"Sodium not found, using default logging: " + e.getMessage());
+            log(0, "Sodium not found, using default logging: " + e.getMessage());
+            return false;
         }
     }
 
     // Logging method
     public static void log(int messageLevel, String message) {
         String loggingMessage = "EuphoriaPatcher: " + message;
-        if (isSodiumLoaded) {
+        if (doSodiumLogging() && doSodiumLogging) {
             SodiumConsole.logMessage(messageLevel, loggingMessage);
         }
         switch (messageLevel) {

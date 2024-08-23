@@ -1,6 +1,8 @@
 package mc.euphoria_patches.euphoria_patcher;
 
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import io.sigpipe.jbsdiff.InvalidHeaderException;
@@ -47,6 +49,11 @@ public class EuphoriaPatcher {
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
 
     public EuphoriaPatcher() {
+        if(FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
+            log(3,"The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
+            return;
+        }
+        
         configStuff();
 
         // Detect installed Complementary Shaders versions

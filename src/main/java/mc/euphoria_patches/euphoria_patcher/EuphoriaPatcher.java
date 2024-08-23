@@ -104,7 +104,7 @@ public class EuphoriaPatcher {
     // Logging method
     public static void log(int messageLevel, String message) {
         String loggingMessage = "EuphoriaPatcher: " + message;
-        if (doSodiumLogging() && doSodiumLogging) {
+        if (isSodiumInstalled() && doSodiumLogging) {
             SodiumConsole.logMessage(messageLevel, loggingMessage);
         }
         switch (messageLevel) {
@@ -239,7 +239,7 @@ public class EuphoriaPatcher {
 
         if (!verifyBaseArchive(baseArchived)) return false;
 
-        return applyPatch(baseArchived, temp, patchedName, shaderpacks, info.styleUnbound, info.styleReimagined);
+        return applyPatch(baseArchived, temp, patchedName, info.styleUnbound, info.styleReimagined);
     }
 
     // Extract base shader

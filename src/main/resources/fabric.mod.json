@@ -3,7 +3,7 @@
 	"id": "euphoria_patcher",
 	"version": "${version}",
 	"name": "Euphoria Patcher",
-	"description": "A mod that applies the Euphoria Patches to Complementary Shaders.",
+	"description": "A mod that applies the Euphoria Patches to Complementary Shaders.\nReport issues on discord!",
 	"authors": [
 		"isuewo",
 		"SpacEagle17"
@@ -27,5 +27,13 @@
 	"depends": {
 		"fabricloader": ">=0.14.10",
 		"minecraft": ">=1.14.0"
+	},
+	"custom": {
+		"modmenu": {
+			"links": {
+				"modmenu.discord": "https://discord.gg/5N45SAsC3X"
+			},
+			"update_checker": true
+		}
 	}
 }

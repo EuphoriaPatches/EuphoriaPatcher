@@ -2,6 +2,7 @@ package mc.euphoria_patches.euphoria_patcher;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.api.EnvType;
 
 import io.sigpipe.jbsdiff.InvalidHeaderException;
 import io.sigpipe.jbsdiff.ui.FileUI;
@@ -47,6 +48,11 @@ public class EuphoriaPatcher implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        if(FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER){
+            log(3,"The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
+            return;
+        }
+
         configStuff();
 
         if(doSodiumLogging) isSodiumInstalled();

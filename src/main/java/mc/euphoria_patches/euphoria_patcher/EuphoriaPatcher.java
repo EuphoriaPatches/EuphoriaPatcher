@@ -109,7 +109,7 @@ public class EuphoriaPatcher {
     // Logging method
     public static void log(int messageLevel, String message) {
         String loggingMessage = "EuphoriaPatcher: " + message;
-        if (isSodiumInstalled() && doSodiumLogging) {
+        if (doSodiumLogging) {
             SodiumConsole.logMessage(messageLevel, loggingMessage);
         }
         switch (messageLevel) {

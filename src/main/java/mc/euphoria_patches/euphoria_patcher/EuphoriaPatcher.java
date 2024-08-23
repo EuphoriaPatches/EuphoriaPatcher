@@ -46,13 +46,17 @@ public class EuphoriaPatcher {
     private static final int BASE_TAR_SIZE = 1274880;
 
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
+    public static boolean isSodiumInstalled = false;
 
     public EuphoriaPatcher() {
         if(FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
             log(3,"The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
             return;
         }
+        
         configStuff();
+
+        if(doSodiumLogging) isSodiumInstalled();
 
         // Detect installed Complementary Shaders versions
         ShaderInfo shaderInfo = detectInstalledShaders();
@@ -94,22 +98,21 @@ public class EuphoriaPatcher {
         doSodiumLogging = Boolean.parseBoolean(Config.readWriteConfig("doSodiumLogging", "true"));
     }
 
-    private static boolean isSodiumInstalled() {
+    private void isSodiumInstalled() {
         String sodiumVersion = "me.jellysquid.mods.sodium.client.gui.console.Console"; // "net.caffeinemc.mods.sodium.client.console.Console" // Newer Sodium versions // Crashes the game if used - import classes are different in SodiumConsole.java
         try {
             Class.forName(sodiumVersion);
             log(0, "Sodium found, using Sodium logging!");
-            return true;
+            isSodiumInstalled = true;
         } catch (ClassNotFoundException e) {
             log(0, "Sodium not found, using default logging: " + e.getMessage());
-            return false;
         }
     }
 
     // Logging method
     public static void log(int messageLevel, String message) {
         String loggingMessage = "EuphoriaPatcher: " + message;
-        if (doSodiumLogging) {
+        if (isSodiumInstalled) {
             SodiumConsole.logMessage(messageLevel, loggingMessage);
         }
         switch (messageLevel) {

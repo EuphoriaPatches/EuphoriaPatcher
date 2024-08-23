@@ -11,7 +11,6 @@ import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.nio.file.DirectoryStream;
@@ -44,10 +43,13 @@ public class EuphoriaPatcher implements ModInitializer {
     private static final int BASE_TAR_SIZE = 1274880;
 
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
+    public static boolean isSodiumInstalled = false;
 
     @Override
     public void onInitialize() {
         configStuff();
+
+        if(doSodiumLogging) isSodiumInstalled();
 
         // Detect installed Complementary Shaders versions
         ShaderInfo shaderInfo = detectInstalledShaders();
@@ -89,22 +91,21 @@ public class EuphoriaPatcher implements ModInitializer {
         doSodiumLogging = Boolean.parseBoolean(Config.readWriteConfig("doSodiumLogging", "true"));
     }
 
-    private static boolean isSodiumInstalled() {
+    private void isSodiumInstalled() {
         String sodiumVersion = "me.jellysquid.mods.sodium.client.gui.console.Console"; // "net.caffeinemc.mods.sodium.client.console.Console" // Newer Sodium versions // Crashes the game if used - import classes are different in SodiumConsole.java
         try {
             Class.forName(sodiumVersion);
             log(0, "Sodium found, using Sodium logging!");
-            return true;
+            isSodiumInstalled = true;
         } catch (ClassNotFoundException e) {
             log(0, "Sodium not found, using default logging: " + e.getMessage());
-            return false;
         }
     }
 
     // Logging method
     public static void log(int messageLevel, String message) {
         String loggingMessage = "EuphoriaPatcher: " + message;
-        if (isSodiumInstalled() && doSodiumLogging) {
+        if (isSodiumInstalled) {
             SodiumConsole.logMessage(messageLevel, loggingMessage);
         }
         switch (messageLevel) {
@@ -484,7 +485,7 @@ public class EuphoriaPatcher implements ModInitializer {
         }
     }
 
-    private static @NotNull String setNewShaderLoaderSelectedPackName(StringBuilder oldContent, boolean styleUnbound, boolean styleReimagined) {
+    private static String setNewShaderLoaderSelectedPackName(StringBuilder oldContent, boolean styleUnbound, boolean styleReimagined) {
         String style = styleUnbound ? "Unbound" : "Reimagined";
         if (styleUnbound && styleReimagined) { // Both styles installed
             style = oldContent.toString().contains(PATCH_NAME) && !oldContent.toString().contains(PATCH_VERSION) && oldContent.toString().contains("Unbound") ? "Unbound" : "Reimagined";

@@ -13,7 +13,6 @@ import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.nio.file.DirectoryStream;
@@ -490,7 +489,7 @@ public class EuphoriaPatcher {
         }
     }
 
-    private static @NotNull String setNewShaderLoaderSelectedPackName(StringBuilder oldContent, boolean styleUnbound, boolean styleReimagined) {
+    private static String setNewShaderLoaderSelectedPackName(StringBuilder oldContent, boolean styleUnbound, boolean styleReimagined) {
         String style = styleUnbound ? "Unbound" : "Reimagined";
         if (styleUnbound && styleReimagined) { // Both styles installed
             style = oldContent.toString().contains(PATCH_NAME) && !oldContent.toString().contains(PATCH_VERSION) && oldContent.toString().contains("Unbound") ? "Unbound" : "Reimagined";

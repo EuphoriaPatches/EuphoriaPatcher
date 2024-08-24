@@ -17,8 +17,9 @@ import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class EuphoriaPatcher implements ModInitializer {
     
@@ -401,34 +402,20 @@ public class EuphoriaPatcher implements ModInitializer {
 
     // Update config file
     private void updateShaderTxtConfigFile(boolean styleUnbound, boolean styleReimagined) {
-        try (DirectoryStream<Path> oldConfigTextStream = Files.newDirectoryStream(shaderpacks, this::isConfigFile)) {
+        try (DirectoryStream<Path> oldConfigTextStream = Files.newDirectoryStream(shaderpacks,
+                path -> isConfigFile(path, true))) {
             Path oldShaderConfigFilePath = findShaderConfigFile(oldConfigTextStream, true);
             if (oldShaderConfigFilePath != null) {
-                String style = styleUnbound ? "Unbound" : "Reimagined";
-                String newName = "Complementary" + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION + ".txt";
-                try {
-                    Files.copy(oldShaderConfigFilePath, oldShaderConfigFilePath.resolveSibling(newName)); // Copy old config and rename it to current PATCH_VERSION
-                    log(0, "Successfully updated shader config file to the latest version!");
-                } catch (IOException e) {
-                    log(3, "Could not rename the config file: " + e.getMessage());
-                }
-                if (styleUnbound && styleReimagined) { // Yeah, this makes things unnecessarily complex lol
-                    log(0, "Both shader styles detected!");
-                    try (DirectoryStream<Path> latestConfigTextStream = Files.newDirectoryStream(shaderpacks, this::isConfigFile)) { // Create a new DirectoryStream - The iterator of Files.newDirectoryStream can only be used once
-                        Path latestShaderConfigFilePath = findShaderConfigFile(latestConfigTextStream, false);
-                        if (latestShaderConfigFilePath != null) {
-                            style = latestShaderConfigFilePath.toString().contains("Unbound") ? "Reimagined" : "Unbound"; // Detect what the previously renamed (oldShaderConfigFilePath) .txt contains
-                            newName = "Complementary" + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION + ".txt";
-                            try { // Now copy and past the renamed .txt file with a new name - 2 identical.txt files with different style names are now in the shaderpacks folder
-                                Files.copy(latestShaderConfigFilePath, latestShaderConfigFilePath.resolveSibling(newName));
-                                log(0, "Successfully copied shader config file and renamed it!");
-                            } catch (IOException e) {
-                                log(3, "Could not copy and rename the config file: " + e.getMessage());
-                            }
-                        }
-                    } catch (IOException e) {
-                        log(3, "Error reading shaderpacks directory: " + e.getMessage());
+                doConfigFileCopy(oldShaderConfigFilePath, true, styleUnbound, styleReimagined);
+            } else { // No Euphoria settings .txt file
+                try (DirectoryStream<Path> baseShaderConfigTextStream = Files.newDirectoryStream(shaderpacks,
+                        path -> isConfigFile(path, false))) {
+                    Path baseShaderConfigFilePath = findShaderConfigFile(baseShaderConfigTextStream, true);
+                    if (baseShaderConfigFilePath != null) {
+                        doConfigFileCopy(baseShaderConfigFilePath, false, styleUnbound, styleReimagined);
                     }
+                } catch (IOException e) {
+                    log(3, "Error reading shaderpacks directory: " + e.getMessage());
                 }
             }
         } catch (IOException e) {
@@ -436,25 +423,95 @@ public class EuphoriaPatcher implements ModInitializer {
         }
     }
 
-    // Helper method to check if a file is a config file
-    private boolean isConfigFile(Path path) {
-        String nameText = path.getFileName().toString();
-        return nameText.matches("Complementary.*") && nameText.endsWith(".txt") && nameText.contains(PATCH_NAME);
+    private void doConfigFileCopy(Path configFilePath, boolean containsPatchName, boolean styleUnbound, boolean styleReimagined){
+        String style = styleUnbound ? "Unbound" : "Reimagined";
+        String newName = "Complementary" + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION + ".txt";
+        try {
+            Files.copy(configFilePath, configFilePath.resolveSibling(newName)); // Copy old config and rename it to current PATCH_VERSION
+            log(0, "Successfully updated shader config file to the latest version!");
+        } catch (IOException e) {
+            log(3, "Could not rename the config file: " + e.getMessage());
+        }
+        if (styleUnbound && styleReimagined) { // Yeah, this makes things unnecessarily complex lol
+            log(0, "Both shader styles detected!");
+            try (DirectoryStream<Path> latestConfigTextStream = Files.newDirectoryStream(shaderpacks,
+                    path -> isConfigFile(path, containsPatchName))) { // Create a new DirectoryStream - The iterator of Files.newDirectoryStream can only be used once
+                Path latestShaderConfigFilePath = findShaderConfigFile(latestConfigTextStream, false);
+                if (latestShaderConfigFilePath != null) {
+                    style = latestShaderConfigFilePath.toString().contains("Unbound") ? "Reimagined" : "Unbound"; // Detect what the previously renamed (oldShaderConfigFilePath) .txt contains
+                    newName = "Complementary" + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION + ".txt";
+                    try { // Now copy and past the renamed .txt file with a new name - 2 identical.txt files with different style names are now in the shaderpacks folder
+                        Files.copy(latestShaderConfigFilePath, latestShaderConfigFilePath.resolveSibling(newName));
+                        log(0, "Successfully copied shader config file and renamed it!");
+                    } catch (IOException e) {
+                        log(3, "Could not copy and rename the config file: " + e.getMessage());
+                    }
+                }
+            } catch (IOException e) {
+                log(3, "Error reading shaderpacks directory: " + e.getMessage());
+            }
+        }
     }
 
-    // Find the latest config file
-    private Path findShaderConfigFile(DirectoryStream<Path> textStream, boolean searchOldConfigs) {
-        Path latestRequestedConfig = null;
+    // Helper method to check if a file is a config file
+    private boolean isConfigFile(Path path, boolean containsPatchName) {
+        String nameText = path.getFileName().toString();
+        return containsPatchName ? nameText.matches("Complementary.*(Reimagined|Unbound).*") && nameText.endsWith(".txt") && nameText.contains(PATCH_NAME) :
+                nameText.matches("Complementary.*(Reimagined|Unbound).*") && nameText.endsWith(".txt");
+    }
+
+    private Path findShaderConfigFile(DirectoryStream<Path> textStream, boolean searchOldEuphoriaConfigs) {
+        List<Path> validFiles = new ArrayList<>();
         for (Path potentialTextFile : textStream) {
             String name = potentialTextFile.getFileName().toString();
             if (name.endsWith(".txt")) {
-                latestRequestedConfig = potentialTextFile;
-                if (name.contains(PATCH_VERSION)) {
-                    return searchOldConfigs ? null : latestRequestedConfig; // by default return null if contains PATCH_VERSION only return with PATCH_VERSION if Reimagined AND Unbound both installed
-                }
+                validFiles.add(potentialTextFile);
+            }
+        }
+
+        // Sort the valid files based on version number
+        validFiles.sort((p1, p2) -> compareConfigFileVersions(getConfigFileVersion(p1), getConfigFileVersion(p2)));
+
+        // Process the sorted files
+        Path latestRequestedConfig = null;
+        for (Path file : validFiles) {
+            String name = file.getFileName().toString();
+            latestRequestedConfig = file;
+            log(0, String.valueOf(latestRequestedConfig)); // TEST
+            if (name.contains(PATCH_VERSION)) {
+                return searchOldEuphoriaConfigs ? null : latestRequestedConfig;
             }
         }
         return latestRequestedConfig;
+    }
+
+    private String getConfigFileVersion(Path path) {
+        String name = path.getFileName().toString();
+        Pattern pattern = Pattern.compile("r(\\d+(?:\\.\\d+)*)(?: \\+ EuphoriaPatches_(\\d+(?:\\.\\d+)*))?");
+        Matcher matcher = pattern.matcher(name);
+        if (matcher.find()) {
+            String mainVersion = matcher.group(1);
+            String patchVersion = matcher.group(2);
+            if (patchVersion != null) {
+                return mainVersion + "." + patchVersion;
+            }
+            return mainVersion;
+        }
+        return "0"; // Default version if pattern doesn't match
+    }
+
+    private int compareConfigFileVersions(String v1, String v2) {
+        String[] parts1 = v1.split("\\.");
+        String[] parts2 = v2.split("\\.");
+        int length = Math.max(parts1.length, parts2.length);
+        for (int i = 0; i < length; i++) {
+            int p1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+            int p2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+            if (p1 != p2) {
+                return p1 - p2; // Changed to ascending order
+            }
+        }
+        return 0;
     }
 
     // Update shader loader (iris) config

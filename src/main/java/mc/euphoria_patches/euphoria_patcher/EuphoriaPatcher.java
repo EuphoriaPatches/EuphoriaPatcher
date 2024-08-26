@@ -86,15 +86,15 @@ public class EuphoriaPatcher {
         thankYouMessage();
     }
 
+    private void configStuff(){
+        doSodiumLogging = Boolean.parseBoolean(Config.readWriteConfig("doSodiumLogging", "true","Option for the sodium message popup logging"));
+    }
+
     private Path getShaderLoaderPath(Path configDirectory){
         Path shaderLoaderConfig = configDirectory.resolve("iris.properties");
         if(!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = configDirectory.resolve("oculus.properties");
         if (!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = null;
         return shaderLoaderConfig;
-    }
-
-    private void configStuff(){
-        doSodiumLogging = Boolean.parseBoolean(Config.readWriteConfig("doSodiumLogging", "true"));
     }
 
     // Logging method

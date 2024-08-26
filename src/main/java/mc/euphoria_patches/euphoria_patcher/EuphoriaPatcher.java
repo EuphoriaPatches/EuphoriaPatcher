@@ -98,7 +98,7 @@ public class EuphoriaPatcher {
     }
 
     // Logging method
-    public static void log(int messageLevel, String message) {
+    public static void log(int messageLevel, int messageFadeTimer, String message) {
         String loggingMessage = "EuphoriaPatcher: " + message;
         switch (messageLevel) {
             case 0:
@@ -115,6 +115,21 @@ public class EuphoriaPatcher {
                 System.out.println(loggingMessage);
                 break;
         }
+    }
+    public static void log(int messageLevel, String message) { // Method overloading for optional parameter
+        int messageFadeTimer = 0;
+        switch (messageLevel) {
+            case 1:
+                messageFadeTimer = 5;
+                break;
+            case 2:
+                messageFadeTimer = 8;
+                break;
+            case 3:
+                messageFadeTimer = 15;
+                break;
+        }
+        log(messageLevel, messageFadeTimer, message);
     }
 
     // Detect installed Complementary Shaders versions

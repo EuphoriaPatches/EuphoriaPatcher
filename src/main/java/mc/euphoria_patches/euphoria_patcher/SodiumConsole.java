@@ -11,13 +11,13 @@ import net.minecraft.text.Text;
 public class SodiumConsole {
     private static final ConsoleSink CONSOLE = Console.instance();
 
-    public static void logMessage(int level, String message) {
+    public static void logMessage(int level, int messageFadeTimer, String message) {
         if (level == 1) {
-            CONSOLE.logMessage(MessageLevel.INFO, Text.of(message), 5.0);
+            CONSOLE.logMessage(MessageLevel.INFO, Text.of(message), messageFadeTimer);
         } else if (level == 2) {
-            CONSOLE.logMessage(MessageLevel.WARN, Text.of(message), 15.0);
+            CONSOLE.logMessage(MessageLevel.WARN, Text.of(message), messageFadeTimer);
         } else if (level == 3) {
-        CONSOLE.logMessage(MessageLevel.SEVERE, Text.of(message), 15.0);
+        CONSOLE.logMessage(MessageLevel.SEVERE, Text.of(message), messageFadeTimer);
         }
     }
 }

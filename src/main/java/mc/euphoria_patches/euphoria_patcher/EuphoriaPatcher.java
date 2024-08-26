@@ -110,10 +110,10 @@ public class EuphoriaPatcher implements ModInitializer {
     }
 
     // Logging method
-    public static void log(int messageLevel, String message) {
+    public static void log(int messageLevel, int messageFadeTimer, String message) {
         String loggingMessage = "EuphoriaPatcher: " + message;
-        if (isSodiumInstalled) {
-            SodiumConsole.logMessage(messageLevel, loggingMessage);
+        if (isSodiumInstalled && messageFadeTimer > 0) {
+            SodiumConsole.logMessage(messageLevel, messageFadeTimer, loggingMessage);
         }
         switch (messageLevel) {
             case 0:
@@ -130,6 +130,21 @@ public class EuphoriaPatcher implements ModInitializer {
                 System.out.println(loggingMessage);
                 break;
         }
+    }
+    public static void log(int messageLevel, String message) { // Method overloading for optional parameter
+        int messageFadeTimer = 0;
+        switch (messageLevel) {
+            case 1:
+                messageFadeTimer = 5;
+                break;
+            case 2:
+                messageFadeTimer = 8;
+                break;
+            case 3:
+                messageFadeTimer = 15;
+                break;
+        }
+        log(messageLevel, messageFadeTimer, message);
     }
 
     // Detect installed Complementary Shaders versions
@@ -415,11 +430,11 @@ public class EuphoriaPatcher implements ModInitializer {
                         doConfigFileCopy(baseShaderConfigFilePath, false, styleUnbound, styleReimagined);
                     }
                 } catch (IOException e) {
-                    log(3, "Error reading shaderpacks directory: " + e.getMessage());
+                    log(3,0, "Error reading shaderpacks directory: " + e.getMessage());
                 }
             }
         } catch (IOException e) {
-            log(3, "Error reading shaderpacks directory: " + e.getMessage());
+            log(3,0, "Error reading shaderpacks directory: " + e.getMessage());
         }
     }
 
@@ -430,7 +445,7 @@ public class EuphoriaPatcher implements ModInitializer {
             Files.copy(configFilePath, configFilePath.resolveSibling(newName)); // Copy old config and rename it to current PATCH_VERSION
             log(0, "Successfully updated shader config file to the latest version!");
         } catch (IOException e) {
-            log(3, "Could not rename the config file: " + e.getMessage());
+            log(3,0, "Could not rename the config file: " + e.getMessage());
         }
         if (styleUnbound && styleReimagined) { // Yeah, this makes things unnecessarily complex lol
             log(0, "Both shader styles detected!");
@@ -444,11 +459,11 @@ public class EuphoriaPatcher implements ModInitializer {
                         Files.copy(latestShaderConfigFilePath, latestShaderConfigFilePath.resolveSibling(newName));
                         log(0, "Successfully copied shader config file and renamed it!");
                     } catch (IOException e) {
-                        log(3, "Could not copy and rename the config file: " + e.getMessage());
+                        log(3,0, "Could not copy and rename the config file: " + e.getMessage());
                     }
                 }
             } catch (IOException e) {
-                log(3, "Error reading shaderpacks directory: " + e.getMessage());
+                log(3,0, "Error reading shaderpacks directory: " + e.getMessage());
             }
         }
     }
@@ -477,7 +492,6 @@ public class EuphoriaPatcher implements ModInitializer {
         for (Path file : validFiles) {
             String name = file.getFileName().toString();
             latestRequestedConfig = file;
-            log(0, String.valueOf(latestRequestedConfig)); // TEST
             if (name.contains(PATCH_VERSION)) {
                 return searchOldEuphoriaConfigs ? null : latestRequestedConfig;
             }
@@ -539,12 +553,12 @@ public class EuphoriaPatcher implements ModInitializer {
                 try (FileWriter writer = new FileWriter(fileToBeModified)) {
                     writer.write(newContent);
                 } catch (IOException e) {
-                    log(3, "Error writing to " + shaderLoaderName + " config file: " + e.getMessage());
+                    log(3,0, "Error writing to " + shaderLoaderName + " config file: " + e.getMessage());
                 }
                 log(0, "Successfully applied new version in " + shaderLoaderName + ".properties config file!");
             }
         } catch (IOException e) {
-            log(3, "Error reading or writing to " + shaderLoaderName + " config file: " + e.getMessage());
+            log(3,0, "Error reading or writing to " + shaderLoaderName + " config file: " + e.getMessage());
         }
     }
 

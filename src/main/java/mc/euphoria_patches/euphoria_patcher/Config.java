@@ -14,7 +14,7 @@ public class Config {
             Files.createFile(CONFIG_PATH);
             EuphoriaPatcher.log(0, "Successfully created config file");
         } catch (IOException e) {
-            EuphoriaPatcher.log(3, "Error creating config file: " + e.getMessage());
+            EuphoriaPatcher.log(3,0, "Error creating config file: " + e.getMessage());
         }
     }
 
@@ -33,7 +33,7 @@ public class Config {
                 properties.store(out, initialConfig);
             }
         } catch (IOException e) {
-            EuphoriaPatcher.log(3, "Error writing to config file: " + e.getMessage());
+            EuphoriaPatcher.log(3,0, "Error writing to config file: " + e.getMessage());
         }
     }
 
@@ -46,7 +46,7 @@ public class Config {
         try (InputStream in = Files.newInputStream(CONFIG_PATH)) {
             properties.load(in);
         } catch (IOException e) {
-            EuphoriaPatcher.log(3, "Error loading properties: " + e.getMessage());
+            EuphoriaPatcher.log(3,0, "Error loading properties: " + e.getMessage());
         }
     }
 }

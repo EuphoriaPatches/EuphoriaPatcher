@@ -9,7 +9,6 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.utils.IOUtils;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -29,15 +28,6 @@ public class ArchiveUtils {
     public static void extract(Path in, Path out) throws IOException, ArchiveException {
         // Create the output directory if it doesn't exist
         Files.createDirectories(out);
-
-        // Construct the path for the .txt file (assuming it has the same name as the output directory)
-        Path txtFilePath = out.resolve(out.getFileName() + ".txt");
-        String txtContent = null;
-
-        // Check if the .txt file exists and backup its content
-        if (Files.exists(txtFilePath)) {
-            txtContent = new String(Files.readAllBytes(txtFilePath), StandardCharsets.UTF_8);
-        }
 
         // Start the extraction process
         try (ArchiveInputStream archiveInputStream = new ArchiveStreamFactory().createArchiveInputStream(
@@ -72,12 +62,6 @@ public class ArchiveUtils {
                     }
                 }
             }
-        }
-
-        // After extraction, restore the .txt file if it existed before
-        if (txtContent != null) {
-            Files.write(txtFilePath, txtContent.getBytes(StandardCharsets.UTF_8));
-            EuphoriaPatcher.log(0, "Restored .txt file: " + txtFilePath);
         }
     }
 

@@ -136,13 +136,13 @@ public class EuphoriaPatcher {
         int messageFadeTimer = 0;
         switch (messageLevel) {
             case 1:
-                messageFadeTimer = 5;
+                messageFadeTimer = 4;
                 break;
             case 2:
                 messageFadeTimer = 8;
                 break;
             case 3:
-                messageFadeTimer = 15;
+                messageFadeTimer = 16;
                 break;
         }
         log(messageLevel, messageFadeTimer, message);

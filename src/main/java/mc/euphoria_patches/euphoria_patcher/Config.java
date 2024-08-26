@@ -42,9 +42,6 @@ public class Config {
         writeConfig(optionName, defaultValue, description);
         return properties.getProperty(optionName, defaultValue); // Provide defaultValue if the property is missing
     }
-    public static String readWriteConfig(String optionName, String defaultValue) {
-        return readWriteConfig(optionName, defaultValue, null);
-    }
 
     private static void loadProperties() {
         try (InputStream in = Files.newInputStream(CONFIG_PATH)) {

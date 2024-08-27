@@ -51,7 +51,7 @@ public class EuphoriaPatcher implements ModInitializer {
     @Override
     public void onInitialize() {
         if(FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER){
-            log(3,"The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
+            log(3,0,"The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
             return;
         }
 

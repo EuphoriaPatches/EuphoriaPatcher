@@ -27,17 +27,6 @@ public class EuphoriaPatcher {
     
     private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
 
-    // Config Options
-    public static boolean doSodiumLogging;
-
-    // Get necessary paths
-    public static Path shaderpacks = FMLPaths.GAMEDIR.get().resolve("shaderpacks");
-    public static Path configDirectory = FMLPaths.CONFIGDIR.get();
-    public static Path resourcesBuildDir = shaderpacks.getParent().getParent().resolve("build");
-
-    private static final String DOWNLOAD_URL = "https://www.complementary.dev/";
-    private static final String COMMON_LOCATION = "shaders/lib/common.glsl";
-
     private static final String BRAND_NAME = "Complementary";
     private static final String PATCH_NAME = "EuphoriaPatches";
     private static final String VERSION = "_r5.2.2";
@@ -46,6 +35,18 @@ public class EuphoriaPatcher {
     private static final String BASE_TAR_HASH = "46a2fb63646e22cea56b2f8fa5815ac2";
     private static final int BASE_TAR_SIZE = 1274880;
 
+    private static final String DOWNLOAD_URL = "https://www.complementary.dev/";
+    private static final String COMMON_LOCATION = "shaders/lib/common.glsl";
+
+    // Get necessary paths
+    public static Path shaderpacks = FMLPaths.GAMEDIR.get().resolve("shaderpacks");
+    public static Path configDirectory = FMLPaths.CONFIGDIR.get();
+    public static Path resourcesBuildDir = shaderpacks.getParent().getParent().resolve("build");
+
+    // Config Options
+    public static boolean doSodiumLogging;
+
+    // Global Variables and Objects
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
     public static boolean isSodiumInstalled = false;
 
@@ -90,6 +91,9 @@ public class EuphoriaPatcher {
     }
 
     private void configStuff(){
+        // How to use: Cast to desired data type, then call readWriteConfig, it returns a String.
+        // First parameter is the config name, second is the value
+        // Third one is the description, it can either be null or a String, supports multi line descriptions with "\n"
         doSodiumLogging = Boolean.parseBoolean(Config.readWriteConfig("doSodiumLogging", "true","Option for the sodium message popup logging"));
     }
 

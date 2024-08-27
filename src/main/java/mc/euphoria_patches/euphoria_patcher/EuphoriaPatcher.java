@@ -52,7 +52,7 @@ public class EuphoriaPatcher {
 
     public EuphoriaPatcher() {
         if(FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
-            log(3,"The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
+            log(3,0,"The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
             return;
         }
         

@@ -36,7 +36,7 @@ public class EuphoriaPatcher implements ModInitializer {
     private static final String DOWNLOAD_URL = "https://www.complementary.dev/";
     private static final String COMMON_LOCATION = "shaders/lib/common.glsl";
 
-    private static final String BRAND_NAME = "ComplementaryShaders";
+    private static final String BRAND_NAME = "Complementary";
     private static final String PATCH_NAME = "EuphoriaPatches";
     private static final String VERSION = "_r5.2.2";
     private static final String PATCH_VERSION = "_1.3.2";
@@ -63,8 +63,9 @@ public class EuphoriaPatcher implements ModInitializer {
 
         if(!shaderInfo.isAlreadyInstalled) {
             if (shaderInfo.baseFile == null){
-                log(2, "You need to have " + BRAND_NAME + VERSION + " installed. Please download it from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft.");
-                return;
+                log(3, 8, "You need to have " + BRAND_NAME + "Shaders" + VERSION + " installed!");
+                log(3, 8, "Please download it from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft!");
+                if(!IS_DEV) return;
             }
         } else {
             thankYouMessage();
@@ -167,7 +168,7 @@ public class EuphoriaPatcher implements ModInitializer {
     // Helper method to check if a file is a Complementary Shader
     private boolean isComplementaryShader(Path path) {
         String name = path.getFileName().toString();
-        return name.matches("Complementary.+?(?=" + VERSION + ")" + VERSION + "(?!\\.[0-9]).*") && name.endsWith(".zip") && !name.contains(PATCH_NAME);
+        return name.matches(BRAND_NAME + ".*" + VERSION + ".*") && name.endsWith(".zip") && !name.contains(PATCH_NAME);
     }
 
     // Process each shader file
@@ -212,7 +213,7 @@ public class EuphoriaPatcher implements ModInitializer {
 
     // Helper method to check if a directory is a Complementary Shader
     private boolean isComplementaryShaderDirectory(Path path) {
-        return path.getFileName().toString().matches("Complementary.+?(?=" + VERSION + ")" + VERSION + "(?!\\.[0-9]).*") && Files.isDirectory(path);
+        return path.getFileName().toString().matches(BRAND_NAME + ".*" + VERSION + ".*") && Files.isDirectory(path);
     }
 
     // Process each shader directory
@@ -315,14 +316,17 @@ public class EuphoriaPatcher implements ModInitializer {
             } else {
                 String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived), BASE_TAR_SIZE));
                 if (!hash.equals(BASE_TAR_HASH)) {
-                    log(2, "The version of " + BRAND_NAME + " that was found in your shaderpacks folder can't be used as a base for " + PATCH_NAME +
-                            ". Please download " + BRAND_NAME + VERSION + " from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft.");
+                    log(3, 8, "The shader " + BRAND_NAME + "Shaders" + " that was found in your shaderpacks folder can't be used as a base for " + PATCH_NAME);
+                    log(3, 8, "Please download " + BRAND_NAME + "Shaders" + VERSION + " from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft.");
+                    log(3, 8, "The file in your shaderpacks folder might have been modified. The expected hash does not match.");
                     return false;
                 }
             }
         } catch (IOException e) {
-            log(2,"The version of " + BRAND_NAME + " that was found in your shaderpacks folder can't be used as a base for " + PATCH_NAME +
-                    ". Please download " + BRAND_NAME + VERSION + " from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft. And something more went wrong" + e.getMessage());
+            log(3, 8, "The shader " + BRAND_NAME + "Shaders" + " that was found in your shaderpacks folder can't be used as a base for " + PATCH_NAME);
+            log(3, 8, "Please download " + BRAND_NAME + "Shaders" + VERSION + " from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft.");
+            log(3, 8, "The file in your shaderpacks folder might have been modified. The expected hash does not match.");
+            log(3, "Something went wrong" + e.getMessage());
             return false;
         }
         return true;

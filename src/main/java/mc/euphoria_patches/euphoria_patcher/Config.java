@@ -28,7 +28,13 @@ public class Config {
             loadProperties();
             if(!properties.containsKey(option)) {
                 try (FileWriter writer = new FileWriter(String.valueOf(CONFIG_PATH), true)) {
-                    writer.write(description != null ? "\n# " + description + "\n" : "\n");
+                    writer.write("\n"); // Always write a newline before a new entry
+                    if (description != null) {
+                        String[] lines = description.split("\n");
+                        for (String line : lines) {
+                            writer.write("# " + line + "\n");
+                        }
+                    }
                     writer.write(option + "=" + value + "\n");
                     EuphoriaPatcher.log(0, "Successfully wrote to config file: " + option + "=" + value);
                 }

@@ -210,7 +210,7 @@ public class EuphoriaPatcher implements ModInitializer {
     }
 
     private void thankYouMessage(){
-        log(0,"Thank you for using Euphoria Patches - SpacEagle17 :)");
+        log(0,"Thank you for using Euphoria Patches - SpacEagle17");
     }
 
     // Detect installed directories

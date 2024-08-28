@@ -11,17 +11,20 @@ import java.net.URL;
 
 public class UpdateChecker {
     private static final String UPDATE_URL = "https://api.github.com/repos/EuphoriaPatches/PatcherUpdateChecker/releases/latest";
+    public static String NEW_MOD_VERSION = null;
+    public static boolean NEW_VERSION_AVAILABLE = false;
 
     public static void checkForUpdates() {
         try {
-            String latestVersion = fetchLatestVersion();
-            if (latestVersion == null) {
+            NEW_MOD_VERSION = fetchLatestVersion();
+            if (NEW_MOD_VERSION == null) {
                 EuphoriaPatcher.log(2, 0, "[UPDATE CHECKER] Failed to fetch the latest version.");
                 return;
             }
 
-            if (isNewerVersion(latestVersion)) {
-                EuphoriaPatcher.log(2, "[UPDATE CHECKER] A new version of the EuphoriaPatcher Mod is available: " + latestVersion);
+            if (isNewerVersion(NEW_MOD_VERSION)) {
+                NEW_VERSION_AVAILABLE = true;
+                EuphoriaPatcher.log(2, "[UPDATE CHECKER] A new version of the EuphoriaPatcher Mod is available: " + NEW_MOD_VERSION);
                 EuphoriaPatcher.log(2, "[UPDATE CHECKER] Download it from Modrinth: https://modrinth.com/mod/euphoria-patches");
                 EuphoriaPatcher.log(1, 8, "[UPDATE CHECKER] Current Version: " + EuphoriaPatcher.MOD_VERSION);
                 EuphoriaPatcher.log(1, 8, "[UPDATE CHECKER] Check logs for more info");

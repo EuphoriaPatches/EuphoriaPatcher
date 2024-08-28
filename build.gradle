@@ -79,6 +79,7 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 
     implementation 'io.sigpipe:jbsdiff:1.0'
+    implementation 'com.google.code.gson:gson:2.8.9'
 }
 
 tasks.withType(ProcessResources).configureEach {

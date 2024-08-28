@@ -404,7 +404,7 @@ public class EuphoriaPatcher {
                     log(2, "Error extracting archive: " + e.getMessage());
                 }
                 applyStyleSettings(patchedFile, styleUnbound, styleReimagined);
-                log(1, PATCH_NAME + " was successfully installed. Enjoy! -SpacEagle17 :)");
+                log(1, PATCH_NAME + " was successfully installed. Enjoy! -SpacEagle17");
                 return true;
             }
         } catch (IOException | CompressorException | InvalidHeaderException e) {

@@ -212,7 +212,7 @@ public class EuphoriaPatcher {
     }
 
     private void thankYouMessage(Path baseFile){
-        if (UpdateChecker.NEW_VERSION_AVAILABLE && doUpdateChecking) {
+        if (UpdateChecker.NEW_VERSION_AVAILABLE && doUpdateChecking && baseFile != null) {
             try {
                 modifyShaderPackAndLangFiles(baseFile.resolveSibling(baseFile.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION));
             } catch (IOException e) {

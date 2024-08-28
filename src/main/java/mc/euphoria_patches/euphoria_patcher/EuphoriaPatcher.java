@@ -23,18 +23,19 @@ import java.util.regex.Pattern;
 
 public class EuphoriaPatcher implements ModInitializer {
     
-    private static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
+    public static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
 
-    private static final String BRAND_NAME = "Complementary";
-    private static final String PATCH_NAME = "EuphoriaPatches";
-    private static final String VERSION = "_r5.2.2";
-    private static final String PATCH_VERSION = "_1.3.2";
+    public static final String BRAND_NAME = "Complementary";
+    public static final String PATCH_NAME = "EuphoriaPatches";
+    public static final String VERSION = "_r5.2.2";
+    public static final String PATCH_VERSION = "_1.3.2";
+    public static final String MOD_VERSION = "0.3.4";
 
     private static final String BASE_TAR_HASH = "46a2fb63646e22cea56b2f8fa5815ac2";
     private static final int BASE_TAR_SIZE = 1274880;
 
-    private static final String DOWNLOAD_URL = "https://www.complementary.dev/";
-    private static final String COMMON_LOCATION = "shaders/lib/common.glsl";
+    public static final String DOWNLOAD_URL = "https://www.complementary.dev/";
+    public static final String COMMON_LOCATION = "shaders/lib/common.glsl";
 
     // Get necessary paths
     public static Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
@@ -42,7 +43,8 @@ public class EuphoriaPatcher implements ModInitializer {
     public static Path resourcesBuildDir = shaderpacks.getParent().getParent().resolve("build");
 
     // Config Options
-    public static boolean doSodiumLogging;
+    public static boolean doSodiumLogging = true;
+    public static boolean doUpdateChecking = true;
 
     // Global Variables and Objects
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
@@ -58,6 +60,8 @@ public class EuphoriaPatcher implements ModInitializer {
         configStuff();
 
         if(doSodiumLogging) isSodiumInstalled();
+
+        if(doUpdateChecking) UpdateChecker.checkForUpdates();
 
         // Detect installed Complementary Shaders versions
         ShaderInfo shaderInfo = detectInstalledShaders();
@@ -93,7 +97,11 @@ public class EuphoriaPatcher implements ModInitializer {
         // How to use: Cast to desired data type, then call readWriteConfig, it returns a String.
         // First parameter is the config name, second is the value
         // Third one is the description, it can either be null or a String, supports multi line descriptions with "\n"
-        doSodiumLogging = Boolean.parseBoolean(Config.readWriteConfig("doSodiumLogging", "true","Option for the sodium message popup logging"));
+        doSodiumLogging = Boolean.parseBoolean(Config.readWriteConfig("doSodiumLogging", "true","Option for the sodium message popup logging." +
+                "\nDefault = true"));
+        doUpdateChecking = Boolean.parseBoolean(Config.readWriteConfig("doUpdateChecking", "true","Option that enables or disables the update checker, which verifies if a new version of the mod is available." +
+                "\nMore info here: https://github.com/EuphoriaPatches/PatcherUpdateChecker" +
+                "\nDefault = true"));
     }
 
     private Path getShaderLoaderPath(Path configDirectory){
@@ -202,7 +210,7 @@ public class EuphoriaPatcher implements ModInitializer {
     }
 
     private void thankYouMessage(){
-        log(0,"Thank you for using Euphoria Patches - SpacEagle17");
+        log(0,"Thank you for using Euphoria Patches - SpacEagle17 :)");
     }
 
     // Detect installed directories

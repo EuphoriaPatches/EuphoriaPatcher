@@ -36,6 +36,8 @@ public class EuphoriaPatcher implements ModInitializer {
 
     public static final String DOWNLOAD_URL = "https://www.complementary.dev/";
     public static final String COMMON_LOCATION = "shaders/lib/common.glsl";
+    public static final String LANG_LOCATION = "shaders/lang";
+    public static final String SHADERS_PROPERTIES_LOCATION = "shaders/shaders.properties";
 
     // Get necessary paths
     public static Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
@@ -73,7 +75,7 @@ public class EuphoriaPatcher implements ModInitializer {
                 if(!IS_DEV) return;
             }
         } else {
-            thankYouMessage();
+            thankYouMessage(shaderInfo.baseFile);
             return;
         }
 
@@ -90,7 +92,7 @@ public class EuphoriaPatcher implements ModInitializer {
         // Update shader loader (iris) config
         updateShaderLoaderConfig(shaderInfo.styleUnbound, shaderInfo.styleReimagined);
 
-        thankYouMessage();
+        thankYouMessage(shaderInfo.baseFile);
     }
 
     private void configStuff(){
@@ -203,13 +205,19 @@ public class EuphoriaPatcher implements ModInitializer {
     // Check if the patch is already installed
     private void checkIfAlreadyInstalled(Path file, ShaderInfo info) {
         if (info.baseFile != null && Files.exists(file.resolveSibling(file.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION)) && !IS_DEV && !info.isAlreadyInstalled) {
-            info.baseFile = null;
             info.isAlreadyInstalled = true;
             log(0, PATCH_NAME + PATCH_VERSION + " is already installed.");
         }
     }
 
-    private void thankYouMessage(){
+    private void thankYouMessage(Path baseFile){
+        if (UpdateChecker.NEW_VERSION_AVAILABLE && doUpdateChecking) {
+            try {
+                modifyShaderPackAndLangFiles(baseFile.resolveSibling(baseFile.getFileName().toString().replace(".zip", "") + " + " + EuphoriaPatcher.PATCH_NAME + EuphoriaPatcher.PATCH_VERSION));
+            } catch (IOException e) {
+                log(3,0,"Could not modify the shader to show the user that a new version is available" + e.getMessage());
+            }
+        }
         log(0,"Thank you for using Euphoria Patches - SpacEagle17");
     }
 
@@ -303,6 +311,30 @@ public class EuphoriaPatcher implements ModInitializer {
         } catch (IOException e) {
             log(3, "Error extracting style information: " + e.getMessage());
             return false;
+        }
+    }
+
+    private void modifyShaderPackAndLangFiles(Path patchedFile) throws IOException {
+        if(Files.exists(patchedFile)) {
+            // Modify shaders.properties file
+            Path shadersPropertiesPath = patchedFile.resolve(SHADERS_PROPERTIES_LOCATION);
+            String shadersPropertiesContent = new String(Files.readAllBytes(shadersPropertiesPath));
+            String modifiedShadersPropertiesContent = shadersPropertiesContent.replaceFirst("screen=<empty> <empty>", "screen=info19 info20");
+            Files.write(shadersPropertiesPath, modifiedShadersPropertiesContent.getBytes());
+
+            // Modify language files
+            Path langDirectory = patchedFile.resolve(LANG_LOCATION);
+            try (DirectoryStream<Path> langFiles = Files.newDirectoryStream(langDirectory, "*.lang")) {
+                for (Path langFile : langFiles) {
+                    String langContent = new String(Files.readAllBytes(langFile));
+
+                    // Replace NEW_MOD_VERSION with NEW_MOD_VERSION
+                    String modifiedLangContent = langContent.replaceAll("value\\.info19\\.0=.*", "value.info19.0=" + UpdateChecker.NEW_MOD_VERSION);
+                    modifiedLangContent = modifiedLangContent.replaceAll("value\\.info20\\.0=.*", "value.info20.0=" + MOD_VERSION);
+
+                    Files.write(langFile, modifiedLangContent.getBytes());
+                }
+            }
         }
     }
 

@@ -214,7 +214,7 @@ public class EuphoriaPatcher {
     private void thankYouMessage(Path baseFile){
         if (UpdateChecker.NEW_VERSION_AVAILABLE && doUpdateChecking) {
             try {
-                modifyShaderPackAndLangFiles(baseFile.resolveSibling(baseFile.getFileName().toString().replace(".zip", "") + " + " + EuphoriaPatcher.PATCH_NAME + EuphoriaPatcher.PATCH_VERSION));
+                modifyShaderPackAndLangFiles(baseFile.resolveSibling(baseFile.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION));
             } catch (IOException e) {
                 log(3,0,"Could not modify the shader to show the user that a new version is available" + e.getMessage());
             }

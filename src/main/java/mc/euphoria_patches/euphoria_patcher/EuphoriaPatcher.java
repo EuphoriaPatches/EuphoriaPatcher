@@ -493,7 +493,6 @@ public class EuphoriaPatcher {
         for (Path file : validFiles) {
             String name = file.getFileName().toString();
             latestRequestedConfig = file;
-            log(0, String.valueOf(latestRequestedConfig)); // TEST
             if (name.contains(PATCH_VERSION)) {
                 return searchOldEuphoriaConfigs ? null : latestRequestedConfig;
             }

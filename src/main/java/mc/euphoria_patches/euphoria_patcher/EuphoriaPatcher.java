@@ -75,7 +75,7 @@ public class EuphoriaPatcher implements ModInitializer {
                 if(!IS_DEV) return;
             }
         } else {
-            thankYouMessage(shaderInfo.baseFile);
+            thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
             return;
         }
 
@@ -92,7 +92,7 @@ public class EuphoriaPatcher implements ModInitializer {
         // Update shader loader (iris) config
         updateShaderLoaderConfig(shaderInfo.styleUnbound, shaderInfo.styleReimagined);
 
-        thankYouMessage(shaderInfo.baseFile);
+        thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
     }
 
     private void configStuff(){
@@ -210,15 +210,15 @@ public class EuphoriaPatcher implements ModInitializer {
         }
     }
 
-    private void thankYouMessage(Path baseFile){
+    private void thankYouMessage(Path baseFile, boolean styleUnbound, boolean styleReimagined) {
         if (UpdateChecker.NEW_VERSION_AVAILABLE && doUpdateChecking && baseFile != null) {
             try {
-                modifyShaderPackAndLangFiles(baseFile.resolveSibling(baseFile.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION));
+                modifyShaderPackAndLangFiles(baseFile.resolveSibling(baseFile.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION), styleUnbound, styleReimagined);
             } catch (IOException e) {
-                log(3,0,"Could not modify the shader to show the user that a new version is available" + e.getMessage());
+                log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
             }
         }
-        log(0,"Thank you for using Euphoria Patches - SpacEagle17");
+        log(0, "Thank you for using Euphoria Patches - SpacEagle17");
     }
 
     // Detect installed directories
@@ -314,25 +314,49 @@ public class EuphoriaPatcher implements ModInitializer {
         }
     }
 
-    private void modifyShaderPackAndLangFiles(Path patchedFile) throws IOException {
-        if(Files.exists(patchedFile)) {
-            // Modify shaders.properties file
-            Path shadersPropertiesPath = patchedFile.resolve(SHADERS_PROPERTIES_LOCATION);
-            String shadersPropertiesContent = new String(Files.readAllBytes(shadersPropertiesPath));
-            String modifiedShadersPropertiesContent = shadersPropertiesContent.replaceFirst("screen=<empty> <empty>", "screen=info19 info20");
-            Files.write(shadersPropertiesPath, modifiedShadersPropertiesContent.getBytes());
+    private void modifyShaderPackAndLangFiles(Path patchedFile, boolean styleUnbound, boolean styleReimagined) throws IOException {
+        List<Path> shaderPacks = new ArrayList<>();
 
-            // Modify language files
-            Path langDirectory = patchedFile.resolve(LANG_LOCATION);
-            try (DirectoryStream<Path> langFiles = Files.newDirectoryStream(langDirectory, "*.lang")) {
-                for (Path langFile : langFiles) {
-                    String langContent = new String(Files.readAllBytes(langFile));
+        if (styleUnbound && styleReimagined) {
+            // Both styles are present, so we need to handle both
+            shaderPacks.add(patchedFile);
 
-                    // Replace NEW_MOD_VERSION with NEW_MOD_VERSION
-                    String modifiedLangContent = langContent.replaceAll("value\\.info19\\.0=.*", "value.info19.0=" + UpdateChecker.NEW_MOD_VERSION);
-                    modifiedLangContent = modifiedLangContent.replaceAll("value\\.info20\\.0=.*", "value.info20.0=" + MOD_VERSION);
+            // Check for the other style and add if it exists
+            Path otherStylePath;
+            if (patchedFile.getFileName().toString().contains("Reimagined")) {
+                otherStylePath = patchedFile.resolveSibling(patchedFile.getFileName().toString().replace("Reimagined", "Unbound"));
+            } else {
+                otherStylePath = patchedFile.resolveSibling(patchedFile.getFileName().toString().replace("Unbound", "Reimagined"));
+            }
 
-                    Files.write(langFile, modifiedLangContent.getBytes());
+            if (Files.exists(otherStylePath)) {
+                shaderPacks.add(otherStylePath);
+            }
+        } else {
+            // Only one style is present, so we just handle the patchedFile
+            shaderPacks.add(patchedFile);
+        }
+
+        for (Path shaderPack : shaderPacks) {
+            if (Files.exists(shaderPack)) {
+                // Modify shaders.properties file
+                Path shadersPropertiesPath = shaderPack.resolve(SHADERS_PROPERTIES_LOCATION);
+                String shadersPropertiesContent = new String(Files.readAllBytes(shadersPropertiesPath));
+                String modifiedShadersPropertiesContent = shadersPropertiesContent.replaceFirst("screen=<empty> <empty>", "screen=info19 info20");
+                Files.write(shadersPropertiesPath, modifiedShadersPropertiesContent.getBytes());
+
+                // Modify language files
+                Path langDirectory = shaderPack.resolve(LANG_LOCATION);
+                try (DirectoryStream<Path> langFiles = Files.newDirectoryStream(langDirectory, "*.lang")) {
+                    for (Path langFile : langFiles) {
+                        String langContent = new String(Files.readAllBytes(langFile));
+
+                        // Replace NEW_MOD_VERSION with NEW_MOD_VERSION
+                        String modifiedLangContent = langContent.replaceAll("value\\.info19\\.0=.*", "value.info19.0=" + UpdateChecker.NEW_MOD_VERSION);
+                        modifiedLangContent = modifiedLangContent.replaceAll("value\\.info20\\.0=.*", "value.info20.0=" + MOD_VERSION);
+
+                        Files.write(langFile, modifiedLangContent.getBytes());
+                    }
                 }
             }
         }

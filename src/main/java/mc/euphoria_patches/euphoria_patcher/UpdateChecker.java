@@ -1,5 +1,6 @@
 package mc.euphoria_patches.euphoria_patcher;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -42,18 +43,18 @@ public class UpdateChecker {
         if (connection.getResponseCode() != 200) {
             return null;
         }
+
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-            StringBuilder response = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
-            }
-            JsonObject jsonObject = JsonParser.parseString(response.toString()).getAsJsonObject();
+            // Use the older compatible method for parsing to make it compatible with older MC versions
+            JsonElement jsonElement = new JsonParser().parse(reader);
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+
             return jsonObject.get("tag_name").getAsString();
         } finally {
             connection.disconnect();
         }
     }
+
     // Compare the latest version with the current version
     private static boolean isNewerVersion(String latestVersion) {
         String[] latest = latestVersion.split("\\.");

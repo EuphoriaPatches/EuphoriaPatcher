@@ -107,7 +107,7 @@ public class EuphoriaPatcher {
                 "\nDefault = true"));
     }
 
-    private Path getShaderLoaderPath){
+    private Path getShaderLoaderPath(){
         Path shaderLoaderConfig = configDirectory.resolve("iris.properties");
         if(!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = configDirectory.resolve("oculus.properties");
         if(!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = shaderpacks.getParent().resolve("optionsshaders.txt");

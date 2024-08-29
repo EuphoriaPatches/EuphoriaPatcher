@@ -106,9 +106,10 @@ public class EuphoriaPatcher implements ModInitializer {
                 "\nDefault = true"));
     }
 
-    private Path getShaderLoaderPath(Path configDirectory){
+    private Path getShaderLoaderPath(){
         Path shaderLoaderConfig = configDirectory.resolve("iris.properties");
         if(!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = configDirectory.resolve("oculus.properties");
+        if(!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = shaderpacks.getParent().resolve("optionsshaders.txt");
         if (!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = null;
         return shaderLoaderConfig;
     }
@@ -602,13 +603,13 @@ public class EuphoriaPatcher implements ModInitializer {
 
     // Update shader loader (iris) config
     private void updateShaderLoaderConfig(boolean styleUnbound, boolean styleReimagined) {
-        Path shaderLoaderConfig = getShaderLoaderPath(configDirectory);
+        Path shaderLoaderConfig = getShaderLoaderPath();
         if (shaderLoaderConfig == null) {
             log(0, "No shader loader config found");
             return;
         }
 
-        String shaderLoaderName = shaderLoaderConfig.toString().contains("iris") ? "iris" : "oculus";
+        String shaderLoaderName = shaderLoaderConfig.toString().contains("iris") ? "iris" : shaderLoaderConfig.toString().contains("oculus") ? "oculus" : "OptiFine";
 
         File fileToBeModified = shaderLoaderConfig.toFile();
         StringBuilder oldContent = new StringBuilder();

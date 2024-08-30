@@ -50,6 +50,7 @@ public class EuphoriaPatcher {
     // Config Options
     public static boolean doSodiumLogging = true;
     public static boolean doUpdateChecking = true;
+    public static boolean doRenameOldShaderFiles = true;
     
     // Global Variables and Objects
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
@@ -91,6 +92,8 @@ public class EuphoriaPatcher {
         // Update shader loader (iris) config
         updateShaderLoaderConfig(shaderInfo.styleUnbound, shaderInfo.styleReimagined);
 
+        if(doRenameOldShaderFiles) renameOutdatedPatches();
+
         thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
     }
 
@@ -102,6 +105,9 @@ public class EuphoriaPatcher {
                 "\nDefault = true"));
         doUpdateChecking = Boolean.parseBoolean(Config.readWriteConfig("doUpdateChecking", "true","Option that enables or disables the update checker, which verifies if a new version of the mod is available." +
                 "\nMore info here: https://github.com/EuphoriaPatches/PatcherUpdateChecker" +
+                "\nDefault = true"));
+        doRenameOldShaderFiles = Boolean.parseBoolean(Config.readWriteConfig("doRenameOldShaderFiles", "true","Option that automatically renames outdated Euphoria Patches folders and config files to a new name." +
+                "\nThis makes it easier for users to identify which ones are outdated." +
                 "\nDefault = true"));
     }
 
@@ -116,7 +122,9 @@ public class EuphoriaPatcher {
     // Logging method
     public static void log(int messageLevel, int messageFadeTimer, String message) {
         String loggingMessage = "EuphoriaPatcher: " + message;
+        if (messageLevel == -1) loggingMessage = "\n\n" + loggingMessage;
         switch (messageLevel) {
+            case -1:
             case 0:
             case 1:
                 LOGGER.info(loggingMessage);
@@ -204,7 +212,7 @@ public class EuphoriaPatcher {
                 log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
             }
         }
-        log(0, "Thank you for using Euphoria Patches - SpacEagle17");
+        log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
     }
 
     // Detect installed directories
@@ -529,8 +537,8 @@ public class EuphoriaPatcher {
     // Helper method to check if a file is a config file
     private boolean isConfigFile(Path path, boolean containsPatchName) {
         String nameText = path.getFileName().toString();
-        return containsPatchName ? nameText.matches("Complementary.*(Reimagined|Unbound).*") && nameText.endsWith(".txt") && nameText.contains(PATCH_NAME) :
-                nameText.matches("Complementary.*(Reimagined|Unbound).*") && nameText.endsWith(".txt");
+        return containsPatchName ? nameText.matches(".*Complementary.*(Reimagined|Unbound).*") && nameText.endsWith(".txt") && (nameText.contains(PATCH_NAME) || nameText.contains(" + EP_")):
+                nameText.matches(".*Complementary.*(Reimagined|Unbound).*") && nameText.endsWith(".txt");
     }
 
     private Path findShaderConfigFile(DirectoryStream<Path> textStream, boolean searchOldEuphoriaConfigs) {
@@ -559,7 +567,7 @@ public class EuphoriaPatcher {
 
     private String getConfigFileVersion(Path path) {
         String name = path.getFileName().toString();
-        Pattern pattern = Pattern.compile("r(\\d+(?:\\.\\d+)*)(?: \\+ EuphoriaPatches_(\\d+(?:\\.\\d+)*))?");
+        Pattern pattern = Pattern.compile("r(\\d+(?:\\.\\d+)*)(?: \\+ (?:EuphoriaPatches_|EP_)(\\d+(?:\\.\\d+)*))?");
         Matcher matcher = pattern.matcher(name);
         if (matcher.find()) {
             String mainVersion = matcher.group(1);
@@ -627,6 +635,24 @@ public class EuphoriaPatcher {
         }
         String newName = "Complementary" + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION;
         return oldContent.toString().replaceAll("shaderPack=.*", "shaderPack=" + newName);
+    }
+
+    private void renameOutdatedPatches() {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, this::isOutdatedPatch)) {
+            for (Path potentialFile : stream) {
+                String name = potentialFile.getFileName().toString();
+                String newName = name.replaceFirst("(.*) \\+", "§cOutdated§r $1 +").replace("EuphoriaPatches_", "EP_");
+                Files.move(potentialFile, potentialFile.resolveSibling(newName));
+                log(0,"Successfully renamed outdated " + name + " shaderpack file!");
+            }
+        } catch (IOException e) {
+            log(3, 0, "Error reading shaderpacks directory: " + e.getMessage());
+        }
+    }
+
+    private boolean isOutdatedPatch(Path path) {
+        String name = path.getFileName().toString();
+        return name.contains(PATCH_NAME) && !name.contains(PATCH_VERSION);
     }
 
     // Helper class to store shader information

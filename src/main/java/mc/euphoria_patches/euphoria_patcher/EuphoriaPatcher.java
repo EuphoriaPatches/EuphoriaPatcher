@@ -617,7 +617,7 @@ public class EuphoriaPatcher {
             return;
         }
 
-        String shaderLoaderName = shaderLoaderConfig.toString().contains("iris") ? "iris" : shaderLoaderConfig.toString().contains("oculus") ? "oculus" : "OptiFine";
+        String shaderLoaderName = shaderLoaderConfig.toString().contains("iris") ? "iris.properties" : shaderLoaderConfig.toString().contains("oculus") ? "oculus.properties" : "OptiFine's optionsshaders.txt";
 
         File fileToBeModified = shaderLoaderConfig.toFile();
         StringBuilder oldContent = new StringBuilder();
@@ -636,7 +636,7 @@ public class EuphoriaPatcher {
                 } catch (IOException e) {
                     log(3, "Error writing to " + shaderLoaderName + " config file: " + e.getMessage());
                 }
-                log(0, "Successfully applied new version in " + shaderLoaderName + ".properties config file!");
+                log(0, "Successfully applied new version in " + shaderLoaderName + " config file!");
             }
         } catch (IOException e) {
             log(3, "Error reading or writing to " + shaderLoaderName + " config file: " + e.getMessage());

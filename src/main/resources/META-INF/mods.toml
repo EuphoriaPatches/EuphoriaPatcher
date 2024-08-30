@@ -32,6 +32,8 @@ side="BOTH"
 # Optional Dependencies
 [[dependencies.${mod_id}]]
 modId="oculus"
+optional=true
+type="optional"
 mandatory=false
 versionRange="*" # Accept any version of Oculus
 ordering="BEFORE" # Ensures that this mod loads before Oculus if both are present
@@ -39,6 +41,8 @@ side="BOTH"
 
 [[dependencies.${mod_id}]]
 modId="iris"
+optional=true
+type="optional"
 mandatory=false
 versionRange="*" # Accept any version of Iris
 ordering="BEFORE" # Ensures that this mod loads before Iris if both are present

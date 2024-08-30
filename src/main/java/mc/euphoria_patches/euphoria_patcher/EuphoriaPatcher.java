@@ -521,7 +521,7 @@ public class EuphoriaPatcher implements ModInitializer {
 
     private void doConfigFileCopy(Path configFilePath, boolean containsPatchName, boolean styleUnbound, boolean styleReimagined){
         String style = styleUnbound ? "Unbound" : "Reimagined";
-        String newName = "Complementary" + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION + ".txt";
+        String newName = BRAND_NAME + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION + ".txt";
         try {
             Files.copy(configFilePath, configFilePath.resolveSibling(newName)); // Copy old config and rename it to current PATCH_VERSION
             log(0, "Successfully updated shader config file to the latest version!");
@@ -535,7 +535,7 @@ public class EuphoriaPatcher implements ModInitializer {
                 Path latestShaderConfigFilePath = findShaderConfigFile(latestConfigTextStream, false);
                 if (latestShaderConfigFilePath != null) {
                     style = latestShaderConfigFilePath.toString().contains("Unbound") ? "Reimagined" : "Unbound"; // Detect what the previously renamed (oldShaderConfigFilePath) .txt contains
-                    newName = "Complementary" + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION + ".txt";
+                    newName = BRAND_NAME + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION + ".txt";
                     try { // Now copy and past the renamed .txt file with a new name - 2 identical.txt files with different style names are now in the shaderpacks folder
                         Files.copy(latestShaderConfigFilePath, latestShaderConfigFilePath.resolveSibling(newName));
                         log(0, "Successfully copied shader config file and renamed it!");
@@ -552,8 +552,8 @@ public class EuphoriaPatcher implements ModInitializer {
     // Helper method to check if a file is a config file
     private boolean isConfigFile(Path path, boolean containsPatchName) {
         String nameText = path.getFileName().toString();
-        return containsPatchName ? nameText.matches(".*Complementary.*(Reimagined|Unbound).*") && nameText.endsWith(".txt") && (nameText.contains(PATCH_NAME) || nameText.contains(" + EP_")):
-                nameText.matches(".*Complementary.*(Reimagined|Unbound).*") && nameText.endsWith(".txt");
+        return containsPatchName ? nameText.matches(".*" + BRAND_NAME + ".*(Reimagined|Unbound).*") && nameText.endsWith(".txt") && (nameText.contains(PATCH_NAME) || nameText.contains(" + EP_")):
+                nameText.matches(".*" + BRAND_NAME + ".*(Reimagined|Unbound).*") && nameText.endsWith(".txt");
     }
 
     private Path findShaderConfigFile(DirectoryStream<Path> textStream, boolean searchOldEuphoriaConfigs) {
@@ -648,7 +648,7 @@ public class EuphoriaPatcher implements ModInitializer {
         if (styleUnbound && styleReimagined) { // Both styles installed
             style = oldContent.toString().contains(PATCH_NAME) && !oldContent.toString().contains(PATCH_VERSION) && oldContent.toString().contains("Unbound") ? "Unbound" : "Reimagined";
         }
-        String newName = "Complementary" + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION;
+        String newName = BRAND_NAME + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION;
         return oldContent.toString().replaceAll("shaderPack=.*", "shaderPack=" + newName);
     }
 

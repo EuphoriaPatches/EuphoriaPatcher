@@ -14,6 +14,7 @@ logoFile="logo.png" #optional
 #credits="Thanks for this example mod goes to Java" #optional
 authors="${mod_authors}" #optional
 description='''${mod_description}'''
+side="CLIENT"
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.${mod_id}]] #optional
 modId="forge"
@@ -21,13 +22,13 @@ mandatory=true
 # The version range of the dependency
 versionRange="${forge_version_range}"
 ordering="NONE"
-side="BOTH"
+side="CLIENT"
 [[dependencies.${mod_id}]]
 modId="minecraft"
 mandatory=true
 versionRange="${minecraft_version_range}"
 ordering="NONE"
-side="BOTH"
+side="CLIENT"
 
 # Optional Dependencies
 [[dependencies.${mod_id}]]
@@ -37,7 +38,7 @@ type="optional"
 mandatory=false
 versionRange="*" # Accept any version of Oculus
 ordering="BEFORE" # Ensures that this mod loads before Oculus if both are present
-side="BOTH"
+side="CLIENT"
 
 [[dependencies.${mod_id}]]
 modId="iris"
@@ -46,4 +47,4 @@ type="optional"
 mandatory=false
 versionRange="*" # Accept any version of Iris
 ordering="BEFORE" # Ensures that this mod loads before Iris if both are present
-side="BOTH"
+side="CLIENT"

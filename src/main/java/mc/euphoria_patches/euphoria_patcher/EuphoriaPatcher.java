@@ -1,5 +1,6 @@
 package mc.euphoria_patches.euphoria_patcher;
 
+import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLPaths;
 
 import io.sigpipe.jbsdiff.InvalidHeaderException;
@@ -19,6 +20,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Mod("euphoria_patcher")
 public class EuphoriaPatcher {
     
     public static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
@@ -50,8 +52,13 @@ public class EuphoriaPatcher {
     // Global Variables and Objects
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
     public static boolean isSodiumInstalled = false;
+    private static boolean ALREADY_LAUNCHED = false;
 
     public EuphoriaPatcher() {
+        if (ALREADY_LAUNCHED) {
+            return;
+        }
+        ALREADY_LAUNCHED = true;
         configStuff();
 
         if(doSodiumLogging) isSodiumInstalled();

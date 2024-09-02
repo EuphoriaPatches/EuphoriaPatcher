@@ -1,8 +1,5 @@
 package mc.euphoria_patches.euphoria_patcher;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import io.sigpipe.jbsdiff.InvalidHeaderException;
@@ -22,10 +19,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-//@Mod("euphoria_patcher"
-@Mod("euphoria_patcher")
 public class EuphoriaPatcher {
-    
+
     public static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
 
     public static final String BRAND_NAME = "Complementary";
@@ -56,11 +51,6 @@ public class EuphoriaPatcher {
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
 
     public EuphoriaPatcher() {
-        if(FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
-            log(3,0,"The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
-            return;
-        }
-        
         configStuff();
 
         if(doUpdateChecking) UpdateChecker.checkForUpdates();

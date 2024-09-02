@@ -1,8 +1,6 @@
 package mc.euphoria_patches.euphoria_patcher;
 
-import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.api.EnvType;
 
 import io.sigpipe.jbsdiff.InvalidHeaderException;
 import io.sigpipe.jbsdiff.ui.FileUI;
@@ -21,7 +19,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class EuphoriaPatcher implements ModInitializer {
+public class EuphoriaPatcher {
     
     public static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
 
@@ -53,13 +51,7 @@ public class EuphoriaPatcher implements ModInitializer {
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
     public static boolean isSodiumInstalled = false;
 
-    @Override
-    public void onInitialize() {
-        if(FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER){
-            log(3,0,"The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
-            return;
-        }
-
+    public EuphoriaPatcher() {
         configStuff();
 
         if(doSodiumLogging) isSodiumInstalled();

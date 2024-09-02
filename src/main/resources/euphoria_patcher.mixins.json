@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "mc.euphoria_patches.euphoria_patcher.mixin",
+  "mixins": [
+    "EuphoriaPatcherMixin"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

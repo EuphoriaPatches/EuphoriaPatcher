@@ -1,7 +1,5 @@
 package mc.euphoria_patches.euphoria_patcher;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
 
 import io.sigpipe.jbsdiff.InvalidHeaderException;
@@ -54,11 +52,6 @@ public class EuphoriaPatcher {
     public static boolean isSodiumInstalled = false;
 
     public EuphoriaPatcher() {
-        if(FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
-            log(3,0,"The Euphoria Patcher Mod should not be loaded on a server! Disabling...");
-            return;
-        }
-        
         configStuff();
 
         if(doSodiumLogging) isSodiumInstalled();

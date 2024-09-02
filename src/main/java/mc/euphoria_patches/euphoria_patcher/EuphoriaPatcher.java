@@ -212,7 +212,7 @@ public class EuphoriaPatcher {
                 log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
             }
         }
-        log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
+        log(-1, "Thank you for using Euphoria Patches - SpacEagle17\n");
     }
 
     // Detect installed directories

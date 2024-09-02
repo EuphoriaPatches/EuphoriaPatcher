@@ -1,7 +1,6 @@
 package mc.euphoria_patches.euphoria_patcher;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
 
@@ -22,7 +21,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Mod("euphoria_patcher")
 public class EuphoriaPatcher {
     
     public static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
@@ -228,7 +226,7 @@ public class EuphoriaPatcher {
                 log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
             }
         }
-        log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
+        log(-1, "Thank you for using Euphoria Patches - SpacEagle17\n");
     }
     // Detect installed directories
     private void detectInstalledDirectories(ShaderInfo info) throws IOException {

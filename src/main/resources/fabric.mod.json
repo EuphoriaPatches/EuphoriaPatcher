@@ -23,17 +23,9 @@
 		"fabricloader": ">=0.14.10",
 		"minecraft": ">=1.14.0"
 	},
-	"suggests": {
-		"iris": "*"
-	},
-	"before": [
-		"iris"
+	"mixins": [
+		"euphoria_patcher.mixins.json"
 	],
-	"entrypoints": {
-		"main": [
-			"mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher"
-		]
-	},
 	"custom": {
 		"modmenu": {
 			"links": {

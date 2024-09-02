@@ -13,8 +13,13 @@ public class UpdateChecker {
     private static final String UPDATE_URL = "https://api.github.com/repos/EuphoriaPatches/PatcherUpdateChecker/releases/latest";
     public static String NEW_MOD_VERSION = null;
     public static boolean NEW_VERSION_AVAILABLE = false;
+    private static boolean UPDATE_CHECK_PERFORMED = false;
 
     public static void checkForUpdates() {
+        if (UPDATE_CHECK_PERFORMED) {
+            return;
+        }
+        UPDATE_CHECK_PERFORMED = true;
         try {
             NEW_MOD_VERSION = fetchLatestVersion();
             if (NEW_MOD_VERSION == null) {
@@ -44,6 +49,7 @@ public class UpdateChecker {
         connection.setRequestProperty("Accept", "application/vnd.github.v3+json");
 
         if (connection.getResponseCode() != 200) {
+            EuphoriaPatcher.log(2, 0, "[UPDATE CHECKER] Connection timed out.");
             return null;
         }
 

@@ -1,7 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.mixin;
 
 import mc.euphoria_patches.euphoria_patcher.EuphoriaPatcher;
-import mc.euphoria_patches.euphoria_patcher.ServerCheck;
+import mc.euphoria_patches.euphoria_patcher.util.ServerCheck;
 import net.minecraft.Bootstrap;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

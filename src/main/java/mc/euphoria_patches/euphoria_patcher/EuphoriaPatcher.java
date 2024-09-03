@@ -1,6 +1,9 @@
 package mc.euphoria_patches.euphoria_patcher;
 
-import net.neoforged.fml.common.Mod;
+import mc.euphoria_patches.euphoria_patcher.util.Config;
+import mc.euphoria_patches.euphoria_patcher.util.SodiumConsole;
+import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
+
 import net.neoforged.fml.loading.FMLPaths;
 
 import io.sigpipe.jbsdiff.InvalidHeaderException;
@@ -20,7 +23,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Mod("euphoria_patcher")
 public class EuphoriaPatcher {
     
     public static final boolean IS_DEV = false; // Manual Boolean. DON'T FORGET TO SET TO FALSE BEFORE COMPILING
@@ -133,7 +135,7 @@ public class EuphoriaPatcher {
     // Logging method
     public static void log(int messageLevel, int messageFadeTimer, String message) {
         String loggingMessage = "EuphoriaPatcher: " + message;
-        if (messageLevel == -1) loggingMessage = "\n\n" + loggingMessage;
+        if (messageLevel == -1) loggingMessage = "\n\n" + loggingMessage + "\n";
         if (isSodiumInstalled && messageFadeTimer > 0) {
             SodiumConsole.logMessage(messageLevel, messageFadeTimer, loggingMessage);
         }
@@ -226,7 +228,7 @@ public class EuphoriaPatcher {
                 log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
             }
         }
-        log(-1, "Thank you for using Euphoria Patches - SpacEagle17\n");
+        log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
     }
     // Detect installed directories
     private void detectInstalledDirectories(ShaderInfo info) throws IOException {

@@ -50,8 +50,13 @@ public class EuphoriaPatcher {
     // Global Variables and Objects
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
     public static boolean isSodiumInstalled = false;
+    private static boolean ALREADY_LAUNCHED = false;
 
     public EuphoriaPatcher() {
+        if (ALREADY_LAUNCHED) {
+            return;
+        }
+        ALREADY_LAUNCHED = true;
         configStuff();
 
         if(doSodiumLogging) isSodiumInstalled();
@@ -126,7 +131,7 @@ public class EuphoriaPatcher {
     // Logging method
     public static void log(int messageLevel, int messageFadeTimer, String message) {
         String loggingMessage = "EuphoriaPatcher: " + message;
-        if (messageLevel == -1) loggingMessage = "\n\n" + loggingMessage;
+        if (messageLevel == -1) loggingMessage = "\n\n" + loggingMessage + "\n";
         if (isSodiumInstalled && messageFadeTimer > 0) {
             SodiumConsole.logMessage(messageLevel, messageFadeTimer, loggingMessage);
         }
@@ -219,7 +224,7 @@ public class EuphoriaPatcher {
                 log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
             }
         }
-        log(-1, "Thank you for using Euphoria Patches - SpacEagle17\n");
+        log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
     }
 
     // Detect installed directories

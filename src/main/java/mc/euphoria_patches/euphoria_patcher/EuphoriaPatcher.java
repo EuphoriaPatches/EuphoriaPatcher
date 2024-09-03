@@ -1,5 +1,8 @@
 package mc.euphoria_patches.euphoria_patcher;
 
+import mc.euphoria_patches.euphoria_patcher.util.Config;
+import mc.euphoria_patches.euphoria_patcher.util.SodiumConsole;
+import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
 import net.fabricmc.loader.api.FabricLoader;
 
 import io.sigpipe.jbsdiff.InvalidHeaderException;

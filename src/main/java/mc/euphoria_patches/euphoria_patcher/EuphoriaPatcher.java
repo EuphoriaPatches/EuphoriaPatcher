@@ -5,7 +5,6 @@ import mc.euphoria_patches.euphoria_patcher.features.RenameOutdatedPatches;
 import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderConfig;
 import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderLoaderConfig;
 import mc.euphoria_patches.euphoria_patcher.util.Config;
-import mc.euphoria_patches.euphoria_patcher.util.SodiumConsole;
 import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
 import mc.euphoria_patches.euphoria_patcher.util.ServerCheck;
 

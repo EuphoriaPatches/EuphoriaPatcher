@@ -64,7 +64,7 @@ public class EuphoriaPatcher {
             return;
         }
         ALREADY_LAUNCHED = true;
-        ServerCheck.check();
+        if(ServerCheck.check()) return;
 
         configStuff();
 

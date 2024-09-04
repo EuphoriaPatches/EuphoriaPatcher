@@ -57,7 +57,7 @@ public class EuphoriaPatcher {
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
 
     public EuphoriaPatcher() {
-        ServerCheck.check();
+        if(ServerCheck.check()) return;
         
         configStuff();
 

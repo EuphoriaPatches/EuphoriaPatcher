@@ -6,7 +6,6 @@ import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderConfig;
 import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderLoaderConfig;
 import mc.euphoria_patches.euphoria_patcher.util.Config;
 import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
-import mc.euphoria_patches.euphoria_patcher.util.ServerCheck;
 
 import net.minecraftforge.fml.loading.FMLPaths;
 
@@ -56,9 +55,7 @@ public class EuphoriaPatcher {
     // Global Variables and Objects
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
 
-    public EuphoriaPatcher() {
-        if(ServerCheck.check()) return;
-        
+    public EuphoriaPatcher() {        
         configStuff();
 
         if(doUpdateChecking) UpdateChecker.checkForUpdates();

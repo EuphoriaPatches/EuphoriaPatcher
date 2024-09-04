@@ -7,7 +7,6 @@ import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderLoaderConfig;
 import mc.euphoria_patches.euphoria_patcher.util.Config;
 import mc.euphoria_patches.euphoria_patcher.util.SodiumConsole;
 import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
-import mc.euphoria_patches.euphoria_patcher.util.ServerCheck;
 
 import net.neoforged.fml.loading.FMLPaths;
 
@@ -63,9 +62,7 @@ public class EuphoriaPatcher {
         if (ALREADY_LAUNCHED) {
             return;
         }
-        ALREADY_LAUNCHED = true;
-        if(ServerCheck.check()) return;
-        
+        ALREADY_LAUNCHED = true;        
         configStuff();
 
         if(doSodiumLogging) isSodiumInstalled();

@@ -7,7 +7,6 @@ import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderLoaderConfig;
 import mc.euphoria_patches.euphoria_patcher.util.Config;
 import mc.euphoria_patches.euphoria_patcher.util.SodiumConsole;
 import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
-import mc.euphoria_patches.euphoria_patcher.util.ServerCheck;
 
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -64,8 +63,6 @@ public class EuphoriaPatcher {
             return;
         }
         ALREADY_LAUNCHED = true;
-        if(ServerCheck.check()) return;
-
         configStuff();
 
         if(doSodiumLogging) isSodiumInstalled();

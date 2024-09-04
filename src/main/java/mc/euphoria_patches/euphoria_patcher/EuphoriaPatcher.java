@@ -1,8 +1,13 @@
 package mc.euphoria_patches.euphoria_patcher;
 
+import mc.euphoria_patches.euphoria_patcher.features.ModifyUpdateInfo;
+import mc.euphoria_patches.euphoria_patcher.features.RenameOutdatedPatches;
+import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderConfig;
+import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderLoaderConfig;
 import mc.euphoria_patches.euphoria_patcher.util.Config;
 import mc.euphoria_patches.euphoria_patcher.util.SodiumConsole;
 import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
+import mc.euphoria_patches.euphoria_patcher.util.ServerCheck;
 
 import net.neoforged.fml.loading.FMLPaths;
 
@@ -20,8 +25,6 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class EuphoriaPatcher {
     
@@ -61,6 +64,8 @@ public class EuphoriaPatcher {
             return;
         }
         ALREADY_LAUNCHED = true;
+        ServerCheck.check();
+        
         configStuff();
 
         if(doSodiumLogging) isSodiumInstalled();
@@ -89,12 +94,12 @@ public class EuphoriaPatcher {
         if (!processAndPatchShaders(shaderInfo, temp)) return;
 
         // Update .txt shader config file
-        updateShaderTxtConfigFile(shaderInfo.styleUnbound, shaderInfo.styleReimagined);
+        UpdateShaderConfig.updateShaderTxtConfigFile(shaderInfo.styleUnbound, shaderInfo.styleReimagined);
 
         // Update shader loader (iris) config
-        updateShaderLoaderConfig(shaderInfo.styleUnbound, shaderInfo.styleReimagined);
+        UpdateShaderLoaderConfig.updateShaderLoaderConfig(shaderInfo.styleUnbound, shaderInfo.styleReimagined);
 
-        if(doRenameOldShaderFiles) renameOutdatedPatches();
+        if(doRenameOldShaderFiles) RenameOutdatedPatches.rename();
 
         thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
     }
@@ -111,14 +116,6 @@ public class EuphoriaPatcher {
         doRenameOldShaderFiles = Boolean.parseBoolean(Config.readWriteConfig("doRenameOldShaderFiles", "true","Option that automatically renames outdated Euphoria Patches folders and config files to a new name." +
                 "\nThis makes it easier for users to identify which ones are outdated." +
                 "\nDefault = true"));
-    }
-
-    private Path getShaderLoaderPath(){
-        Path shaderLoaderConfig = configDirectory.resolve("iris.properties");
-        if(!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = configDirectory.resolve("oculus.properties");
-        if(!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = shaderpacks.getParent().resolve("optionsshaders.txt");
-        if (!Files.exists(shaderLoaderConfig)) shaderLoaderConfig = null;
-        return shaderLoaderConfig;
     }
 
     private void isSodiumInstalled() {
@@ -323,54 +320,6 @@ public class EuphoriaPatcher {
         }
     }
 
-    private void modifyShaderPackAndLangFiles(Path patchedFile, boolean styleUnbound, boolean styleReimagined) throws IOException {
-        List<Path> shaderPacks = new ArrayList<>();
-
-        if (styleUnbound && styleReimagined) {
-            // Both styles are present, so we need to handle both
-            shaderPacks.add(patchedFile);
-
-            // Check for the other style and add if it exists
-            Path otherStylePath;
-            if (patchedFile.getFileName().toString().contains("Reimagined")) {
-                otherStylePath = patchedFile.resolveSibling(patchedFile.getFileName().toString().replace("Reimagined", "Unbound"));
-            } else {
-                otherStylePath = patchedFile.resolveSibling(patchedFile.getFileName().toString().replace("Unbound", "Reimagined"));
-            }
-
-            if (Files.exists(otherStylePath)) {
-                shaderPacks.add(otherStylePath);
-            }
-        } else {
-            // Only one style is present, so we just handle the patchedFile
-            shaderPacks.add(patchedFile);
-        }
-
-        for (Path shaderPack : shaderPacks) {
-            if (Files.exists(shaderPack)) {
-                // Modify shaders.properties file
-                Path shadersPropertiesPath = shaderPack.resolve(SHADERS_PROPERTIES_LOCATION);
-                String shadersPropertiesContent = new String(Files.readAllBytes(shadersPropertiesPath));
-                String modifiedShadersPropertiesContent = shadersPropertiesContent.replaceFirst("screen=<empty> <empty>", "screen=info19 info20");
-                Files.write(shadersPropertiesPath, modifiedShadersPropertiesContent.getBytes());
-
-                // Modify language files
-                Path langDirectory = shaderPack.resolve(LANG_LOCATION);
-                try (DirectoryStream<Path> langFiles = Files.newDirectoryStream(langDirectory, "*.lang")) {
-                    for (Path langFile : langFiles) {
-                        String langContent = new String(Files.readAllBytes(langFile));
-
-                        // Replace NEW_MOD_VERSION with NEW_MOD_VERSION
-                        String modifiedLangContent = langContent.replaceAll("value\\.info19\\.0=.*", "value.info19.0=" + UpdateChecker.NEW_MOD_VERSION);
-                        modifiedLangContent = modifiedLangContent.replaceAll("value\\.info20\\.0=.*", "value.info20.0=" + MOD_VERSION);
-
-                        Files.write(langFile, modifiedLangContent.getBytes());
-                    }
-                }
-            }
-        }
-    }
-
     // Archive base shader
     private Path archiveBase(Path baseExtracted, Path temp, String baseName) {
         Path baseArchived = temp.resolve(baseName + ".tar");
@@ -494,180 +443,6 @@ public class EuphoriaPatcher {
                 FileUtils.writeStringToFile(commons, unboundConfig, "UTF-8");
             }
         }
-    }
-
-    // Update config file
-    private void updateShaderTxtConfigFile(boolean styleUnbound, boolean styleReimagined) {
-        try (DirectoryStream<Path> oldConfigTextStream = Files.newDirectoryStream(shaderpacks,
-                path -> isConfigFile(path, true))) {
-            Path oldShaderConfigFilePath = findShaderConfigFile(oldConfigTextStream, true);
-            if (oldShaderConfigFilePath != null) {
-                doConfigFileCopy(oldShaderConfigFilePath, true, styleUnbound, styleReimagined);
-            } else { // No Euphoria settings .txt file
-                try (DirectoryStream<Path> baseShaderConfigTextStream = Files.newDirectoryStream(shaderpacks,
-                        path -> isConfigFile(path, false))) {
-                    Path baseShaderConfigFilePath = findShaderConfigFile(baseShaderConfigTextStream, true);
-                    if (baseShaderConfigFilePath != null) {
-                        doConfigFileCopy(baseShaderConfigFilePath, false, styleUnbound, styleReimagined);
-                    }
-                } catch (IOException e) {
-                    log(3, "Error reading shaderpacks directory: " + e.getMessage());
-                }
-            }
-        } catch (IOException e) {
-            log(3, "Error reading shaderpacks directory: " + e.getMessage());
-        }
-    }
-
-    private void doConfigFileCopy(Path configFilePath, boolean containsPatchName, boolean styleUnbound, boolean styleReimagined){
-        String style = styleUnbound ? "Unbound" : "Reimagined";
-        String newName = BRAND_NAME + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION + ".txt";
-        try {
-            Files.copy(configFilePath, configFilePath.resolveSibling(newName)); // Copy old config and rename it to current PATCH_VERSION
-            log(0, "Successfully updated shader config file to the latest version!");
-        } catch (IOException e) {
-            log(3, "Could not rename the config file: " + e.getMessage());
-        }
-        if (styleUnbound && styleReimagined) { // Yeah, this makes things unnecessarily complex lol
-            log(0, "Both shader styles detected!");
-            try (DirectoryStream<Path> latestConfigTextStream = Files.newDirectoryStream(shaderpacks,
-                    path -> isConfigFile(path, containsPatchName))) { // Create a new DirectoryStream - The iterator of Files.newDirectoryStream can only be used once
-                Path latestShaderConfigFilePath = findShaderConfigFile(latestConfigTextStream, false);
-                if (latestShaderConfigFilePath != null) {
-                    style = latestShaderConfigFilePath.toString().contains("Unbound") ? "Reimagined" : "Unbound"; // Detect what the previously renamed (oldShaderConfigFilePath) .txt contains
-                    newName = BRAND_NAME + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION + ".txt";
-                    try { // Now copy and past the renamed .txt file with a new name - 2 identical.txt files with different style names are now in the shaderpacks folder
-                        Files.copy(latestShaderConfigFilePath, latestShaderConfigFilePath.resolveSibling(newName));
-                        log(0, "Successfully copied shader config file and renamed it!");
-                    } catch (IOException e) {
-                        log(3, "Could not copy and rename the config file: " + e.getMessage());
-                    }
-                }
-            } catch (IOException e) {
-                log(3, "Error reading shaderpacks directory: " + e.getMessage());
-            }
-        }
-    }
-
-    // Helper method to check if a file is a config file
-    private boolean isConfigFile(Path path, boolean containsPatchName) {
-        String nameText = path.getFileName().toString();
-        return containsPatchName ? nameText.matches(".*" + BRAND_NAME + ".*(Reimagined|Unbound).*") && nameText.endsWith(".txt") && (nameText.contains(PATCH_NAME) || nameText.contains(" + EP_")):
-                nameText.matches(".*" + BRAND_NAME + ".*(Reimagined|Unbound).*") && nameText.endsWith(".txt");
-    }
-
-    private Path findShaderConfigFile(DirectoryStream<Path> textStream, boolean searchOldEuphoriaConfigs) {
-        List<Path> validFiles = new ArrayList<>();
-        for (Path potentialTextFile : textStream) {
-            String name = potentialTextFile.getFileName().toString();
-            if (name.endsWith(".txt")) {
-                validFiles.add(potentialTextFile);
-            }
-        }
-
-        // Sort the valid files based on version number
-        validFiles.sort((p1, p2) -> compareConfigFileVersions(getConfigFileVersion(p1), getConfigFileVersion(p2)));
-
-        // Process the sorted files
-        Path latestRequestedConfig = null;
-        for (Path file : validFiles) {
-            String name = file.getFileName().toString();
-            latestRequestedConfig = file;
-            if (name.contains(PATCH_VERSION)) {
-                return searchOldEuphoriaConfigs ? null : latestRequestedConfig;
-            }
-        }
-        return latestRequestedConfig;
-    }
-
-    private String getConfigFileVersion(Path path) {
-        String name = path.getFileName().toString();
-        Pattern pattern = Pattern.compile("r(\\d+(?:\\.\\d+)*)(?: \\+ (?:EuphoriaPatches_|EP_)(\\d+(?:\\.\\d+)*))?");
-        Matcher matcher = pattern.matcher(name);
-        if (matcher.find()) {
-            String mainVersion = matcher.group(1);
-            String patchVersion = matcher.group(2);
-            if (patchVersion != null) {
-                return mainVersion + "." + patchVersion;
-            }
-            return mainVersion;
-        }
-        return "0"; // Default version if pattern doesn't match
-    }
-
-    private int compareConfigFileVersions(String v1, String v2) {
-        String[] parts1 = v1.split("\\.");
-        String[] parts2 = v2.split("\\.");
-        int length = Math.max(parts1.length, parts2.length);
-        for (int i = 0; i < length; i++) {
-            int p1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
-            int p2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
-            if (p1 != p2) {
-                return p1 - p2; // Changed to ascending order
-            }
-        }
-        return 0;
-    }
-
-    // Update shader loader (iris) config
-    private void updateShaderLoaderConfig(boolean styleUnbound, boolean styleReimagined) {
-        Path shaderLoaderConfig = getShaderLoaderPath();
-        if (shaderLoaderConfig == null) {
-            log(0, "No shader loader config found");
-            return;
-        }
-
-        String shaderLoaderName = shaderLoaderConfig.toString().contains("iris") ? "iris.properties" : shaderLoaderConfig.toString().contains("oculus") ? "oculus.properties" : "OptiFine's optionsshaders.txt";
-
-        File fileToBeModified = shaderLoaderConfig.toFile();
-        StringBuilder oldContent = new StringBuilder();
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(fileToBeModified))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                oldContent.append(line).append(System.lineSeparator());
-            }
-
-            if (oldContent.toString().contains(PATCH_NAME) && !oldContent.toString().contains(PATCH_VERSION)) {
-                String newContent = setNewShaderLoaderSelectedPackName(oldContent, styleUnbound, styleReimagined);
-
-                try (FileWriter writer = new FileWriter(fileToBeModified)) {
-                    writer.write(newContent);
-                } catch (IOException e) {
-                    log(3, "Error writing to " + shaderLoaderName + " config file: " + e.getMessage());
-                }
-                log(0, "Successfully applied new version in " + shaderLoaderName + " config file!");
-            }
-        } catch (IOException e) {
-            log(3, "Error reading or writing to " + shaderLoaderName + " config file: " + e.getMessage());
-        }
-    }
-
-    private static String setNewShaderLoaderSelectedPackName(StringBuilder oldContent, boolean styleUnbound, boolean styleReimagined) {
-        String style = styleUnbound ? "Unbound" : "Reimagined";
-        if (styleUnbound && styleReimagined) { // Both styles installed
-            style = oldContent.toString().contains(PATCH_NAME) && !oldContent.toString().contains(PATCH_VERSION) && oldContent.toString().contains("Unbound") ? "Unbound" : "Reimagined";
-        }
-        String newName = BRAND_NAME + style + VERSION + " + " + PATCH_NAME + PATCH_VERSION;
-        return oldContent.toString().replaceAll("shaderPack=.*", "shaderPack=" + newName);
-    }
-
-    private void renameOutdatedPatches() {
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks, this::isOutdatedPatch)) {
-            for (Path potentialFile : stream) {
-                String name = potentialFile.getFileName().toString();
-                String newName = name.replaceFirst("(.*) \\+", "§cOutdated§r $1 +").replace("EuphoriaPatches_", "EP_");
-                Files.move(potentialFile, potentialFile.resolveSibling(newName));
-                log(0,"Successfully renamed outdated " + name + " shaderpack file!");
-            }
-        } catch (IOException e) {
-            log(3, 0, "Error reading shaderpacks directory: " + e.getMessage());
-        }
-    }
-
-    private boolean isOutdatedPatch(Path path) {
-        String name = path.getFileName().toString();
-        return name.contains(PATCH_NAME) && !name.contains(PATCH_VERSION);
     }
 
     // Helper class to store shader information

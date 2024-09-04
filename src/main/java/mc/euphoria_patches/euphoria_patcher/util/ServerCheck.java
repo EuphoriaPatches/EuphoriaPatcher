@@ -1,7 +1,7 @@
 package mc.euphoria_patches.euphoria_patcher.util;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.fml.loading.FMLEnvironment;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 public class ServerCheck {
     public static boolean check() {

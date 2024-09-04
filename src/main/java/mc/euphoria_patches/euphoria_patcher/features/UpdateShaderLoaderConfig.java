@@ -42,6 +42,7 @@ public class UpdateShaderLoaderConfig {
                     EuphoriaPatcher.log(3,0, "Error writing to " + shaderLoaderName + " config file: " + e.getMessage());
                 }
                 EuphoriaPatcher.log(0, "Successfully applied new version in " + shaderLoaderName + " config file!");
+                EuphoriaPatcher.log(0, oldContent.toString().split("shaderPack=")[1] + " -> " + newContent.split("shaderPack=")[1]);
             }
         } catch (IOException e) {
             EuphoriaPatcher.log(3,0, "Error reading or writing to " + shaderLoaderName + " config file: " + e.getMessage());

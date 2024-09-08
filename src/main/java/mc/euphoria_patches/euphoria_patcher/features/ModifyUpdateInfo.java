@@ -49,8 +49,8 @@ public class ModifyUpdateInfo {
                         String langContent = new String(Files.readAllBytes(langFile));
 
                         // Replace NEW_MOD_VERSION with NEW_MOD_VERSION
-                        String modifiedLangContent = langContent.replaceAll("value\\.info19\\.0=.*", "value.info19.0=" + UpdateChecker.NEW_MOD_VERSION);
-                        modifiedLangContent = modifiedLangContent.replaceAll("value\\.info20\\.0=.*", "value.info20.0=" + EuphoriaPatcher.MOD_VERSION);
+                        String modifiedLangContent = langContent.replaceAll("value\\.info19\\.0=.*", "value.info19.0=§a" + UpdateChecker.NEW_MOD_VERSION);
+                        modifiedLangContent = modifiedLangContent.replaceAll("value\\.info20\\.0=.*", "value.info20.0=§c" + EuphoriaPatcher.MOD_VERSION);
 
                         Files.write(langFile, modifiedLangContent.getBytes());
                     }

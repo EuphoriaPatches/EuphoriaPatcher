@@ -194,7 +194,10 @@ public class EuphoriaPatcher {
     private void thankYouMessage(Path baseFile, boolean styleUnbound, boolean styleReimagined) {
         if (UpdateChecker.NEW_VERSION_AVAILABLE && doUpdateChecking && baseFile != null) {
             try {
-                ModifyUpdateInfo.modifyShaderPackAndLangFiles(baseFile.resolveSibling(baseFile.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION), styleUnbound, styleReimagined);
+                Path shader = baseFile.resolveSibling(baseFile.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION);
+                ModifyPatchedShaderpacks.modifyShadersProperties(shader, styleUnbound, styleReimagined,"screen=<empty> <empty>", "screen=info19 info20");
+                ModifyPatchedShaderpacks.modifyLangFiles(shader, styleUnbound, styleReimagined,"value\\.info19\\.0=.*", "value.info19.0=§a" + UpdateChecker.NEW_MOD_VERSION,
+                        "value\\.info20\\.0=.*", "value.info20.0=§c" + MOD_VERSION);
             } catch (IOException e) {
                 log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
             }

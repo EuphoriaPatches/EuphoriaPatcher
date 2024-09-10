@@ -225,7 +225,11 @@ public class EuphoriaPatcher {
                 log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
             }
         }
-        log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
+        if (shaderpacks.toString().contains("SpacEagle")) {
+            log(1, "Have fun developing Euphoria Patches!");
+        } else {
+            log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
+        }
     }
     // Detect installed directories
     private void detectInstalledDirectories(ShaderInfo info) throws IOException {

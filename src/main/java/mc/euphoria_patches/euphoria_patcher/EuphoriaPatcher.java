@@ -109,7 +109,7 @@ public class EuphoriaPatcher {
     // Logging method
     public static void log(int messageLevel, int messageFadeTimer, String message) {
         String loggingMessage = "EuphoriaPatcher: " + message;
-        if (messageLevel == -1) loggingMessage = "\n\n" + loggingMessage;
+        if (messageLevel == -1) loggingMessage = "\n\n" + loggingMessage + "\n";
         switch (messageLevel) {
             case -1:
             case 0:
@@ -202,7 +202,11 @@ public class EuphoriaPatcher {
                 log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
             }
         }
-        log(-1, "Thank you for using Euphoria Patches - SpacEagle17\n");
+        if (shaderpacks.toString().contains("SpacEagle")) {
+            log(1, "Have fun developing Euphoria Patches!");
+        } else {
+            log(-1, "Thank you for using Euphoria Patches - SpacEagle17");
+        }
     }
 
     // Detect installed directories

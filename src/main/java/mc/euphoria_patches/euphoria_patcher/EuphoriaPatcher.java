@@ -1,6 +1,6 @@
 package mc.euphoria_patches.euphoria_patcher;
 
-import mc.euphoria_patches.euphoria_patcher.features.ModifyUpdateInfo;
+import mc.euphoria_patches.euphoria_patcher.features.ModifyPatchedShaderpacks;
 import mc.euphoria_patches.euphoria_patcher.features.RenameOutdatedPatches;
 import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderConfig;
 import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderLoaderConfig;

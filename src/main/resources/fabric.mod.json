@@ -3,7 +3,7 @@
 	"id": "euphoria_patcher",
 	"version": "${version}",
 	"name": "Euphoria Patcher",
-	"description": "A mod that applies the Euphoria Patches to Complementary Shaders.\nReport issues on discord!",
+	"description": "A mod that applies the Euphoria Patches add-on to Complementary Shaders.\nReport issues on discord!",
 	"authors": [
 		"isuewo",
 		"SpacEagle17"

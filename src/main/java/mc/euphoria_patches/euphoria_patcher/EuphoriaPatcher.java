@@ -1,9 +1,6 @@
 package mc.euphoria_patches.euphoria_patcher;
 
-import mc.euphoria_patches.euphoria_patcher.features.ModifyPatchedShaderpacks;
-import mc.euphoria_patches.euphoria_patcher.features.RenameOutdatedPatches;
-import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderConfig;
-import mc.euphoria_patches.euphoria_patcher.features.UpdateShaderLoaderConfig;
+import mc.euphoria_patches.euphoria_patcher.features.*;
 import mc.euphoria_patches.euphoria_patcher.util.Config;
 import mc.euphoria_patches.euphoria_patcher.util.SodiumConsole;
 import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
@@ -68,6 +65,8 @@ public class EuphoriaPatcher {
         if(doSodiumLogging) isSodiumInstalled();
 
         if(doUpdateChecking) UpdateChecker.checkForUpdates();
+
+        log(0, RandomStartupMessage.getRandomMessage());
 
         // Detect installed Complementary Shaders versions
         ShaderInfo shaderInfo = detectInstalledShaders();

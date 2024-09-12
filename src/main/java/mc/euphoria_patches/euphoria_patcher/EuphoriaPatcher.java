@@ -45,7 +45,7 @@ public class EuphoriaPatcher {
     public static Path resourcesBuildDir = shaderpacks.getParent().getParent().resolve("build");
 
     // Config Options
-    public static boolean doSodiumLogging = true;
+    public static boolean doPopUpLogging = true;
     public static boolean doUpdateChecking = true;
     public static boolean doRenameOldShaderFiles = true;
     
@@ -95,7 +95,7 @@ public class EuphoriaPatcher {
         // How to use: Cast to desired data type, then call readWriteConfig, it returns a String.
         // First parameter is the config name, second is the value
         // Third one is the description, it can either be null or a String, supports multi line descriptions with "\n"
-        doSodiumLogging = Boolean.parseBoolean(Config.readWriteConfig("doSodiumLogging", "true","Option for the sodium message popup logging." +
+        doPopUpLogging = Boolean.parseBoolean(Config.readWriteConfig("doPopUpLogging", "true","Option for the sodium message popup logging." +
                 "\nDefault = true"));
         doUpdateChecking = Boolean.parseBoolean(Config.readWriteConfig("doUpdateChecking", "true","Option that enables or disables the update checker, which verifies if a new version of the mod is available." +
                 "\nMore info here: https://github.com/EuphoriaPatches/PatcherUpdateChecker" +

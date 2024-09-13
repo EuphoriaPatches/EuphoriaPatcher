@@ -326,7 +326,11 @@ public class EuphoriaPatcher {
                 if (!hash.equals(BASE_TAR_HASH)) {
                     log(3, 8, "The shader " + BRAND_NAME + "Shaders" + " that was found in your shaderpacks folder can't be used as a base for " + PATCH_NAME);
                     log(3, 8, "Please download " + BRAND_NAME + "Shaders" + VERSION + " from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft.");
-                    log(3, 8, "The file in your shaderpacks folder might have been modified. The expected hash does not match.");
+                    if (baseArchived.getFileName().toString().matches(BRAND_NAME + ".*" + VERSION + ".*")) {
+                        log(3, 8, "Correct Shader Version Found. BUT it might have been modified. The expected hash does not match.");
+                    } else {
+                        log(3, 8, "Incorrect Shader Version found or unexpected error. The expected hash does not match.");
+                    }
                     return false;
                 }
             }

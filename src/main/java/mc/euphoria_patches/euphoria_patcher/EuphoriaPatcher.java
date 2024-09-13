@@ -66,7 +66,7 @@ public class EuphoriaPatcher {
 
         if(doUpdateChecking) UpdateChecker.checkForUpdates();
 
-        log(0, RandomStartupMessage.getRandomMessage());
+        log(0, JsonUtilReader.getRandomMessage("startupMessages"));
 
         // Detect installed Complementary Shaders versions
         ShaderInfo shaderInfo = detectInstalledShaders();

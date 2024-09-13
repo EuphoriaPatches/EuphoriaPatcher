@@ -380,7 +380,7 @@ public class EuphoriaPatcher {
         try {
             ArchiveUtils.archive(patchedFile, patchedArchive);
             FileUI.diff(baseArchived.toFile(), patchedArchive.toFile(), patchFile.toFile());
-            log(0, ".patch file successfully created!");
+            log(0, ".patch file successfully created in " + patchFile + "!");
             return true;
         } catch (CompressorException | IOException | InvalidHeaderException e) {
             log(3, "Error creating dev patch: " + e.getMessage());

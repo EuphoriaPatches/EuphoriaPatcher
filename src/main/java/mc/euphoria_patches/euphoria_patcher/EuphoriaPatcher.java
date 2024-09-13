@@ -76,7 +76,7 @@ public class EuphoriaPatcher {
             if (shaderInfo.baseFile == null){
                 log(3, 8, "You need to have " + BRAND_NAME + "Shaders" + VERSION + " installed!");
                 log(3, 8, "Please download it from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft!");
-                return;
+                if(!IS_DEV) return;
             }
         } else {
             thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
@@ -402,7 +402,7 @@ public class EuphoriaPatcher {
         try {
             ArchiveUtils.archive(patchedFile, patchedArchive);
             FileUI.diff(baseArchived.toFile(), patchedArchive.toFile(), patchFile.toFile());
-            log(0, ".patch file successfully created!");
+            log(0, ".patch file successfully created in " + patchFile + "!");
             return true;
         } catch (CompressorException | IOException | InvalidHeaderException e) {
             log(3, "Error creating dev patch: " + e.getMessage());

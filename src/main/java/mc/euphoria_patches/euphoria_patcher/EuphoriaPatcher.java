@@ -33,7 +33,7 @@ public class EuphoriaPatcher {
     public static final String PATCH_VERSION = "_1.3.2";
     public static final String MOD_VERSION = "0.3.4";
 
-    private static final String BASE_TAR_ = "46a2fb63646e22cea56b2f8fa5815ac2";
+    private static final String BASE_TAR_HASH = "46a2fb63646e22cea56b2f8fa5815ac2";
     private static final int BASE_TAR_SIZE = 1274880;
 
     public static final String DOWNLOAD_URL = "https://www.complementary.dev/";
@@ -341,7 +341,7 @@ public class EuphoriaPatcher {
     private boolean verifyBaseArchive(Path baseArchived) {
         try {
             if (IS_DEV) {
-                String  = DigestUtils.md5Hex(Files.newInputStream(baseArchived));
+                String hash = DigestUtils.md5Hex(Files.newInputStream(baseArchived));
                 log(0, " of base: " + hash);
                 log(0, FileUtils.sizeOf(baseArchived.toFile()) + " bytes");
             } else {

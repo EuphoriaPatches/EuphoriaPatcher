@@ -33,7 +33,7 @@ public class EuphoriaPatcher {
     public static final String PATCH_VERSION = "_1.3.2";
     public static final String MOD_VERSION = "0.3.4";
 
-    private static final String BASE_TAR_HASH = "46a2fb63646e22cea56b2f8fa5815ac2";
+    private static final String BASE_TAR_ = "46a2fb63646e22cea56b2f8fa5815ac2";
     private static final int BASE_TAR_SIZE = 1274880;
 
     public static final String DOWNLOAD_URL = "https://www.complementary.dev/";
@@ -341,15 +341,19 @@ public class EuphoriaPatcher {
     private boolean verifyBaseArchive(Path baseArchived) {
         try {
             if (IS_DEV) {
-                String hash = DigestUtils.md5Hex(Files.newInputStream(baseArchived));
-                log(0, "Hash of base: " + hash);
+                String  = DigestUtils.md5Hex(Files.newInputStream(baseArchived));
+                log(0, " of base: " + hash);
                 log(0, FileUtils.sizeOf(baseArchived.toFile()) + " bytes");
             } else {
                 String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived), BASE_TAR_SIZE));
                 if (!hash.equals(BASE_TAR_HASH)) {
                     log(3, 8, "The shader " + BRAND_NAME + "Shaders" + " that was found in your shaderpacks folder can't be used as a base for " + PATCH_NAME);
                     log(3, 8, "Please download " + BRAND_NAME + "Shaders" + VERSION + " from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft.");
-                    log(3, 8, "The file in your shaderpacks folder might have been modified. The expected hash does not match.");
+                    if (baseArchived.getFileName().toString().matches(BRAND_NAME + ".*" + VERSION + ".*")) {
+                        log(3, 8, "Correct Shader Version Found. BUT it might have been modified. The expected hash does not match.");
+                    } else {
+                        log(3, 8, "Incorrect Shader Version found or unexpected error. The expected hash does not match.");
+                    }
                     return false;
                 }
             }

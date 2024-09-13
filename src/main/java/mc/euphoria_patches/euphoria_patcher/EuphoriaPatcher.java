@@ -2,6 +2,7 @@ package mc.euphoria_patches.euphoria_patcher;
 
 import mc.euphoria_patches.euphoria_patcher.features.*;
 import mc.euphoria_patches.euphoria_patcher.util.Config;
+import mc.euphoria_patches.euphoria_patcher.util.JsonUtilReader;
 import mc.euphoria_patches.euphoria_patcher.util.UpdateChecker;
 
 import net.minecraftforge.fml.loading.FMLPaths;

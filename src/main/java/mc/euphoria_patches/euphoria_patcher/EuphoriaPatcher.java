@@ -342,7 +342,7 @@ public class EuphoriaPatcher {
         try {
             if (IS_DEV) {
                 String hash = DigestUtils.md5Hex(Files.newInputStream(baseArchived));
-                log(0, " of base: " + hash);
+                log(0, "Hash of base: " + hash);
                 log(0, FileUtils.sizeOf(baseArchived.toFile()) + " bytes");
             } else {
                 String hash = DigestUtils.md5Hex(Arrays.copyOf(Files.readAllBytes(baseArchived), BASE_TAR_SIZE));

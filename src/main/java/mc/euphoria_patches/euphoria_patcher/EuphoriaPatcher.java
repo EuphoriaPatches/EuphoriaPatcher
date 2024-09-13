@@ -358,10 +358,7 @@ public class EuphoriaPatcher {
                 }
             }
         } catch (IOException e) {
-            log(3, 8, "The shader " + BRAND_NAME + "Shaders" + " that was found in your shaderpacks folder can't be used as a base for " + PATCH_NAME);
-            log(3, 8, "Please download " + BRAND_NAME + "Shaders" + VERSION + " from " + DOWNLOAD_URL + ", place it into your shaderpacks folder and restart Minecraft.");
-            log(3, 8, "The file in your shaderpacks folder might have been modified. The expected hash does not match.");
-            log(3, "Something went wrong" + e.getMessage());
+            log(3, "Something went wrong during the hash verification" + e.getMessage());
             return false;
         }
         return true;

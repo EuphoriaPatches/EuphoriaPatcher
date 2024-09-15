@@ -31,7 +31,6 @@ public class EuphoriaPatcher {
     public static final String PATCH_NAME = "EuphoriaPatches";
     public static final String VERSION = "_r5.2.2";
     public static final String PATCH_VERSION = "_1.3.2";
-    public static final String MOD_VERSION = "0.3.4";
 
     private static final String BASE_TAR_HASH = "46a2fb63646e22cea56b2f8fa5815ac2";
     private static final int BASE_TAR_SIZE = 1274880;
@@ -219,8 +218,7 @@ public class EuphoriaPatcher {
             try {
                 Path shader = baseFile.resolveSibling(baseFile.getFileName().toString().replace(".zip", "") + " + " + PATCH_NAME + PATCH_VERSION);
                 ModifyPatchedShaderpacks.modifyShadersProperties(shader, styleUnbound, styleReimagined,"screen=<empty> <empty>", "screen=info19 info20");
-                ModifyPatchedShaderpacks.modifyLangFiles(shader, styleUnbound, styleReimagined,"value\\.info19\\.0=.*", "value.info19.0=§a" + UpdateChecker.NEW_MOD_VERSION,
-                        "value\\.info20\\.0=.*", "value.info20.0=§c" + MOD_VERSION);
+                ModifyPatchedShaderpacks.modifyLangFiles(shader, styleUnbound, styleReimagined,"value\\.info19\\.0=.*", "value.info19.0=§c" + PATCH_VERSION.replace("_", "") + " §r->§a " + UpdateChecker.NEW_MOD_VERSION);
             } catch (IOException e) {
                 log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
             }

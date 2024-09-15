@@ -12,6 +12,7 @@ import java.net.URL;
 
 public class UpdateChecker {
     private static final String UPDATE_URL = "https://api.github.com/repos/EuphoriaPatches/PatcherUpdateChecker/releases/latest";
+    private static final String MOD_VERSION = EuphoriaPatcher.PATCH_VERSION.replace("_","");
     public static String NEW_MOD_VERSION = null;
     public static boolean NEW_VERSION_AVAILABLE = false;
     private static boolean UPDATE_CHECK_PERFORMED = false;
@@ -32,7 +33,7 @@ public class UpdateChecker {
                 NEW_VERSION_AVAILABLE = true;
                 EuphoriaPatcher.log(2, "[UPDATE CHECKER] A new version of the EuphoriaPatcher Mod is available: " + NEW_MOD_VERSION);
                 EuphoriaPatcher.log(2, "[UPDATE CHECKER] Download it from Modrinth: https://modrinth.com/mod/euphoria-patches");
-                EuphoriaPatcher.log(1, 8, "[UPDATE CHECKER] Current Version: " + EuphoriaPatcher.MOD_VERSION);
+                EuphoriaPatcher.log(1, 8, "[UPDATE CHECKER] Current Version: " + MOD_VERSION);
                 EuphoriaPatcher.log(1, 8, "[UPDATE CHECKER] Check logs for more info");
             } else {
                 EuphoriaPatcher.log(0, "[UPDATE CHECKER] The EuphoriaPatcher Mod is up to date");
@@ -68,7 +69,7 @@ public class UpdateChecker {
     // Compare the latest version with the current version
     private static boolean isNewerVersion(String latestVersion) {
         String[] latest = latestVersion.split("\\.");
-        String[] current = EuphoriaPatcher.MOD_VERSION.split("\\.");
+        String[] current = MOD_VERSION.split("\\.");
 
         for (int i = 0; i < Math.min(latest.length, current.length); i++) {
             int latestPart = Integer.parseInt(latest[i]);

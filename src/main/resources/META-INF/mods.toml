@@ -1,6 +1,6 @@
 modLoader="javafml" #mandatory
 loaderVersion="${loader_version_range}"
-issueTrackerURL="https://discord.gg/5N45SAsC3X"
+issueTrackerURL="https://euphoriapatches.com/discord"
 license="${mod_license}"
 # A list of mods - how many allowed here is determined by the individual mod loader
 [[mods]] #mandatory
@@ -9,7 +9,7 @@ version="${mod_version}"
 displayName="${mod_name}"
 # A URL to query for updates for this mod. See the JSON update specification <here>
 #updateJSONURL="http://myurl.me/" #optional
-displayURL="https://discord.gg/5N45SAsC3X" #optional
+displayURL="https://euphoriapatches.com" #optional
 logoFile="logo.png" #optional
 #credits="Thanks for this example mod goes to Java" #optional
 authors="${mod_authors}" #optional

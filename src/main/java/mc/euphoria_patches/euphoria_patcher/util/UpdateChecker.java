@@ -32,7 +32,7 @@ public class UpdateChecker {
             if (isNewerVersion(NEW_MOD_VERSION)) {
                 NEW_VERSION_AVAILABLE = true;
                 EuphoriaPatcher.log(2, "[UPDATE CHECKER] A new version of the EuphoriaPatcher Mod is available: " + NEW_MOD_VERSION);
-                EuphoriaPatcher.log(2, "[UPDATE CHECKER] Download it from Modrinth: https://modrinth.com/mod/euphoria-patches");
+                EuphoriaPatcher.log(2, "[UPDATE CHECKER] Download it from Modrinth: https://euphoriapatches.com/download");
                 EuphoriaPatcher.log(1, 8, "[UPDATE CHECKER] Current Version: " + MOD_VERSION);
                 EuphoriaPatcher.log(1, 8, "[UPDATE CHECKER] Check logs for more info");
             } else {

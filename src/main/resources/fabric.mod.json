@@ -9,9 +9,9 @@
 		"SpacEagle17"
 	],
 	"contact": {
-		"homepage": "https://discord.gg/5N45SAsC3X",
-		"sources": "https://github.com/EuphoriaPatches",
-		"issues": "https://github.com/IrisShaders/Iris/issues"
+		"homepage": "https://euphoriapatches.com",
+		"sources": "https://euphoriapatches.com/github",
+		"issues": "https://euphoriapatches.com/contact"
 	},
 	"license": "MPL-2.0",
 	"icon": "assets/euphoria_patcher/icon.png",
@@ -31,9 +31,9 @@
 	"custom": {
 		"modmenu": {
 			"links": {
-				"modmenu.discord": "https://discord.gg/5N45SAsC3X",
-				"modmenu.donate": "https://www.patreon.com/SpacEagle17",
-				"modmenu.patreon": "https://www.patreon.com/SpacEagle17"
+				"modmenu.discord": "https://euphoriapatches.com/discord",
+				"modmenu.donate": "https://euphoriapatches.com/support",
+				"modmenu.patreon": "https://euphoriapatches.com/support"
 			},
 			"update_checker": true
 		}

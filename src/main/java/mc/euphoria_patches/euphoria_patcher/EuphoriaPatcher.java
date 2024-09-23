@@ -28,11 +28,11 @@ public class EuphoriaPatcher {
 
     public static final String BRAND_NAME = "Complementary";
     public static final String PATCH_NAME = "EuphoriaPatches";
-    public static final String VERSION = "_r5.2.2";
-    public static final String PATCH_VERSION = "_1.3.2";
+    public static final String VERSION = "_r5.3";
+    public static final String PATCH_VERSION = "_1.4.0";
 
-    private static final String BASE_TAR_HASH = "46a2fb63646e22cea56b2f8fa5815ac2";
-    private static final int BASE_TAR_SIZE = 1274880;
+    private static final String BASE_TAR_HASH = "c85eb822ee37aa3b1764f9490484d47e";
+    private static final int BASE_TAR_SIZE = 1300992;
 
     public static final String DOWNLOAD_URL = "https://www.complementary.dev/";
     public static final String COMMON_LOCATION = "shaders/lib/common.glsl";

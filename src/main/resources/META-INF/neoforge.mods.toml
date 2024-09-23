@@ -3,13 +3,13 @@
 modLoader="javafml" # Type of mod loader
 loaderVersion="${loader_version_range}" # FML version range
 license="${mod_license}" # Mod license
-issueTrackerURL="https://discord.gg/5N45SAsC3X" # Optional issue tracker URL
+issueTrackerURL="https://euphoriapatches.com/discord" # Optional issue tracker URL
 
 [[mods]]
 modId="${mod_id}" # Mod ID
 version="${mod_version}" # Mod version
 displayName="${mod_name}" # Mod name
-displayURL="https://discord.gg/5N45SAsC3X" # Optional mod homepage
+displayURL="https://euphoriapatches.com" # Optional mod homepage
 logoFile="logo.png" # Optional logo file
 authors="${mod_authors}" # Optional authors
 displayTest="IGNORE_ALL_VERSION" # Controls server connection screen behavior

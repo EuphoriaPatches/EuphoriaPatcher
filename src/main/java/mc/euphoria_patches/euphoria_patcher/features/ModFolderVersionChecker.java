@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 
 public class ModFolderVersionChecker {
     private static final String MOD_PREFIX = "EuphoriaPatcher-";
-    private static final Pattern VERSION_PATTERN = Pattern.compile("EuphoriaPatcher-(\\d+\\.\\d+\\.\\d+)(?:-r.*)?-\\w+\\.jar");
+    private static final Pattern VERSION_PATTERN = Pattern.compile("EuphoriaPatcher-(\\d+\\.\\d+\\.\\d+)(?:-r.*)?-.*\\.jar");
 
     public static boolean existsNewerModInFolder() {
         String currentVersion = EuphoriaPatcher.PATCH_VERSION.substring(1); // Remove leading underscore

@@ -43,6 +43,7 @@ public class EuphoriaPatcher {
     public static Path shaderpacks = FMLPaths.GAMEDIR.get().resolve("shaderpacks");
     public static Path configDirectory = FMLPaths.CONFIGDIR.get();
     public static Path resourcesBuildDir = shaderpacks.getParent().getParent().resolve("build");
+    public static Path modDirectory = shaderpacks.getParent().resolve("mods");
 
     // Config Options
     public static boolean doPopUpLogging = true;
@@ -54,6 +55,7 @@ public class EuphoriaPatcher {
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
 
     public EuphoriaPatcher() {
+        if (ModFolderVersionChecker.existsNewerModInFolder()) return;
         configStuff();
 
         if(doUpdateChecking) UpdateChecker.checkForUpdates();

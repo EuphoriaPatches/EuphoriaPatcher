@@ -30,7 +30,7 @@ public class ModifyOutdatedPatches {
                 try {
                     if (isOutdatedPatch(path, false)) {
                         deleteRecursively(path);
-                        EuphoriaPatcher.log(0, "Successfully deleted outdated " + path.getFileName() + " shaderpack!");
+                        EuphoriaPatcher.log(0, "Successfully deleted outdated " + path.getFileName() + " shaderpack file!");
                     }
                 } catch (IOException e) {
                     EuphoriaPatcher.log(2, 0, "Error processing path: " + path + " - " + e.getMessage());

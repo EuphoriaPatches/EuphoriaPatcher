@@ -44,6 +44,7 @@ public class EuphoriaPatcher {
     public static Path shaderpacks = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
     public static Path configDirectory = FabricLoader.getInstance().getConfigDir();
     public static Path resourcesBuildDir = shaderpacks.getParent().getParent().resolve("build");
+    public static Path modDirectory = shaderpacks.getParent().resolve("mods");
 
     // Config Options
     public static boolean doPopUpLogging = true;
@@ -61,6 +62,7 @@ public class EuphoriaPatcher {
             return;
         }
         ALREADY_LAUNCHED = true;
+        if (ModFolderVersionChecker.existsNewerModInFolder()) return;
         configStuff();
 
         if(doPopUpLogging) isSodiumInstalled();

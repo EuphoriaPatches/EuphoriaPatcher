@@ -48,6 +48,7 @@ public class EuphoriaPatcher {
     public static boolean doPopUpLogging = true;
     public static boolean doUpdateChecking = true;
     public static boolean doRenameOldShaderFiles = true;
+    public static boolean doDeleteOldShaderFiles = false;
     
     // Global Variables and Objects
     public static Logger LOGGER = LogManager.getLogger("euphoriaPatches");
@@ -86,7 +87,8 @@ public class EuphoriaPatcher {
         // Update shader loader (iris) config
         UpdateShaderLoaderConfig.updateShaderLoaderConfig(shaderInfo.styleUnbound, shaderInfo.styleReimagined);
 
-        if(doRenameOldShaderFiles) RenameOutdatedPatches.rename();
+        if(doDeleteOldShaderFiles) ModifyOutdatedPatches.delete();
+        if(doRenameOldShaderFiles) ModifyOutdatedPatches.rename();
 
         thankYouMessage(shaderInfo.baseFile, shaderInfo.styleUnbound, shaderInfo.styleReimagined);
     }
@@ -103,6 +105,8 @@ public class EuphoriaPatcher {
         doRenameOldShaderFiles = Boolean.parseBoolean(Config.readWriteConfig("doRenameOldShaderFiles", "true","Option that automatically renames outdated Euphoria Patches folders and config files to a new name." +
                 "\nThis makes it easier for users to identify which ones are outdated." +
                 "\nDefault = true"));
+        doDeleteOldShaderFiles = Boolean.parseBoolean(Config.readWriteConfig("doDeleteOldShaderFiles", "false","Option that automatically deleted outdated Euphoria Patches folders and config files." +
+                "\nDefault = false"));
     }
 
     // Logging method

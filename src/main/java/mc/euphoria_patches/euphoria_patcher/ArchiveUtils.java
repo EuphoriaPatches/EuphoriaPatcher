@@ -44,11 +44,6 @@ public class ArchiveUtils {
                 // Resolve the target path for the current entry
                 Path targetFilePath = out.resolve(entry.getName()).normalize();
 
-                // Security check to prevent path traversal attacks
-                if (targetFilePath.toString().contains("..")) {
-                    throw new IOException("Potentially malicious entry detected: " + entry.getName());
-                }
-
                 if (entry.isDirectory()) {
                     // Create directory if the entry is a directory
                     Files.createDirectories(targetFilePath);

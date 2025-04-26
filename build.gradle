@@ -38,7 +38,7 @@ dependencies {
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
 	// Mod dependencies (not shadowed)
-	modImplementation "maven.modrinth:sodium:mc1.20.4-0.5.8"
+	modCompileOnly "maven.modrinth:sodium:mc1.20.4-0.5.8"
 
 	// Dependencies to be shadowed
 	shade 'io.sigpipe:jbsdiff:1.0'
@@ -48,6 +48,10 @@ dependencies {
 	shade 'org.apache.commons:commons-compress:1.21'
 	shade 'commons-io:commons-io:2.11.0'
 	shade 'commons-codec:commons-codec:1.15'
+
+	// These are optional compile-time dependencies from Modrinth
+	modCompileOnly "maven.modrinth:modmenu:${modmenu_version}"
+	modCompileOnly "maven.modrinth:cloth-config:${cloth_config_version}"
 }
 
 // Disable the default jar task

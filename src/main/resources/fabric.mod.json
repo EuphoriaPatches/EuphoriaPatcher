@@ -22,6 +22,9 @@
 	"entrypoints": {
 		"main": [
 			"mc.euphoria_patches.euphoria_patcher.ClientEuphoriaPatcher"
+		],
+		"modmenu": [
+			"mc.euphoria_patches.euphoria_patcher.compat.ModMenuApiImpl"
 		]
 	},
 	"mixins": [

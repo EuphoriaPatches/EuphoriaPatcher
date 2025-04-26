@@ -7,8 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -19,6 +18,7 @@ public class Config {
     private static FileTime lastModified = null;
     private static boolean watcherActive = false;
     private static ScheduledExecutorService scheduler;
+    private static final Map<String, ConfigOptionMetadata> CONFIG_METADATA = new HashMap<>();
 
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[Config] " + message);
@@ -78,8 +78,15 @@ public class Config {
                 updateVersionLine(); // Always update the version line
             }
             loadProperties();
-            if(!properties.containsKey(option)) {
-                List<String> lines = Files.readAllLines(CONFIG_PATH, StandardCharsets.UTF_8);
+            
+            // Check if the option already exists
+            boolean optionExists = properties.containsKey(option);
+            String existingValue = properties.getProperty(option);
+            boolean valueChanged = !value.equals(existingValue);
+
+            List<String> lines = Files.readAllLines(CONFIG_PATH, StandardCharsets.UTF_8);
+            if (!optionExists) {
+                // Add new option with description (existing logic)
                 try (FileWriter writer = new FileWriter(String.valueOf(CONFIG_PATH), false)) {
                     // Write existing lines
                     for (String line : lines) {
@@ -97,15 +104,49 @@ public class Config {
                     writer.write(option + "=" + value + "\n");
                     debugLog("Successfully wrote to config file: " + option + "=" + value);
                 }
+            } else if (valueChanged) {
+                // Only update if the value actually changed
+                for (int i = 0; i < lines.size(); i++) {
+                    String line = lines.get(i);
+                    if (line.startsWith(option + "=")) {
+                        lines.set(i, option + "=" + value);
+                        break;
+                    }
+                }
+                Files.write(CONFIG_PATH, lines, StandardCharsets.UTF_8);
+                debugLog("Updated existing config option: " + option + "=" + value);
             }
+            
+            // Update the property in memory as well
+            properties.setProperty(option, value);
+            
+            // Update last modified time
+            lastModified = Files.getLastModifiedTime(CONFIG_PATH);
         } catch (IOException e) {
             EuphoriaPatcher.log(3, 0, "Error writing to config file: " + e.getMessage());
         }
     }
 
     public static String readWriteConfig(String optionName, String defaultValue, String description) {
-        writeConfig(optionName, defaultValue, description);
-        return properties.getProperty(optionName, defaultValue);
+        // Store metadata when config is read
+        CONFIG_METADATA.put(optionName, new ConfigOptionMetadata(optionName, defaultValue, description));
+        
+        // Make sure properties are loaded
+        if (properties.isEmpty() && Files.exists(CONFIG_PATH)) {
+            loadProperties();
+        }
+        
+        // Check if the property already exists in the file
+        String existingValue = properties.getProperty(optionName);
+        
+        if (existingValue == null) {
+            // Only write the default if the option doesn't exist yet
+            writeConfig(optionName, defaultValue, description);
+            return defaultValue;
+        } else {
+            // Option already exists, just return the existing value
+            return existingValue;
+        }
     }
 
     public static void loadProperties() {
@@ -146,6 +187,43 @@ public class Config {
         if (watcherActive && scheduler != null) {
             scheduler.shutdown();
             watcherActive = false;
+        }
+    }
+
+    public static Map<String, ConfigOptionMetadata> getConfigMetadata() {
+        return CONFIG_METADATA;
+    }
+
+    public static class ConfigOptionMetadata {
+        public final String key;
+        public final String defaultValue;
+        public final String description;
+        public final String displayName;
+        
+        public ConfigOptionMetadata(String key, String defaultValue, String description) {
+            this.key = key;
+            this.defaultValue = defaultValue;
+            this.description = description;
+            
+            // Generate a display name from the key
+            // e.g., "doPopUpLogging" → "Popup Logging"
+            if (key.startsWith("do") && key.length() > 2) {
+                StringBuilder result = new StringBuilder();
+                // Skip the "do" prefix
+                for (int i = 2; i < key.length(); i++) {
+                    char c = key.charAt(i);
+                    if (i == 2) {
+                        result.append(Character.toUpperCase(c));
+                    } else if (Character.isUpperCase(c)) {
+                        result.append(' ').append(c);
+                    } else {
+                        result.append(c);
+                    }
+                }
+                this.displayName = result.toString();
+            } else {
+                this.displayName = key;
+            }
         }
     }
 }

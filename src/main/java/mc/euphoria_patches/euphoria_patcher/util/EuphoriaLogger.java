@@ -17,6 +17,7 @@ public class EuphoriaLogger {
     private static final String ERROR_LOG_FILE_NAME = "1_EUPHORIA_PATCHES_ERROR_LOGS.txt";
     private final Path errorLogFilePath = EuphoriaPatcher.shaderpacks.resolve(ERROR_LOG_FILE_NAME);;
     private boolean isSodiumInstalled;
+    private boolean shouldCreateErrorLog = true;
 
 
     public EuphoriaLogger() {
@@ -83,6 +84,7 @@ public class EuphoriaLogger {
      * Checks if the error log file exists and adds a restart separator
      */
     public void checkErrorLogFileAndAddSeparator() {
+        if (!shouldCreateErrorLog) return;
         try {
             if (Files.exists(errorLogFilePath)) {
                 String separator = "\n--------------------------------------\n" +
@@ -101,6 +103,7 @@ public class EuphoriaLogger {
      * Appends a message to the error log file with timestamp
      */
     private void appendToErrorLogFile(String message) {
+        if (!shouldCreateErrorLog) return;
         try {
             // Create parent directories if they don't exist
             if (!Files.exists(errorLogFilePath.getParent())) {
@@ -130,6 +133,7 @@ public class EuphoriaLogger {
             if (Files.exists(errorLogFilePath)) {
                 Files.delete(errorLogFilePath);
                 log(0,"Deleted error log file as shader was successfully installed");
+                shouldCreateErrorLog = false;
             }
         } catch (IOException e) {
             log(0,"Failed to delete error log file: " + e.getMessage());

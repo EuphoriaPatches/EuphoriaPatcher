@@ -18,6 +18,14 @@ public class UpdateChecker {
     public static boolean NEW_VERSION_AVAILABLE = false;
     private static boolean UPDATE_CHECK_PERFORMED = false;
 
+    public static boolean isUpdateAvailable() {
+        try {
+            return NEW_VERSION_AVAILABLE;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public static void checkForUpdates() {
         if (UPDATE_CHECK_PERFORMED) {
             return;

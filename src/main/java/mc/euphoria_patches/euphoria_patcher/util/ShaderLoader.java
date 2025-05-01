@@ -20,34 +20,45 @@ public class ShaderLoader {
     private static boolean shaderFileSearched = false;
     private static String cachedShaderLoader = null;
     private static String cachedMCVersion = null;
+    
+    private static void debugLog(String message) {
+        EuphoriaLogger.debugLog("[ShaderLoader] " + message);
+    }
 
     private static File findShaderLoaderFile() {
         // Return cached result if we've already searched
         if (shaderFileSearched) {
+            debugLog("Using cached shader file result: " + (cachedShaderFile != null ? cachedShaderFile.getName() : "null"));
             return cachedShaderFile;
         }
         
+        debugLog("Searching for shader loader file in mods directory");
         try {
             File modsFolder = new File(String.valueOf(EuphoriaPatcher.modDirectory));
             File[] modFiles = modsFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".jar"));
 
             if (modFiles != null) {
+                debugLog("Found " + modFiles.length + " JAR files in mods directory");
                 for (File modFile : modFiles) {
                     String fileName = modFile.getName().toLowerCase();
+                    debugLog("Checking file: " + fileName);
 
                     if (fileName.startsWith("iris") ||
                             fileName.startsWith("oculus") ||
                             fileName.startsWith("optifine")) {
                         cachedShaderFile = modFile;
                         shaderFileSearched = true;
+                        debugLog("Found shader loader file: " + modFile.getName());
                         return cachedShaderFile;
                     }
                 }
             }
+            debugLog("No shader loader file found");
             shaderFileSearched = true;
             return null;
         } catch (Exception e) {
             EuphoriaPatcher.log(2, 0, "Error finding shader loader: " + e.getMessage());
+            debugLog("Exception while searching for shader loader: " + e.getMessage());
             shaderFileSearched = true;
             return null;
         }
@@ -62,23 +73,32 @@ public class ShaderLoader {
     public static String getShaderLoader() {
         // Return cached result if available
         if (cachedShaderLoader != null) {
+            debugLog("Using cached shader loader type: " + cachedShaderLoader);
             return cachedShaderLoader;
         }
         
+        debugLog("Determining shader loader type");
         File shaderFile = findShaderLoaderFile();
         if (shaderFile == null) {
+            debugLog("No shader file found, returning UNKNOWN");
             cachedShaderLoader = UNKNOWN;
             return cachedShaderLoader;
         }
 
         String fileName = shaderFile.getName().toLowerCase();
+        debugLog("Analyzing file name: " + fileName);
+        
         if (fileName.startsWith("iris")) {
+            debugLog("Detected IRIS shader loader");
             cachedShaderLoader = IRIS;
         } else if (fileName.startsWith("oculus")) {
+            debugLog("Detected OCULUS shader loader");
             cachedShaderLoader = OCULUS;
         } else if (fileName.startsWith("optifine")) {
+            debugLog("Detected OPTIFINE shader loader");
             cachedShaderLoader = OPTIFINE;
         } else {
+            debugLog("Could not determine shader loader type, returning UNKNOWN");
             cachedShaderLoader = UNKNOWN;
         }
 
@@ -94,12 +114,15 @@ public class ShaderLoader {
     public static String getShaderLoaderMCVersion() {
         // Return cached result if available
         if (cachedMCVersion != null) {
+            debugLog("Using cached MC version: " + cachedMCVersion);
             return cachedMCVersion;
         }
         
+        debugLog("Extracting Minecraft version from shader loader filename");
         try {
             File shaderFile = findShaderLoaderFile();
             if (shaderFile == null) {
+                debugLog("No shader file found, returning UNKNOWN version");
                 cachedMCVersion = UNKNOWN;
                 return cachedMCVersion;
             }
@@ -107,16 +130,20 @@ public class ShaderLoader {
             String fileName = shaderFile.getName();
             String lowerFileName = fileName.toLowerCase();
             String extractedVersion = null;
+            debugLog("Parsing version from filename: " + fileName);
 
             // Handle OptiFine format: OptiFine_1.18.1_HD_U_H6.jar
             if (lowerFileName.startsWith("optifine_")) {
+                debugLog("Detected OptiFine format");
                 String[] parts = fileName.split("_");
                 if (parts.length >= 2) {
                     extractedVersion = parts[1]; // Return the version part (1.18.1)
+                    debugLog("Extracted version: " + extractedVersion);
                 }
             }
             // Handle Iris format: iris-fabric-1.8.8+mc1.21.4.jar
             else if (lowerFileName.startsWith("iris")) {
+                debugLog("Detected Iris format");
                 int mcIndex = lowerFileName.indexOf("+mc");
                 if (mcIndex != -1) {
                     // Extract version after "+mc" until the next non-version character
@@ -125,11 +152,13 @@ public class ShaderLoader {
                     int endIndex = versionPart.indexOf(".jar");
                     if (endIndex != -1) {
                         extractedVersion = versionPart.substring(0, endIndex);
+                        debugLog("Extracted version: " + extractedVersion);
                     }
                 }
             }
             // Handle Oculus format: oculus-mc1.20.1-1.8.0.jar
             else if (lowerFileName.startsWith("oculus")) {
+                debugLog("Detected Oculus format");
                 int mcIndex = lowerFileName.indexOf("-mc");
                 if (mcIndex != -1) {
                     // Extract version after "-mc" until the next dash
@@ -137,6 +166,7 @@ public class ShaderLoader {
                     int dashIndex = afterMc.indexOf("-");
                     if (dashIndex != -1) {
                         extractedVersion = afterMc.substring(0, dashIndex);
+                        debugLog("Extracted version: " + extractedVersion);
                     }
                 }
             }
@@ -145,17 +175,23 @@ public class ShaderLoader {
             if (extractedVersion != null) {
                 Matcher matcher = VERSION_PATTERN.matcher(extractedVersion);
                 if (matcher.matches()) {
+                    debugLog("Valid version format: " + extractedVersion);
                     cachedMCVersion = extractedVersion;
                     return cachedMCVersion;
                 } else {
+                    debugLog("Invalid version format: " + extractedVersion);
                     EuphoriaPatcher.log(1, 0, "Invalid version format detected: " + extractedVersion);
                 }
+            } else {
+                debugLog("Could not extract version from filename");
             }
 
+            debugLog("Setting version to UNKNOWN");
             cachedMCVersion = UNKNOWN;
             return cachedMCVersion;
         } catch (Exception e) {
             EuphoriaPatcher.log(2, 0, "Error extracting Minecraft version: " + e.getMessage());
+            debugLog("Exception extracting Minecraft version: " + e.getMessage());
             cachedMCVersion = UNKNOWN;
             return cachedMCVersion;
         }

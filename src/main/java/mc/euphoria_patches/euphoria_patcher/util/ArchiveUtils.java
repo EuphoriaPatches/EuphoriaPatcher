@@ -17,6 +17,10 @@ import java.util.stream.Stream;
 
 public class ArchiveUtils {
 
+    private static void debugLog(String message) {
+        EuphoriaLogger.debugLog("[ArchiveUtils] " + message);
+    }
+
     /**
      * Extracts the contents of an archive to the specified output directory.
      *
@@ -25,29 +29,37 @@ public class ArchiveUtils {
      * @throws IOException if there's an issue with file operations
      * @throws ArchiveException if there's an issue with archive processing
      */
-
     public static void extract(Path in, Path out) throws IOException, ArchiveException {
+        debugLog("Starting extraction from " + in + " to " + out);
+        
         // Create the output directory if it doesn't exist
         Files.createDirectories(out);
+        debugLog("Created output directory: " + out);
 
         // Start the extraction process
         try (ArchiveInputStream archiveInputStream = new ArchiveStreamFactory().createArchiveInputStream(
                 new BufferedInputStream(Files.newInputStream(in)))) {
-
+            debugLog("Archive input stream created");
+            
             ArchiveEntry entry;
+            int extractedCount = 0;
+            
             // Iterate through each entry in the archive
             while ((entry = archiveInputStream.getNextEntry()) != null) {
                 // Skip entries that can't be read
                 if (!archiveInputStream.canReadEntryData(entry)) {
+                    debugLog("Skipping unreadable entry: " + entry.getName());
                     continue;
                 }
 
                 // Resolve the target path for the current entry
                 Path targetFilePath = out.resolve(entry.getName()).normalize();
+                debugLog("Processing entry: " + entry.getName() + " -> " + targetFilePath);
 
                 if (entry.isDirectory()) {
                     // Create directory if the entry is a directory
                     Files.createDirectories(targetFilePath);
+                    debugLog("Created directory: " + targetFilePath);
                 } else {
                     // Create parent directories for the file
                     Files.createDirectories(targetFilePath.getParent());
@@ -55,9 +67,16 @@ public class ArchiveUtils {
                     // Extract the file
                     try (OutputStream outputStream = Files.newOutputStream(targetFilePath)) {
                         IOUtils.copy(archiveInputStream, outputStream);
+                        extractedCount++;
+                        debugLog("Extracted file: " + targetFilePath);
                     }
                 }
             }
+            
+            debugLog("Extraction completed. " + extractedCount + " files extracted.");
+        } catch (Exception e) {
+            debugLog("Error during extraction: " + e.getMessage());
+            throw e;
         }
     }
 
@@ -69,14 +88,24 @@ public class ArchiveUtils {
      * @throws IOException if there's an issue with file operations
      */
     public static void archive(Path sourceDir, Path archive) throws IOException {
+        debugLog("Starting archive creation from " + sourceDir + " to " + archive);
+        
         // Use try-with-resources to automatically close the output stream
         try (TarArchiveOutputStream tarOutputStream = new TarArchiveOutputStream(Files.newOutputStream(archive))) {
+            debugLog("TAR archive output stream created");
+            
             // Walk through the file tree of the source directory
             try (Stream<Path> fileStream = Files.walk(sourceDir)) {
+                debugLog("Walking file tree in source directory");
+                
                 // Sort files to ensure a platform-independent order
                 fileStream.sorted(Comparator.comparing(Path::toUri)).forEach(filePath -> addFileToArchive(tarOutputStream, sourceDir, filePath));
             }
             tarOutputStream.finish();
+            debugLog("Archive creation completed: " + archive);
+        } catch (Exception e) {
+            debugLog("Error creating archive: " + e.getMessage());
+            throw e;
         }
     }
 
@@ -90,6 +119,8 @@ public class ArchiveUtils {
     private static void addFileToArchive(TarArchiveOutputStream tarOutputStream, Path sourceDir, Path filePath) {
         try {
             String fileName = sourceDir.relativize(filePath).toString().replace(File.separatorChar, '/'); // fixes weird issues with Lunar client
+            debugLog("Adding to archive: " + fileName);
+            
             TarArchiveEntry tarEntry = new TarArchiveEntry(filePath.toFile(), fileName); // Create a TAR entry for the file or directory
 
             // Set deterministic metadata
@@ -108,11 +139,14 @@ public class ArchiveUtils {
             if (Files.isRegularFile(filePath)) { // If the entry is a regular file, write its contents to the archive
                 try (InputStream inputStream = Files.newInputStream(filePath)) {
                     IOUtils.copy(inputStream, tarOutputStream);
+                    debugLog("Added file content: " + fileName);
                 }
             }
 
             tarOutputStream.closeArchiveEntry(); // Close the current entry in the archive
+            debugLog("Entry added to archive: " + fileName);
         } catch (IOException e) {
+            debugLog("Error adding file to archive: " + filePath + " - " + e.getMessage());
             EuphoriaPatcher.log(3, "Could not add files to TAR Archive: " + e.getMessage());
         }
     }

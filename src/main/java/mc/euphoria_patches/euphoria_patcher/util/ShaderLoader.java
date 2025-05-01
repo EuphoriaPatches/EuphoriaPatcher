@@ -14,8 +14,19 @@ public class ShaderLoader {
 
     // Pattern to validate Minecraft version format (1.X.Y or 1.XX.YY)
     private static final Pattern VERSION_PATTERN = Pattern.compile("1\\.(\\d+)\\.(\\d+)");
+    
+    // Cache variables
+    private static File cachedShaderFile = null;
+    private static boolean shaderFileSearched = false;
+    private static String cachedShaderLoader = null;
+    private static String cachedMCVersion = null;
 
     private static File findShaderLoaderFile() {
+        // Return cached result if we've already searched
+        if (shaderFileSearched) {
+            return cachedShaderFile;
+        }
+        
         try {
             File modsFolder = new File(String.valueOf(EuphoriaPatcher.modDirectory));
             File[] modFiles = modsFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".jar"));
@@ -27,13 +38,17 @@ public class ShaderLoader {
                     if (fileName.startsWith("iris") ||
                             fileName.startsWith("oculus") ||
                             fileName.startsWith("optifine")) {
-                        return modFile;
+                        cachedShaderFile = modFile;
+                        shaderFileSearched = true;
+                        return cachedShaderFile;
                     }
                 }
             }
+            shaderFileSearched = true;
             return null;
         } catch (Exception e) {
             EuphoriaPatcher.log(2, 0, "Error finding shader loader: " + e.getMessage());
+            shaderFileSearched = true;
             return null;
         }
     }
@@ -45,21 +60,29 @@ public class ShaderLoader {
      * @return The shader loader mod name, or "unknown" if not detected
      */
     public static String getShaderLoader() {
+        // Return cached result if available
+        if (cachedShaderLoader != null) {
+            return cachedShaderLoader;
+        }
+        
         File shaderFile = findShaderLoaderFile();
         if (shaderFile == null) {
-            return UNKNOWN;
+            cachedShaderLoader = UNKNOWN;
+            return cachedShaderLoader;
         }
 
         String fileName = shaderFile.getName().toLowerCase();
         if (fileName.startsWith("iris")) {
-            return IRIS;
+            cachedShaderLoader = IRIS;
         } else if (fileName.startsWith("oculus")) {
-            return OCULUS;
+            cachedShaderLoader = OCULUS;
         } else if (fileName.startsWith("optifine")) {
-            return OPTIFINE;
+            cachedShaderLoader = OPTIFINE;
+        } else {
+            cachedShaderLoader = UNKNOWN;
         }
 
-        return UNKNOWN;
+        return cachedShaderLoader;
     }
 
     /**
@@ -69,10 +92,16 @@ public class ShaderLoader {
      * @return The Minecraft version as a string, or "unknown" if not detected
      */
     public static String getShaderLoaderMCVersion() {
+        // Return cached result if available
+        if (cachedMCVersion != null) {
+            return cachedMCVersion;
+        }
+        
         try {
             File shaderFile = findShaderLoaderFile();
             if (shaderFile == null) {
-                return UNKNOWN;
+                cachedMCVersion = UNKNOWN;
+                return cachedMCVersion;
             }
 
             String fileName = shaderFile.getName();
@@ -116,16 +145,19 @@ public class ShaderLoader {
             if (extractedVersion != null) {
                 Matcher matcher = VERSION_PATTERN.matcher(extractedVersion);
                 if (matcher.matches()) {
-                    return extractedVersion;
+                    cachedMCVersion = extractedVersion;
+                    return cachedMCVersion;
                 } else {
                     EuphoriaPatcher.log(1, 0, "Invalid version format detected: " + extractedVersion);
                 }
             }
 
-            return UNKNOWN;
+            cachedMCVersion = UNKNOWN;
+            return cachedMCVersion;
         } catch (Exception e) {
             EuphoriaPatcher.log(2, 0, "Error extracting Minecraft version: " + e.getMessage());
-            return UNKNOWN;
+            cachedMCVersion = UNKNOWN;
+            return cachedMCVersion;
         }
     }
 

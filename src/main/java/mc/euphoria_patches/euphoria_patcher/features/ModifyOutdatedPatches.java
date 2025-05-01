@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 public class ModifyOutdatedPatches {
@@ -48,7 +49,7 @@ public class ModifyOutdatedPatches {
 
     public static void delete() {
         debugLog("Starting delete process for outdated patches");
-        int deletedCount = 0;
+        AtomicInteger deletedCount = new AtomicInteger();
         
         try (Stream<Path> stream = Files.list(EuphoriaPatcher.shaderpacks)) {
             stream.forEach(path -> {
@@ -57,7 +58,7 @@ public class ModifyOutdatedPatches {
                         debugLog("Found outdated pack to delete: " + path.getFileName());
                         UsefulFunctions.deleteRecursively(path);
                         EuphoriaPatcher.log(0, "Successfully deleted outdated " + path.getFileName() + " shaderpack file!");
-                        deletedCount++;
+                        deletedCount.getAndIncrement();
                     }
                 } catch (IOException e) {
                     debugLog("Error processing path: " + path + " - " + e.getMessage());
@@ -65,7 +66,7 @@ public class ModifyOutdatedPatches {
                 }
             });
             
-            if (deletedCount == 0) {
+            if (deletedCount.get() == 0) {
                 debugLog("No outdated patches found to delete");
             } else {
                 debugLog("Deleted " + deletedCount + " outdated patch files");

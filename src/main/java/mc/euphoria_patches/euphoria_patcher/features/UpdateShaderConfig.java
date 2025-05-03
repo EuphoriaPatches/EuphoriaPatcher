@@ -90,16 +90,24 @@ public class UpdateShaderConfig {
             List<Path> filesToUpdate = new ArrayList<>();
             List<Boolean> addVersionFlags = new ArrayList<>();
             
+            // Use existing pattern - modified to match just file identification parts
+            Pattern euphoriaFilePattern = Pattern.compile(
+                "(?:Comp\\d+(?:\\.\\d+)*[rdp]?\\d*EP_|.*(?:EuphoriaPatches|Euphoria-Patches))",
+                Pattern.CASE_INSENSITIVE
+            );
+            
             try (DirectoryStream<Path> configStream = Files.newDirectoryStream(EuphoriaPatcher.shaderpacks,
-                    path -> Files.isRegularFile(path) && 
-                           path.toString().endsWith(".txt") && 
-                           (path.getFileName().toString().contains(EuphoriaPatcher.PATCH_NAME) ||
-                           path.getFileName().toString().contains("Euphoria-Patches")))) {
+                    path -> Files.isRegularFile(path) && path.toString().endsWith(".txt"))) {
                 
                 for (Path configFile : configStream) {
-                    boolean addVersionIdentifier = configFile.getFileName().toString().contains(EuphoriaPatcher.PATCH_VERSION);
-                    filesToUpdate.add(configFile);
-                    addVersionFlags.add(addVersionIdentifier);
+                    String fileName = configFile.getFileName().toString();
+                    // Check if matches any Euphoria Patches pattern
+                    if (euphoriaFilePattern.matcher(fileName).find()) {
+                        boolean addVersionIdentifier = fileName.contains(EuphoriaPatcher.PATCH_VERSION);
+                        filesToUpdate.add(configFile);
+                        addVersionFlags.add(addVersionIdentifier);
+                        debugLog("Identified settings file: " + fileName);
+                    }
                 }
             }
             

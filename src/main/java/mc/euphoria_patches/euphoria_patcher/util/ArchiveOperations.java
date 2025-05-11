@@ -84,7 +84,7 @@ public class ArchiveOperations {
                             // No update available - need the specific version
                             EuphoriaPatcher.log(3, 8, "This version of " + EuphoriaPatcher.PATCH_NAME + " requires " + 
                                 EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION);
-                            EuphoriaPatcher.log(3, 8, "Please download it from " + EuphoriaPatcher.DOWNLOAD_URL + " or wait for an update.");
+                            EuphoriaPatcher.log(3, 8, "Please download it from " + EuphoriaPatcher.DOWNLOAD_URL + " or check for an " + EuphoriaPatcher.PATCH_NAME + " update manually at https://euphoriapatches.com/download");
                         }
                     }
                     // Check if it's the correct version with incorrect size

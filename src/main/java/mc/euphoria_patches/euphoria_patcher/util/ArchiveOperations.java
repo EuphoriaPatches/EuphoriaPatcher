@@ -116,6 +116,32 @@ public class ArchiveOperations {
 
                     return false;
                 }
+
+                // If size matches, check if it's a test/fix version by filename
+                String fileName = baseArchived.getFileName().toString().toLowerCase();
+                if (fileName.contains("test") || fileName.contains("fix") || 
+                    fileName.contains("dev") || fileName.contains("pre")) {
+                    
+                    debugLog("Test/fix version detected: " + baseArchived.getFileName());
+                    EuphoriaPatcher.log(3, 8, "Test or development version detected: " + baseArchived.getFileName().toString().replace(".tar", ""));
+                    EuphoriaPatcher.log(3, 8, EuphoriaPatcher.PATCH_NAME + " requires the official release of " + 
+                        EuphoriaPatcher.BRAND_NAME + "Shaders" + EuphoriaPatcher.VERSION);
+                    EuphoriaPatcher.log(3, 8, "Please download it from " + EuphoriaPatcher.DOWNLOAD_URL);
+
+                    // Start the watcher
+                    EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+                    if (instance != null) {
+                        instance.startWatcherAfterByteSizeFailure();
+                        // If we have a watcher, track this file as invalid
+                        ShaderpacksWatcher watcher = instance.getShaderpacksWatcher();
+                        if (watcher != null) {
+                            watcher.trackInvalidByteSizeFile(fileName);
+                        }
+                    }
+                    
+                    return false;
+                }
+
                 debugLog("Archive size verification passed");
             }
         } catch (IOException e) {
@@ -139,9 +165,21 @@ public class ArchiveOperations {
                 // long expectedSize = 1328640; // Same as BASE_TAR_SIZE
                 // return Math.abs(fileSize - expectedSize) <= 5;
                 
-                boolean isValid = fileSize == EuphoriaPatcher.BASE_TAR_SIZE;
-                debugLog("Archive size: " + fileSize + " bytes, expected: " + EuphoriaPatcher.BASE_TAR_SIZE + " bytes, valid: " + isValid);
-                return isValid;
+                boolean isValidSize = fileSize == EuphoriaPatcher.BASE_TAR_SIZE;
+                debugLog("Archive size: " + fileSize + " bytes, expected: " + EuphoriaPatcher.BASE_TAR_SIZE + " bytes, valid: " + isValidSize);
+                if (!isValidSize) {
+                    return false;
+                }
+
+                // Check for test/fix version markers in filename
+                String fileName = baseArchived.getFileName().toString().toLowerCase();
+                if (fileName.contains("test") || fileName.contains("fix") || 
+                    fileName.contains("dev") || fileName.contains("pre")) {
+                    debugLog("Test/fix version detected in quiet check: " + baseArchived.getFileName());
+                    return false;
+                }
+
+                return true;
             }
         } catch (IOException e) {
             debugLog("Error during quiet archive verification: " + e.getMessage());

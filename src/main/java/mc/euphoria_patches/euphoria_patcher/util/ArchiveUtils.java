@@ -87,7 +87,11 @@ public class ArchiveUtils {
             debugLog(completionMessage);
         } catch (Exception e) {
             debugLog("Error during extraction: " + e.getMessage());
-            throw e;
+            EuphoriaPatcher.log(3, "Archive extraction failed: " + e.getMessage());
+            if (e.getCause() != null) {
+                debugLog("Caused by: " + e.getCause().getMessage());
+            }
+            e.printStackTrace();
         }
     }
 

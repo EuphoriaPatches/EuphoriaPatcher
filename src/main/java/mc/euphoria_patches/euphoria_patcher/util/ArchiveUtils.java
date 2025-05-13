@@ -43,6 +43,7 @@ public class ArchiveUtils {
             
             ArchiveEntry entry;
             int extractedCount = 0;
+            int skippedCount = 0;
             
             // Iterate through each entry in the archive
             while ((entry = archiveInputStream.getNextEntry()) != null) {
@@ -51,29 +52,39 @@ public class ArchiveUtils {
                     debugLog("Skipping unreadable entry: " + entry.getName());
                     continue;
                 }
+                
+                try {
+                    // Resolve the target path for the current entry
+                    Path targetFilePath = out.resolve(entry.getName()).normalize();                    
+                    debugLog("Processing entry: " + entry.getName() + " -> " + targetFilePath);
 
-                // Resolve the target path for the current entry
-                Path targetFilePath = out.resolve(entry.getName()).normalize();
-                debugLog("Processing entry: " + entry.getName() + " -> " + targetFilePath);
+                    if (entry.isDirectory()) {
+                        // Create directory if the entry is a directory
+                        Files.createDirectories(targetFilePath);
+                        debugLog("Created directory: " + targetFilePath);
+                    } else {
+                        // Create parent directories for the file
+                        Files.createDirectories(targetFilePath.getParent());
 
-                if (entry.isDirectory()) {
-                    // Create directory if the entry is a directory
-                    Files.createDirectories(targetFilePath);
-                    debugLog("Created directory: " + targetFilePath);
-                } else {
-                    // Create parent directories for the file
-                    Files.createDirectories(targetFilePath.getParent());
-
-                    // Extract the file
-                    try (OutputStream outputStream = Files.newOutputStream(targetFilePath)) {
-                        IOUtils.copy(archiveInputStream, outputStream);
-                        extractedCount++;
-                        debugLog("Extracted file: " + targetFilePath);
+                        // Extract the file
+                        try (OutputStream outputStream = Files.newOutputStream(targetFilePath)) {
+                            IOUtils.copy(archiveInputStream, outputStream);
+                            extractedCount++;
+                            debugLog("Extracted file: " + targetFilePath);
+                        }
                     }
+                } catch (java.nio.file.InvalidPathException e) {
+                    // Just log and skip files with invalid paths
+                    debugLog("Skipping entry with invalid path: " + entry.getName() + " - " + e.getMessage());
+                    skippedCount++;
                 }
             }
             
-            debugLog("Extraction completed. " + extractedCount + " files extracted.");
+            String completionMessage = "Extraction completed. " + extractedCount + " files extracted";
+            if (skippedCount > 0) {
+                completionMessage += ", " + skippedCount + " entries skipped";
+            }
+            debugLog(completionMessage);
         } catch (Exception e) {
             debugLog("Error during extraction: " + e.getMessage());
             throw e;

@@ -1,0 +1,2 @@
+Manifest-Version: 1.0
+Main-Class: mc.euphoria_patches.euphoria_patcher.Main

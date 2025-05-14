@@ -86,6 +86,10 @@ shadowJar {
 
 	// Force the task to always run and not be UP-TO-DATE
 	outputs.upToDateWhen { false }
+
+	manifest {
+        from file("MANIFEST.MF")
+    }
 }
 
 // Configure remapJar to use shadowJar

@@ -24,7 +24,7 @@ public class EuphoriaPatcher {
     public static final String BRAND_NAME = "Complementary";
     public static final String PATCH_NAME = "EuphoriaPatches";
     public static final String VERSION = "_r5.5.1";
-    public static final String PATCH_VERSION = "_1.6.1";
+    public static final String PATCH_VERSION = "_1.6.2";
 
     public static final int BASE_TAR_SIZE = 1340416;
 
@@ -76,6 +76,8 @@ public class EuphoriaPatcher {
         if (doPopUpLogging) loggerInstance.checkAndSetupSodiumLogging();
 
         if (doUpdateChecking) UpdateChecker.checkForUpdates();
+
+        ShaderLoader.getShaderLoader();
 
         log(0, JsonUtilReader.getRandomMessage("startupMessages"));
 

@@ -10,6 +10,7 @@ public class ShaderLoader {
     public static final String IRIS = "iris";
     public static final String OCULUS = "oculus";
     public static final String OPTIFINE = "optifine";
+    public static final String ANGELICA = "angelica";
     public static final String UNKNOWN = "unknown";
 
     // Pattern to validate Minecraft version format (1.X.Y or 1.XX.YY)
@@ -45,7 +46,8 @@ public class ShaderLoader {
 
                     if (fileName.startsWith("iris") ||
                             fileName.startsWith("oculus") ||
-                            fileName.startsWith("optifine")) {
+                            fileName.startsWith("optifine") ||
+                            fileName.startsWith("angelica")) {
                         cachedShaderFile = modFile;
                         shaderFileSearched = true;
                         debugLog("Found shader loader file: " + modFile.getName());
@@ -66,7 +68,7 @@ public class ShaderLoader {
 
     /**
      * Gets the shader loader mod name from the shader loader filename.
-     * Examples: "iris", "oculus", "optifine"
+     * Examples: "iris", "oculus", "optifine", "angelica"
      *
      * @return The shader loader mod name, or "unknown" if not detected
      */
@@ -81,6 +83,7 @@ public class ShaderLoader {
         File shaderFile = findShaderLoaderFile();
         if (shaderFile == null) {
             debugLog("No shader file found, returning UNKNOWN");
+            EuphoriaPatcher.log(2, 0, "No shader loader mod was found");
             cachedShaderLoader = UNKNOWN;
             return cachedShaderLoader;
         }
@@ -97,6 +100,9 @@ public class ShaderLoader {
         } else if (fileName.startsWith("optifine")) {
             debugLog("Detected OPTIFINE shader loader");
             cachedShaderLoader = OPTIFINE;
+        } else if (fileName.startsWith("angelica")) {  // Add Angelica detection
+            debugLog("Detected ANGELICA shader loader");
+            cachedShaderLoader = ANGELICA;
         } else {
             debugLog("Could not determine shader loader type, returning UNKNOWN");
             cachedShaderLoader = UNKNOWN;
@@ -132,8 +138,15 @@ public class ShaderLoader {
             String extractedVersion = null;
             debugLog("Parsing version from filename: " + fileName);
 
+            // Handle Angelica format: angelica-1.0.0-betaXX.jar
+            if (lowerFileName.startsWith("angelica")) {
+                debugLog("Detected Angelica format - always for Minecraft 1.7.10");
+                // Angelica is specifically for 1.7.10
+                extractedVersion = "1.7.10";
+                debugLog("Set version to 1.7.10 for Angelica");
+            }
             // Handle OptiFine format: OptiFine_1.18.1_HD_U_H6.jar
-            if (lowerFileName.startsWith("optifine_")) {
+            else if (lowerFileName.startsWith("optifine_")) {
                 debugLog("Detected OptiFine format");
                 String[] parts = fileName.split("_");
                 if (parts.length >= 2) {

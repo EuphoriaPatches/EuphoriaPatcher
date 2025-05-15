@@ -32,7 +32,7 @@ public class EuphoriaPatcher {
     public static final String COMMON_LOCATION = "shaders/lib/common.glsl";
     public static final String LANG_LOCATION = "shaders/lang";
     public static final String SHADERS_PROPERTIES_LOCATION = "shaders/shaders.properties";
-    public static final String SHADER_MYFILE_LOCATION = "shaders/lib/myFile.glsl";
+    public static final String SHADER_MYFILE_LOCATION = "shaders/lib/misc/myFile.glsl";
 
     // Get necessary paths
     public static Path shaderpacks = ModLoaderSpecifics.shaderpacks;

@@ -37,9 +37,6 @@ public class EuphoriaLogger {
     private final Path errorLogFilePath = EuphoriaPatcher.shaderpacks.resolve(ERROR_LOG_FILE_NAME);
     private boolean isSodiumInstalled;
     private boolean shouldCreateErrorLog = true;
-
-    // The "EuphoriaPatcher: " header is only prepended to the first message pushed
-    // into the Sodium console; subsequent messages there are shown without it.
     private boolean sodiumHeaderShown = false;
 
     // For error shader generation

@@ -36,6 +36,7 @@
     "IrisLegacyExclusiveUniformsMixin",
     "OptifineShadersUniformsMixin",
     "NativeImageMixin",
+    "ScreenshotMixin",
     "IrisShaderPackScreenMixin",
     "IrisLegacyShaderPackScreenMixin",
     "IrisConfigPropertiesMixin",

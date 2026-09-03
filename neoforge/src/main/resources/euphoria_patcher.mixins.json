@@ -22,6 +22,7 @@
     "IrisModernExclusiveUniformsMixin",
     "PreparedRenderTypeMixin",
     "NativeImageMixin",
+    "ScreenshotMixin",
     "IrisShaderPackScreenMixin",
     "IrisConfigPropertiesMixin",
     "SodiumMessagePopupMixin",

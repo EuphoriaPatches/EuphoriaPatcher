@@ -39,6 +39,8 @@
     "NativeImageMixin",
     "NativeImageMixinYarn",
     "PreparedRenderTypeMixin",
+    "ScreenshotMixin",
+    "ScreenshotMixinYarn",
     "ReloadShadersOnDimensionChangeMixin",
     "ReloadShadersOnDimensionChangeMixinYarn",
     "RenderTypeMixin",

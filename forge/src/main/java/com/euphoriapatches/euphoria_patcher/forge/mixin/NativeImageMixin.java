@@ -24,6 +24,6 @@ public class NativeImageMixin {
     @Dynamic("Bypasses compiler checks for alternative mapping variants")
     @Inject(method = "m_85056_", at = @At("RETURN"), require = 0, remap = false)
     private void euphoriaPatcher$onWriteToFileReturn(File file, CallbackInfo ci) {
-        NativeImageEmbedHelper.createDebugScreenshot(file);
+        NativeImageEmbedHelper.createDebugScreenshot(this, file);
     }
 }

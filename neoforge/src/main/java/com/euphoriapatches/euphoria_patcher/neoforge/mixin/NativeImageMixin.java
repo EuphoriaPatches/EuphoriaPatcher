@@ -20,6 +20,6 @@ public class NativeImageMixin {
 
     @Inject(method = "writeToFile", at = @At("RETURN"))
     private void euphoriaPatcher$onWriteToFileReturn(File file, CallbackInfo ci) {
-        NativeImageEmbedHelper.createDebugScreenshot(file);
+        NativeImageEmbedHelper.createDebugScreenshot(this, file);
     }
 }

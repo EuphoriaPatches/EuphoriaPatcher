@@ -38,6 +38,10 @@ public class EuphoriaLogger {
     private boolean isSodiumInstalled;
     private boolean shouldCreateErrorLog = true;
 
+    // The "EuphoriaPatcher: " header is only prepended to the first message pushed
+    // into the Sodium console; subsequent messages there are shown without it.
+    private boolean sodiumHeaderShown = false;
+
     // For error shader generation
     private final List<String> errorMessages = new ArrayList<>();
     private int lastProcessedErrorCount = 0;
@@ -86,7 +90,11 @@ public class EuphoriaLogger {
         if (messageLevel == -1) loggingMessage = "\n \n" + loggingMessage + "\n\n ";
 
         if (isSodiumInstalled && messageFadeTimer > 0) {
-            SodiumConsole.logMessage(messageLevel, messageFadeTimer, loggingMessage);
+            // Only the first message carries the header, looks cleaner
+            String sodiumMessage = sodiumHeaderShown ? message : "EuphoriaPatcher: " + message;
+            if (messageLevel == -1) sodiumMessage = "\n \n" + sodiumMessage + "\n\n ";
+            SodiumConsole.logMessage(messageLevel, messageFadeTimer, sodiumMessage);
+            sodiumHeaderShown = true;
         }
 
         switch (messageLevel) {

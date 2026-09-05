@@ -1,0 +1,19 @@
+{
+  "euphoria_patcher.button.support": "Support EP",
+  "euphoria_patcher.button.update": "Update EP!",
+  "euphoria_patcher.tooltip.support": "Support Euphoria Patches!",
+  "euphoria_patcher.tooltip.update": "Update Euphoria Patches!",
+  "euphoria_patcher.tooltip.remove": "Verwijder Supportknop?",
+  "euphoria_patcher.tooltip.remove.hint": "(verwijder met SHIFT-klik)",
+  "euphoria_patcher.donation.line1": "Hey daar!",
+  "euphoria_patcher.donation.line2": "Goed om te zien dat je geniet van %s!",
+  "euphoria_patcher.donation.line3": "Het toevoegen van nieuwe instellingen, effecten en functies kost %s aan werk.",
+  "euphoria_patcher.donation.line4": "Als je van de extra sfeer in je wereld geniet, overweeg dan %s.",
+  "euphoria_patcher.donation.line5": "Bedankt voor het gebruiken van Euphoria Patches <3",
+  "euphoria_patcher.donation.line2.highlight": "Euphoria Patches",
+  "euphoria_patcher.donation.line3.highlight": "talloze uren",
+  "euphoria_patcher.donation.line4.highlight": "het project te supporten",
+  "euphoria_patcher.donation.button": "Support Project",
+  "fml.menu.mods.info.description.euphoria_patcher": "Een mod die de Euphoria Patches add-on gemakkelijk op Complementary Shaders toepast.\nPas toe en verander instellingen in het Euphoria Patches instellingenmenu\nMeld problemen op discord!",
+  "modmenu.descriptionTranslation.euphoria_patcher": "Een mod die de Euphoria Patches add-on gemakkelijk op Complementary Shaders toepast.\nPas toe en verander instellingen in het Euphoria Patches instellingenmenu\nMeld problemen op discord!"
+}

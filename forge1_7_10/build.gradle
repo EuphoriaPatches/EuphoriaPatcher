@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'eclipse'
-    id 'com.gtnewhorizons.retrofuturagradle' version '1.4.0'
+    id 'com.gtnewhorizons.retrofuturagradle' version '1.4.9'
     id 'com.github.johnrengelman.shadow' version '7.1.2'
     id 'me.modmuss50.mod-publish-plugin'
 }

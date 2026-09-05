@@ -204,7 +204,7 @@ tasks.whenTaskAdded { task ->
 publishMods {
     file = shadowJar.archiveFile
 
-    changelog = rootProject.ext.changelogFile.text
+    changelog = rootProject.ext.readChangelog()
 
     displayName = "Euphoria Patcher ${project.version}"
 

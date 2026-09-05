@@ -23,10 +23,33 @@ ext.publishConfirmed = false
 ext.skipCurseforge = false
 ext.skipModrinth = false
 
+// Soft requirement, if CHANGELOG.md is missing, create it with placeholder
+ext.ensureChangelogFile = {
+    if (!changelogFile.exists()) {
+        def compVersion = versionProps.getProperty('mod_version').split("-")[1]
+        changelogFile.text = "## The entire changelog can be found here: https://euphoriapatches.com/changelogs\n" +
+                "### Updated to Complementary Shaders ${compVersion} + Euphoria Patches [insert version here]\n" +
+                "\n" +
+                "<iframe width=\"560\" height=\"315\" src=\"https://www.youtube-nocookie.com/embed/INSERT-VIDEO-ID\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" allowfullscreen></iframe>\n" +
+                "\n" +
+                "## [Insert Version Here] Changes:\n" +
+                "### Key Shader Changes:\n" +
+                "- ...\n" +
+                "## Key Mod Changes:\n" +
+                "- ...\n" +
+                "\n" +
+                "## And Much More!\n" +
+                "For a full list of changes, please visit: https://euphoriapatches.com/changelogs"
+    }
+    changelogFile
+}
+ext.readChangelog = { -> ensureChangelogFile().text }
+
 allprojects {
 	group = 'com.euphoriapatches'
 	ext.versionProps = versionProps
 	ext.changelogFile = rootProject.ext.changelogFile
+	ext.readChangelog = rootProject.ext.readChangelog
 	ext.publishTestRun = rootProject.ext.publishTestRun
 }
 
@@ -35,18 +58,13 @@ tasks.register('validateChangelog') {
     outputs.upToDateWhen {false}
     doLast {
         def baseVersion = versionProps.getProperty('mod_version').split("-")[0]
-        def compVersion = versionProps.getProperty('mod_version').split("-")[1]
+        def alreadyExisted = changelogFile.exists()
 
-        if (!changelogFile.exists()) {
-            changelogFile.text = "## The entire changelog can be found here: https://euphoriapatches.com/changelogs\n" +
-                    "### Updated to Complementary Shaders ${compVersion} + Euphoria Patches [insert version here]\n" +
-                    "\n" +
-                    "<iframe width=\"560\" height=\"315\" src=\"https://www.youtube-nocookie.com/embed/INSERT-VIDEO-ID\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" allowfullscreen></iframe>\n" +
-                    "\n"
+        def changelogContent = readChangelog()
+
+        if (!alreadyExisted) {
             throw new GradleException("CHANGELOG.md was missing and has been created. Please update it with release notes and try again.")
         }
-
-        def changelogContent = changelogFile.text
 
         if (!changelogContent.contains(baseVersion)) {
             throw new GradleException("CHANGELOG.md does not contain version ${baseVersion}. Please update the changelog before publishing.")

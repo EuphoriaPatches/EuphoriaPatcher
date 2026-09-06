@@ -16,7 +16,8 @@ import java.util.regex.Pattern;
  * Custom {@code Map} replacing Iris's {@code dimensionMap} in {@code ShaderPack},
  * adding wildcard ('*') support to {@code dimension.properties} patterns (e.g., "namespace:name*").
  * <p>
- * Matches in reverse insertion order so specific rules take priority over catch-alls.
+ * Matches in reverse insertion order so specific rules take priority over catch-alls, EXCEPT for the Iris {@code ":*"} catch-all. Per Iris definition, it acts as the lowest-priority fallback for unassigned dimensions, regardless of its declaration order.
+ * <p>
  * Uses reflection to read target key properties without direct Iris compile dependencies.
  */
 public class DimensionWildcardMap implements Map<Object, Object> {
@@ -46,6 +47,8 @@ public class DimensionWildcardMap implements Map<Object, Object> {
         final Pattern namespacePattern;
         final Pattern namePattern;
         final Object value;
+        /** True for the bare Iris {@code *} catch-all ("*:*") - always lowest match priority. */
+        final boolean isUniversalCatchAll;
 
         PatternEntry(String rawNamespace, String rawName, Pattern namespacePattern, Pattern namePattern, Object value) {
             this.rawNamespace = rawNamespace;
@@ -53,6 +56,7 @@ public class DimensionWildcardMap implements Map<Object, Object> {
             this.namespacePattern = namespacePattern;
             this.namePattern = namePattern;
             this.value = value;
+            this.isUniversalCatchAll = "*".equals(rawNamespace) && "*".equals(rawName);
         }
     }
 
@@ -104,10 +108,24 @@ public class DimensionWildcardMap implements Map<Object, Object> {
             return cached == NO_MATCH ? null : cached;
         }
 
+        // First pass: everything except the iris "*" catch-all
         for (int i = entries.size() - 1; i >= 0; i--) {
             PatternEntry entry = entries.get(i);
+            if (entry.isUniversalCatchAll) {
+                continue;
+            }
             if (entry.namespacePattern.matcher(parts[0]).matches() && entry.namePattern.matcher(parts[1]).matches()) {
                 debugLog("Matched " + parts[0] + ":" + parts[1] + " against " + entry.rawNamespace + ":" + entry.rawName + " -> " + entry.value);
+                matchCache.put(cacheKey, entry);
+                return entry;
+            }
+        }
+
+        // Second pass: fall back to the bare "*" catch-all
+        for (int i = entries.size() - 1; i >= 0; i--) {
+            PatternEntry entry = entries.get(i);
+            if (entry.isUniversalCatchAll) {
+                debugLog("Matched " + parts[0] + ":" + parts[1] + " against catch-all * -> " + entry.value);
                 matchCache.put(cacheKey, entry);
                 return entry;
             }

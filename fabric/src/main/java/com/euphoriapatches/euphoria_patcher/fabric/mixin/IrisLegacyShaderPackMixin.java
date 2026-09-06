@@ -59,6 +59,7 @@ public class IrisLegacyShaderPackMixin {
             for (String part : value.split("\\s+")) {
                 if (part.equals("*")) {
                     builder.registerEntry("*", "*", key);
+                    continue;
                 }
                 builder.registerEntry(part, key);
             }

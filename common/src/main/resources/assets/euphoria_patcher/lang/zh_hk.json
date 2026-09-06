@@ -1,0 +1,19 @@
+{
+  "euphoria_patcher.button.support": "贊助 EP",
+  "euphoria_patcher.button.update": "更新 EP!",
+  "euphoria_patcher.tooltip.support": "贊助 Euphoria Patches!",
+  "euphoria_patcher.tooltip.update": "更新 Euphoria Patches!",
+  "euphoria_patcher.tooltip.remove": "是否移除贊助按鈕？",
+  "euphoria_patcher.tooltip.remove.hint": "(按住SHIFT點擊移除)",
+  "euphoria_patcher.donation.line1": "嗨！",
+  "euphoria_patcher.donation.line2": "很高興看到你在享受 %s！",
+  "euphoria_patcher.donation.line2.highlight": "Euphoria Patches",
+  "euphoria_patcher.donation.line3": "添加新設定，視覺效果及功能需要花費 %s 。",
+  "euphoria_patcher.donation.line3.highlight": "無數個小時",
+  "euphoria_patcher.donation.line4": "如果你喜歡本光影包，請考慮 %s。",
+  "euphoria_patcher.donation.line4.highlight": "贊助本項目",
+  "euphoria_patcher.donation.line5": "感謝使用 Euphoria Patches <3",
+  "euphoria_patcher.donation.button": "贊助項目",
+  "fml.menu.mods.info.description.euphoria_patcher": "一個對 Complementary 光影應用 Euphoria Patches 附加的模組。\n在光影包設置菜單啓用或者調節 Euphoria Patches 設置\n請在 Discord 反饋問題！",
+  "modmenu.descriptionTranslation.euphoria_patcher": "一個對 Complementary 光影應用 Euphoria Patches 附加的模組。\n在光影包設置菜單啓用或者調節 Euphoria Patches 設置\n請在 Discord 反饋問題！"
+}

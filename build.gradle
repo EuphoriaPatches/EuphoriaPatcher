@@ -244,7 +244,11 @@ tasks.register('publishAll') {
 
     doLast {
         println "\n" + "=" * 60
-        println "\u001B[32mAll mod loader variants published successfully!\u001B[0m"
+        if (publishTestRun) {
+            println "\u001B[32mDry run complete - no files were actually published\u001B[0m"
+        } else {
+            println "\u001B[32mAll mod loader variants published successfully!\u001B[0m"
+        }
         println "=" * 60
     }
 }

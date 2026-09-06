@@ -84,13 +84,26 @@ task verifyPatchFile {
 		println "Searching for patch file... expected patch file: ${expectedPatchFile}"
 
 		if (!patchFilePath.exists()) {
-			throw new GradleException("""
+			def details = """
 			❌ PATCH FILE NOT FOUND: ${expectedPatchFile}
 			Expected location: common/src/main/resources/${expectedPatchFile}
 			Expected Version:  EuphoriaPatches_${patchVersion}.patch
 			Current Version:   ${actualPatchFile}
 			Fix: Run DevPatchGenerator or copy from EuphoriaPatchFiles/
-			""".stripIndent().trim())
+			""".stripIndent().trim()
+
+			// Only fail the build when publishing, warn otherwise
+			def isPublishing = gradle.taskGraph.allTasks.any {
+				it.name == 'confirmPublish' || it.name.startsWith('publish')
+			}
+
+			if (isPublishing) {
+				throw new GradleException(details)
+			}
+
+			// Defer printing so the warning shows up at the end of the build output instead of being buried under later task logs.
+			rootProject.ext.patchFileMissingWarning = details + "\nThis is just a warning, the jar can still be compiled."
+			return
 		}
 
 		println "\u001B[32m✓ Patch file found: ${expectedPatchFile}\u001B[0m"
@@ -101,6 +114,14 @@ task verifyPatchFile {
 // This allows DevPatchGenerator to run without needing the patch file to exist yet
 jar.dependsOn verifyPatchFile
 assemble.dependsOn verifyPatchFile
+
+gradle.buildFinished {
+	def warning = rootProject.ext.has('patchFileMissingWarning') ? rootProject.ext.patchFileMissingWarning : null
+	if (warning) {
+		println ""
+		println "\u001B[33m\u26a0 ${warning}\u001B[0m"
+	}
+}
 
 // Ensure Main.java resources are included
 jar {

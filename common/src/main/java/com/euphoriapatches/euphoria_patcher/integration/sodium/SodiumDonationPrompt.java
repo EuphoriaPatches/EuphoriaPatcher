@@ -15,7 +15,7 @@ import java.util.List;
 public final class SodiumDonationPrompt {
 
     public static final int DAYS_THRESHOLD = 3;
-    public static final int SETTINGS_CHANGED_THRESHOLD = 12;
+    public static final int SETTINGS_CHANGED_THRESHOLD = 10;
 
     private static final String[] SCREEN_PROMPT_CLASSES = {
             "net.caffeinemc.mods.sodium.client.gui.prompt.ScreenPrompt",

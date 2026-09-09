@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.fabric.mixin;
 
 import com.euphoriapatches.euphoria_patcher.integration.iris.IrisReloadManager;
+import com.euphoriapatches.euphoria_patcher.util.mod.ClipboardManager;
 import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Dynamic;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,5 +23,6 @@ public class ClientTickMixin {
             at = @At("HEAD"), remap = false)
     private void onClientTick(CallbackInfo ci) {
         IrisReloadManager.checkPendingReload();
+        ClipboardManager.checkPending();
     }
 }

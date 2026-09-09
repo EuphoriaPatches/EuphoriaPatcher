@@ -35,7 +35,7 @@ public final class SodiumConsole {
     private static boolean componentShape;
     /** legacy duration parameter is {@code int} rather than {@code double}. */
     private static boolean intDuration;
-    private static Method textFactory;      // static String -> Text
+    private static Method textFactory; // static String -> Text
     private static Constructor<?> textConstructor; // fallback: new Text(String)
 
     private static void debugLog(String message) {

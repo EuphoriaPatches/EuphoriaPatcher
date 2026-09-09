@@ -2,8 +2,8 @@ package com.euphoriapatches.euphoria_patcher.logging;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.config.ConfigHandler;
-import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import com.euphoriapatches.euphoria_patcher.integration.sodium.SodiumConsole;
+import com.euphoriapatches.euphoria_patcher.util.mod.ClipboardManager;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -232,31 +232,10 @@ public class EuphoriaLogger {
                             lastProcessedErrorCount = errorMessages.size();
                         }
 
-                        // Only attempt clipboard copy on supported mod loaders
-                        if (doErrorClipboardCopy) {
-                            // Check if error shader is active and copy URL to clipboard if available
-                            if (ErrorShaderGenerator.isErrorShaderActive() &&
-                            lastErrorURL != null &&
-                            !errorURLAlreadyCopied &&
-                            ShaderLoader.isShaderLoaderRunning()) {
-                                debugLog("[EuphoriaLogger] Error shader is active, attempting to copy URL to clipboard: " + lastErrorURL);
-                                boolean success = ModLoaderSpecifics.setClipboardStatic(lastErrorURL);
-                                if (success) {
-                                    debugLog("[EuphoriaLogger] Successfully copied URL to clipboard");
-                                    log(3, 8, "The download link has been copied to your clipboard. Paste it in your browser.");
-                                } else {
-                                    debugLog("[EuphoriaLogger] Failed to copy URL to clipboard");
-                                    log(3, 8, "Failed to copy error URL to clipboard. " +
-                                        "Please copy it manually from " + ERROR_LOG_FILE_NAME + " in your shaderpacks folder.");
-
-                                }
-                                ErrorShaderGenerator.generateErrorShader(errorMessages);
-                                lastProcessedErrorCount = errorMessages.size();
-                                errorURLAlreadyCopied = true;
-                            } else {
-                                debugLog("[EuphoriaLogger] Error shader not active or no URL to copy (active=" +
-                                        ErrorShaderGenerator.isErrorShaderActive() + ", url=" + lastErrorURL + ", alreadyCopied=" + errorURLAlreadyCopied + ")");
-                            }
+                        if (doErrorClipboardCopy && lastErrorURL != null && !errorURLAlreadyCopied) {
+                            debugLog("[EuphoriaLogger] Handing error URL to ClipboardManager: " + lastErrorURL);
+                            ClipboardManager.schedule(lastErrorURL);
+                            errorURLAlreadyCopied = true;
                         }
 
                         // Always reschedule to keep checking periodically

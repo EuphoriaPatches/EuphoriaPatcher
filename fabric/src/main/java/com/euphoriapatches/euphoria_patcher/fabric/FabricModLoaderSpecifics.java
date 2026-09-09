@@ -2,13 +2,11 @@ package com.euphoriapatches.euphoria_patcher.fabric;
 
 import com.euphoriapatches.euphoria_patcher.util.Dimensions;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
-import com.euphoriapatches.euphoria_patcher.util.ReflectionUtils;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.Identifier;
-import net.minecraft.world.GameRules;
 
 import java.nio.file.Path;
 
@@ -17,8 +15,6 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
     private final Path shaderpacksPath;
     private final Path configDirectory;
     private static Boolean useYarnMappings = null; // null = not yet determined
-    private static boolean serverSideGamerules = false;
-    private static boolean isServerSideGamerulesNewer = false;
 
     public FabricModLoaderSpecifics() {
         this.shaderpacksPath = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
@@ -101,17 +97,17 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
                     debugLog("handle() method not found");
                     return false;
                 }
-
-                try {
-                    org.lwjgl.glfw.GLFW.glfwSetClipboardString(windowHandle, str);
-                } catch (Throwable t) {
-                    // Modern Minecraft versions switched their windowing backend from GLFW to SDL3
-                    debugLog("GLFW clipboard failed, trying SDL3: " + t.getMessage());
-                    Class<?> sdlClipboardClass = Class.forName("org.lwjgl.sdl.SDLClipboard");
-                    sdlClipboardClass.getMethod("SDL_SetClipboardText", CharSequence.class).invoke(null, str);
-                }
-                return true;
             }
+
+            try {
+                org.lwjgl.glfw.GLFW.glfwSetClipboardString(windowHandle, str);
+            } catch (Throwable t) {
+                // Modern Minecraft versions switched their windowing backend from GLFW to SDL3
+                debugLog("GLFW clipboard failed, trying SDL3: " + t.getMessage());
+                Class<?> sdlClipboardClass = Class.forName("org.lwjgl.sdl.SDLClipboard");
+                sdlClipboardClass.getMethod("SDL_SetClipboardText", CharSequence.class).invoke(null, str);
+            }
+            return true;
         } catch (Throwable e) {
             debugLog("Error setting clipboard: " + e.getMessage());
         }

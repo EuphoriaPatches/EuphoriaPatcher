@@ -1,405 +1,174 @@
 package com.euphoriapatches.euphoria_patcher.integration.sodium;
 
-import com.euphoriapatches.euphoria_patcher.config.ConfigHandler;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.ReflectionUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.List;
+public final class SodiumConsole {
 
-public class SodiumConsole {
-    private static boolean initialized = false;
-    private static boolean sodiumAvailable = false;
-    private static Object consoleSink = null;
-    private static Method logMessageMethod = null;
-    private static Class<?> messageLevelClass = null;
-    private static Object infoLevel = null;
-    private static Object warnLevel = null;
-    private static Object severeLevel = null;
-    private static boolean useDoubleForFadeTimer = false;
-    private static boolean newSignature = false;
+    private SodiumConsole() {
+    }
 
-    // Text handling
-    private static Class<?> textClass = null;
-    private static Method textOfMethod = null;
-    private static Constructor<?> textConstructor = null;
+    private static final String[] CONSOLE_CLASSES = {
+            "net.caffeinemc.mods.sodium.client.console.Console",       // Sodium 0.6.7+ ("26.x")
+            "net.caffeinemc.mods.sodium.client.gui.console.Console",   // Sodium 0.6.0 - 0.6.6
+            "me.jellysquid.mods.sodium.client.gui.console.Console"     // Sodium 0.5.x (1.20.1)
+    };
 
-    // Debug flag - can be enabled to show detailed logs
-    private static final boolean debugLogging = ConfigHandler.doDebugLogging;
+    private static final String[] TEXT_FACTORY_NAMES = {
+            "literal", "m_237113_", "method_43470",   // Component.literal / Text.literal
+            "of", "method_30163",                     // Text.of
+            "nullToEmpty", "m_130674_"                // Component.nullToEmpty
+    };
 
-    // Known Sodium package paths - prioritize 1.20.1 paths first
-    private static final List<String[]> KNOWN_SODIUM_PATHS = Arrays.asList(
-            // 1.20.1 common path (prioritized)
-            new String[] {
-                    "me.jellysquid.mods.sodium.client.gui.console.Console",
-                    "me.jellysquid.mods.sodium.client.gui.console.ConsoleSink",
-                    "me.jellysquid.mods.sodium.client.gui.console.message.MessageLevel"
-            },
-            // 1.21+ relocated path
-            new String[] {
-                    "net.caffeinemc.mods.sodium.client.console.Console",
-                    "net.caffeinemc.mods.sodium.client.console.ConsoleSink",
-                    "net.caffeinemc.mods.sodium.client.console.message.MessageLevel"
-            }
-    );
+    private static boolean initialized;
+    private static boolean available;
 
-    private static void log(String message) {
+    private static Object sink;
+    private static Method logMessage;
+    private static Object infoLevel;
+    private static Object warnLevel;
+    private static Object severeLevel;
+
+    /** true: {@code (MessageLevel, Text, duration)}; false: {@code (MessageLevel, String, boolean, double)}. */
+    private static boolean componentShape;
+    /** legacy duration parameter is {@code int} rather than {@code double}. */
+    private static boolean intDuration;
+    private static Method textFactory;      // static String -> Text
+    private static Constructor<?> textConstructor; // fallback: new Text(String)
+
+    private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[SodiumConsole] " + message);
     }
 
-    private static void initialize() {
-        if (initialized) return;
-        initialized = true;
+    public static boolean isSodiumAvailable() {
+        ensureInitialized();
+        return available;
+    }
 
-        log("Initializing...");
-
-        // Initialize text class
-        initializeTextClass();
-
-        // Try all known Sodium paths
-        for (String[] paths : KNOWN_SODIUM_PATHS) {
-            log("Trying path: " + paths[0]);
-            if (tryInitialize(paths[0], paths[1], paths[2])) {
-                log("Successfully initialized with path: " + paths[0]);
-                return;
-            }
+    /**
+     * @param level 1 = info, 2 = warn, anything else = severe
+     * @param messageFadeTimer seconds before the popup fades
+     * @param message plain text to show
+     */
+    public static void logMessage(int level, int messageFadeTimer, String message) {
+        ensureInitialized();
+        if (!available) {
+            return;
         }
+        try {
+            Object messageLevel = level == 1 ? infoLevel : level == 2 ? warnLevel : severeLevel;
+            if (!componentShape) {
+                logMessage.invoke(sink, messageLevel, message, false, (double) messageFadeTimer);
+            } else if (intDuration) {
+                logMessage.invoke(sink, messageLevel, createText(message), messageFadeTimer);
+            } else {
+                logMessage.invoke(sink, messageLevel, createText(message), (double) messageFadeTimer);
+            }
+        } catch (Throwable t) {
+            available = false;
+            debugLog("Disabled after a logging failure: " + t);
+        }
+    }
 
-        log("All regular initialization attempts failed");
+    private static synchronized void ensureInitialized() {
+        if (initialized) {
+            return;
+        }
+        initialized = true;
+        try {
+            initialize();
+        } catch (Throwable t) {
+            available = false;
+            debugLog("Initialization failed: " + t);
+        }
+    }
 
-        // Try specific fallback methods for problematic versions
-        if (trySpecificVersionFallbacks()) {
-            log("Fallback initialization succeeded");
+    private static void initialize() {
+        Class<?> consoleClass = ReflectionUtils.firstClass(CONSOLE_CLASSES);
+        if (consoleClass == null) {
+            debugLog("Sodium not present - no console class found");
+            return;
+        }
+        debugLog("Using console class " + consoleClass.getName());
+
+        sink = resolveSink(consoleClass);
+        if (sink == null) {
+            debugLog("Could not obtain the Console instance");
             return;
         }
 
-        log("Failed to initialize Sodium console");
+        logMessage = findLogMessage(sink.getClass());
+        if (logMessage == null) {
+            debugLog("No usable logMessage(...) on " + sink.getClass().getName());
+            return;
+        }
+        logMessage.setAccessible(true);
+
+        Class<?>[] params = logMessage.getParameterTypes();
+
+        Class<?> levelClass = params[0];
+        infoLevel = ReflectionUtils.getFieldValue(levelClass, "INFO");
+        warnLevel = ReflectionUtils.getFieldValue(levelClass, "WARN");
+        severeLevel = ReflectionUtils.getFieldValue(levelClass, "SEVERE");
+        if (infoLevel == null || warnLevel == null || severeLevel == null) {
+            debugLog("MessageLevel constants missing on " + levelClass.getName());
+            return;
+        }
+
+        intDuration = params[params.length - 1] == int.class;
+
+        if (params.length == 4 && params[1] == String.class) {
+            componentShape = false;
+            debugLog("Modern string-based console API");
+        } else {
+            componentShape = true;
+            if (!resolveTextFactory(params[1])) {
+                debugLog("Could not resolve a String -> " + params[1].getName() + " factory");
+                return;
+            }
+            debugLog("Legacy component-based console API (" + params[1].getName()
+                    + ", " + (intDuration ? "int" : "double") + " duration)");
+        }
+
+        available = true;
+        debugLog("Ready yay");
     }
 
-    private static boolean trySpecificVersionFallbacks() {
+    private static Object resolveSink(Class<?> consoleClass) {
+        Object value = ReflectionUtils.invokeMethod(consoleClass, "instance", new Class<?>[0]);
+        return value != null ? value : ReflectionUtils.getFieldValue(consoleClass, "INSTANCE");
+    }
+
+    /** The text/duration types vary, but the method is always {@code logMessage(MessageLevel, ...)}. */
+    private static Method findLogMessage(Class<?> sinkClass) {
+        for (Method method : sinkClass.getMethods()) {
+            if (!method.getName().equals("logMessage")) {
+                continue;
+            }
+            Class<?>[] params = method.getParameterTypes();
+            if (params.length < 3 || !params[0].isEnum()) {
+                continue;
+            }
+            Class<?> last = params[params.length - 1];
+            if (last == int.class || last == double.class) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+    private static boolean resolveTextFactory(Class<?> textClass) {
         try {
-            // Try the specific 1.20.1 approach that's known to work
-            Class<?> consoleClass = Class.forName("me.jellysquid.mods.sodium.client.gui.console.Console");
-            log("Found Console class in fallback");
-
-            Method instanceMethod = consoleClass.getMethod("instance");
-            consoleSink = instanceMethod.invoke(null);
-            log("Got Console instance in fallback");
-
-            messageLevelClass = Class.forName("me.jellysquid.mods.sodium.client.gui.console.message.MessageLevel");
-            infoLevel = messageLevelClass.getField("INFO").get(null);
-            warnLevel = messageLevelClass.getField("WARN").get(null);
-            severeLevel = messageLevelClass.getField("SEVERE").get(null);
-            log("Got MessageLevel constants in fallback");
-
-            // For 1.20.1 Fabric, check if we need to initialize the text class
-            if (textClass == null) {
-                try {
-                    // Try obfuscated Fabric class
-                    textClass = Class.forName("net.minecraft.class_2561");
-                    log("Found obfuscated Text class during fallback");
-
-                    // Try to find a suitable method
-                    for (Method m : textClass.getMethods()) {
-                        if (java.lang.reflect.Modifier.isStatic(m.getModifiers()) &&
-                                m.getReturnType().equals(textClass) &&
-                                m.getParameterCount() == 1 &&
-                                m.getParameterTypes()[0].equals(String.class)) {
-                            textOfMethod = m;
-                            log("Found potential text method in fallback: " + m.getName());
-                            break;
-                        }
-                    }
-                } catch (Exception e) {
-                    log("Could not find obfuscated text class during fallback");
-                }
-            }
-
-            Class<?> consoleSinkClass = consoleSink.getClass();
-            log("ConsoleSink class: " + consoleSinkClass.getName());
-
-            // Try to find the exact method without using our helper - direct approach for 1.20.1
-            for (Method method : consoleSinkClass.getMethods()) {
-                if (method.getName().equals("logMessage") && method.getParameterCount() == 3) {
-                    Class<?>[] paramTypes = method.getParameterTypes();
-                    if (messageLevelClass.isAssignableFrom(paramTypes[0]) &&
-                            (paramTypes[2].equals(int.class) || paramTypes[2].equals(double.class))) {
-
-                        logMessageMethod = method;
-                        useDoubleForFadeTimer = paramTypes[2].equals(double.class);
-                        newSignature = false;
-                        sodiumAvailable = true;
-                        log("Found method with direct reflection: " + method);
-                        return true;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log("Fallback attempt failed: " + e.getMessage());
+            textFactory = ReflectionUtils.tryMethods(textClass, new Class<?>[]{String.class}, TEXT_FACTORY_NAMES);
+            return true;
+        } catch (NoSuchMethodException ignored) {
         }
         return false;
     }
 
-    private static void initializeTextClass() {
-        log("Initializing text class");
-
-        // Try Fabric path first
-        if (tryLoadTextClass("net.minecraft.text.Text", "of", "Fabric Text")) return;
-
-        // Try Forge/NeoForge path
-        if (tryLoadTextClass("net.minecraft.network.chat.Component", "literal", "Forge Component")) return;
-
-        // Try obfuscated Fabric class (Fabric 1.20.1)
-        if (tryLoadObfuscatedTextClass()) return;
-
-        // Try even older Forge path
-        try {
-            textClass = Class.forName("net.minecraft.util.text.StringTextComponent");
-            textOfMethod = null;
-            textConstructor = textClass.getConstructor(String.class);
-            log("Found legacy StringTextComponent class");
-        } catch (Exception e) {
-            log("Failed to find legacy StringTextComponent class: " + e.getMessage());
-            // Could not find Text class
-            textClass = null;
-            textOfMethod = null;
-            textConstructor = null;
-            log("Could not find any text class");
-        }
-    }
-
-    private static boolean tryLoadTextClass(String className, String methodName, String description) {
-        try {
-            textClass = Class.forName(className);
-            textOfMethod = textClass.getMethod(methodName, String.class);
-            textConstructor = null;
-            log("Found " + description + " class");
-            return true;
-        } catch (Exception e) {
-            log("Failed to find " + description + " class: " + e.getMessage());
-            return false;
-        }
-    }
-
-    private static boolean tryLoadObfuscatedTextClass() {
-        try {
-            textClass = Class.forName("net.minecraft.class_2561");
-            log("Found obfuscated Text class");
-
-            // Try different method names in order
-            String[] methodNames = {"of", "method_10851", "literal"};
-            for (String methodName : methodNames) {
-                try {
-                    textOfMethod = textClass.getMethod(methodName, String.class);
-                    log("Found obfuscated Text." + methodName + " method");
-                    return true;
-                } catch (NoSuchMethodException e) {
-                    log("No '" + methodName + "' method");
-                }
-            }
-
-            // Last resort: just find any static method that takes a String and returns Text
-            log("Searching all methods in Text class");
-            if (debugLogging) {
-                for (Method m : textClass.getMethods()) {
-                    log(" - " + m.getName() + ": " + m);
-                }
-            }
-
-            for (Method m : textClass.getMethods()) {
-                if (java.lang.reflect.Modifier.isStatic(m.getModifiers()) &&
-                        m.getReturnType().equals(textClass) &&
-                        m.getParameterCount() == 1 &&
-                        m.getParameterTypes()[0].equals(String.class)) {
-                    textOfMethod = m;
-                    log("Found potential text method: " + m.getName());
-                    return true;
-                }
-            }
-
-            return false;
-        } catch (Exception e) {
-            log("Failed to find obfuscated Text class: " + e.getMessage());
-            return false;
-        }
-    }
-
-    private static Object getTextComponentViaReflection(String message) {
-        try {
-            // Try to get the text component via different methods
-            // First, try Fabric's StaticTextContent
-            try {
-                Class<?> staticTextContentClass = Class.forName("net.minecraft.class_2585");
-                Constructor<?> constructor = staticTextContentClass.getConstructor(String.class);
-                return constructor.newInstance(message);
-            } catch (Exception e) {
-                // Attempt to find Text.of/literal/method_10851 method via the obfuscated class
-                try {
-                    Class<?> obfTextClass = Class.forName("net.minecraft.class_2561");
-                    for (Method method : obfTextClass.getMethods()) {
-                        if (java.lang.reflect.Modifier.isStatic(method.getModifiers()) &&
-                                method.getReturnType().equals(obfTextClass) &&
-                                method.getParameterCount() == 1 &&
-                                method.getParameterTypes()[0].equals(String.class)) {
-                            return method.invoke(null, message);
-                        }
-                    }
-                } catch (Exception e2) {
-                    // Last resort
-                    return message;
-                }
-            }
-        } catch (Exception e) {
-            log("Error creating text component: " + e.getMessage());
-        }
-        return message;
-    }
-
-    private static Object createTextComponent(String message) {
-        try {
-            if (textClass == null) {
-                // Try the special fix for 1.20.1 Fabric
-                return getTextComponentViaReflection(message);
-            }
-
-            if (textOfMethod != null) {
-                // Use static method (of/literal)
-                return textOfMethod.invoke(null, message);
-            } else if (textConstructor != null) {
-                // Use constructor for older versions
-                return textConstructor.newInstance(message);
-            } else {
-                // Try the special fix for 1.20.1 Fabric
-                return getTextComponentViaReflection(message);
-            }
-        } catch (Exception e) {
-            log("Error creating text component: " + e.getMessage());
-            // Last attempt - try the special fix
-            return getTextComponentViaReflection(message);
-        }
-    }
-
-    private static boolean tryInitialize(String consolePath, String consoleSinkPath, String messageLevelPath) {
-        try {
-            // Get Console instance
-            Class<?> consoleClass = Class.forName(consolePath);
-            log("Found Console class: " + consolePath);
-
-            Method instanceMethod = consoleClass.getMethod("instance");
-            log("Found instance method");
-
-            consoleSink = instanceMethod.invoke(null);
-            log("Got Console instance");
-
-            // Get MessageLevel class and constants
-            messageLevelClass = Class.forName(messageLevelPath);
-            log("Found MessageLevel class: " + messageLevelPath);
-
-            infoLevel = messageLevelClass.getField("INFO").get(null);
-            warnLevel = messageLevelClass.getField("WARN").get(null);
-            severeLevel = messageLevelClass.getField("SEVERE").get(null);
-            log("Got message level constants");
-
-            // Find suitable method signature
-            Class<?> consoleSinkClass = Class.forName(consoleSinkPath);
-            log("Found ConsoleSink class: " + consoleSinkPath);
-
-            // Dump all available methods to help debug
-            if (debugLogging) {
-                log("Available methods in " + consoleSinkPath + ":");
-                for (Method method : consoleSinkClass.getMethods()) {
-                    if (method.getName().equals("logMessage") || method.getName().equals("add")) {
-                        log("  " + method.getName() + ": " + method);
-                    }
-                }
-            }
-
-            // Try method signatures in order of most likely to work
-            if (textClass != null && tryMethodSignature(consoleSinkClass, "logMessage", textClass, int.class)) {
-                useDoubleForFadeTimer = false;
-                newSignature = false;
-                log("Found int-based logMessage method");
-                return true;
-            } else if (textClass != null && tryMethodSignature(consoleSinkClass, "logMessage", textClass, double.class)) {
-                useDoubleForFadeTimer = true;
-                newSignature = false;
-                log("Found double-based logMessage method");
-                return true;
-            } else if (tryMethodSignature(consoleSinkClass, "logMessage", String.class, boolean.class, double.class)) {
-                useDoubleForFadeTimer = true;
-                newSignature = true;
-                log("Found newest logMessage method format");
-                return true;
-            } else if (textClass != null && tryMethodSignature(consoleSinkClass, "add", textClass, int.class)) {
-                useDoubleForFadeTimer = false;
-                newSignature = false;
-                log("Found add method");
-                return true;
-            } else {
-                log("No compatible methods found");
-                return false;
-            }
-        } catch (Exception e) {
-            log("Error in tryInitialize: " + e.getMessage());
-            return false;
-        }
-    }
-
-    private static boolean tryMethodSignature(Class<?> consoleSinkClass, String methodName, Class<?>... paramTypes) {
-        try {
-            // First parameter is always MessageLevel
-            Class<?>[] fullParamTypes = new Class<?>[paramTypes.length + 1];
-            fullParamTypes[0] = messageLevelClass;
-            System.arraycopy(paramTypes, 0, fullParamTypes, 1, paramTypes.length);
-
-            logMessageMethod = consoleSinkClass.getMethod(methodName, fullParamTypes);
-            sodiumAvailable = true;
-            log("Found method: " + methodName + " with signature: " + Arrays.toString(paramTypes));
-            return true;
-        } catch (NoSuchMethodException e) {
-            log("Method not found: " + methodName + " with signature: " + Arrays.toString(paramTypes));
-            return false;
-        }
-    }
-
-    public static boolean isSodiumAvailable() {
-        if (!initialized) initialize();
-        return sodiumAvailable;
-    }
-
-    public static void logMessage(int level, int messageFadeTimer, String message) {
-        if (!initialized) initialize();
-        if (!sodiumAvailable) return;
-
-        try {
-            Object messageLevel = getMessageLevel(level);
-
-            if (newSignature) {
-                // Newest format (1.21+): MessageLevel, String, boolean, double
-                boolean isPersistent = messageFadeTimer <= 0;
-                logMessageMethod.invoke(consoleSink, messageLevel, message, isPersistent, (double) messageFadeTimer);
-            } else if (useDoubleForFadeTimer) {
-                // Older double format: MessageLevel, Text, double
-                logMessageMethod.invoke(consoleSink, messageLevel, createTextComponent(message), (double) messageFadeTimer);
-            } else {
-                // Original format: MessageLevel, Text, int
-                logMessageMethod.invoke(consoleSink, messageLevel, createTextComponent(message), messageFadeTimer);
-            }
-        } catch (Exception e) {
-            // If something goes wrong, disable Sodium console
-            sodiumAvailable = false;
-            log("Error logging message: " + e.getMessage());
-        }
-    }
-
-    private static Object getMessageLevel(int level) {
-        if (level == 1) {
-            return infoLevel;
-        } else if (level == 2) {
-            return warnLevel;
-        } else {
-            return severeLevel;
-        }
+    private static Object createText(String message) throws ReflectiveOperationException {
+        return textFactory != null ? textFactory.invoke(null, message) : textConstructor.newInstance(message);
     }
 }

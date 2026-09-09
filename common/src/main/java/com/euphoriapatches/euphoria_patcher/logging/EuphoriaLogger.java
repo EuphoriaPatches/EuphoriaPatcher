@@ -71,7 +71,7 @@ public class EuphoriaLogger {
     public void checkAndSetupSodiumLogging() {
         isSodiumInstalled = SodiumConsole.isSodiumAvailable();
         if (isSodiumInstalled) {
-            debugLog("Sodium found, using Sodium logging!");
+            debugLog("[EuphoriaLogger] Sodium found, using Sodium logging!");
         }
     }
 
@@ -129,7 +129,7 @@ public class EuphoriaLogger {
                             synchronized (errorCollectionLock) {
                                 errorURLAlreadyCopied = false; // Reset to allow new copy
                                 lastErrorURL = url;
-                                debugLog("Stored error URL for clipboard: " + lastErrorURL);
+                                debugLog("[EuphoriaLogger] Stored error URL for clipboard: " + lastErrorURL);
                             }
                         }
                     }
@@ -180,16 +180,16 @@ public class EuphoriaLogger {
             hasErrors = true;
 
             // Debug to check message collection
-            debugLog("Collected error #" + errorMessages.size() + ": " + message);
-            debugLog("lastProcessedErrorCount = " + lastProcessedErrorCount);
+            debugLog("[EuphoriaLogger] Collected error #" + errorMessages.size() + ": " + message);
+            debugLog("[EuphoriaLogger] lastProcessedErrorCount = " + lastProcessedErrorCount);
 
             // Schedule error shader generation if this is the first error
             if (errorMessages.size() == 1) {
-                debugLog("First error, scheduling initial generation");
+                debugLog("[EuphoriaLogger] First error, scheduling initial generation");
                 scheduleErrorShaderGeneration();
             } else if (errorMessages.size() >= 10 && errorMessages.size() - lastProcessedErrorCount >= 5) {
                 // If we have 10+ errors with 5+ new ones, don't wait - generate immediately
-                debugLog("Many errors collected, generating immediately");
+                debugLog("[EuphoriaLogger] Many errors collected, generating immediately");
                 cancelScheduledErrorShader();
                 ErrorShaderGenerator.generateErrorShader(errorMessages);
                 lastProcessedErrorCount = errorMessages.size();
@@ -197,7 +197,7 @@ public class EuphoriaLogger {
                 scheduleErrorShaderGeneration();
             } else if (!errorShaderScheduled && errorMessages.size() > lastProcessedErrorCount) {
                 // CRITICAL FIX: If we have new errors but no timer is scheduled, schedule one
-                debugLog("New errors detected and no timer active, scheduling update");
+                debugLog("[EuphoriaLogger] New errors detected and no timer active, scheduling update");
                 scheduleErrorShaderGeneration();
             }
         }
@@ -209,7 +209,7 @@ public class EuphoriaLogger {
     private void scheduleErrorShaderGeneration() {
         synchronized (errorCollectionLock) {
             if (errorShaderScheduled) {
-                debugLog("Timer already scheduled, skipping");
+                debugLog("[EuphoriaLogger] Timer already scheduled, skipping");
                 return; // Already scheduled
             }
 
@@ -222,12 +222,12 @@ public class EuphoriaLogger {
                 @Override
                 public void run() {
                     synchronized (errorCollectionLock) {
-                        debugLog("Timer firing: messages=" + errorMessages.size() +
+                        debugLog("[EuphoriaLogger] Timer firing: messages=" + errorMessages.size() +
                                  ", lastProcessed=" + lastProcessedErrorCount);
 
                         // Generate shader if we have new errors
                         if (hasErrors && errorMessages.size() > lastProcessedErrorCount) {
-                            debugLog("Generating shader with " + errorMessages.size() + " messages");
+                            debugLog("[EuphoriaLogger] Generating shader with " + errorMessages.size() + " messages");
                             ErrorShaderGenerator.generateErrorShader(errorMessages);
                             lastProcessedErrorCount = errorMessages.size();
                         }
@@ -239,13 +239,13 @@ public class EuphoriaLogger {
                             lastErrorURL != null &&
                             !errorURLAlreadyCopied &&
                             ShaderLoader.isShaderLoaderRunning()) {
-                                debugLog("Error shader is active, attempting to copy URL to clipboard: " + lastErrorURL);
+                                debugLog("[EuphoriaLogger] Error shader is active, attempting to copy URL to clipboard: " + lastErrorURL);
                                 boolean success = ModLoaderSpecifics.setClipboardStatic(lastErrorURL);
                                 if (success) {
-                                    debugLog("Successfully copied URL to clipboard");
+                                    debugLog("[EuphoriaLogger] Successfully copied URL to clipboard");
                                     log(3, 8, "The download link has been copied to your clipboard. Paste it in your browser.");
                                 } else {
-                                    debugLog("Failed to copy URL to clipboard");
+                                    debugLog("[EuphoriaLogger] Failed to copy URL to clipboard");
                                     log(3, 8, "Failed to copy error URL to clipboard. " +
                                         "Please copy it manually from " + ERROR_LOG_FILE_NAME + " in your shaderpacks folder.");
 
@@ -254,7 +254,7 @@ public class EuphoriaLogger {
                                 lastProcessedErrorCount = errorMessages.size();
                                 errorURLAlreadyCopied = true;
                             } else {
-                                debugLog("Error shader not active or no URL to copy (active=" +
+                                debugLog("[EuphoriaLogger] Error shader not active or no URL to copy (active=" +
                                         ErrorShaderGenerator.isErrorShaderActive() + ", url=" + lastErrorURL + ", alreadyCopied=" + errorURLAlreadyCopied + ")");
                             }
                         }
@@ -267,7 +267,7 @@ public class EuphoriaLogger {
             }, ERROR_COLLECTION_DELAY_MS);
 
             errorShaderScheduled = true;
-            debugLog("Scheduled error shader generation in " + (ERROR_COLLECTION_DELAY_MS / 1000) + " seconds");
+            debugLog("[EuphoriaLogger] Scheduled error shader generation in " + (ERROR_COLLECTION_DELAY_MS / 1000) + " seconds");
         }
     }
 
@@ -385,7 +385,7 @@ public class EuphoriaLogger {
             if (word.startsWith("http://") || word.startsWith("https://")) {
                 // Clean up any trailing punctuation
                 String url = word.replaceAll("[,;:.)!]+$", "");
-                debugLog("Extracted URL from error message: " + url);
+                debugLog("[EuphoriaLogger] Extracted URL from error message: " + url);
                 return url;
             }
         }

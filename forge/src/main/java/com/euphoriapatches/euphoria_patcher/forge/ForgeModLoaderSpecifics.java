@@ -8,6 +8,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 
 
@@ -17,6 +19,12 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
     private final Path configDirectory;
     // 0 = unknown, 1 = obfuscated, 2 = modern, 3 = pre-1.16.5
     private static int mappingBranch = 0;
+
+    // Cached reflection handles, since getLevel() runs every frame
+    private static Method cachedGetInstance;
+    private static Field cachedLevelField;
+    private static Method cachedDimensionMethod;
+    private static Object cachedMinecraft; // Minecraft singleton - set once, never reassigned
 
     public ForgeModLoaderSpecifics() {
         this.shaderpacksPath = FMLPaths.GAMEDIR.get().resolve("shaderpacks");
@@ -85,17 +93,37 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
     @Override
     public Object getLevel() {
         if (mappingBranch == 0) discoverMappingBranch();
+        if (mappingBranch == 0) return null;
 
-        // Use cached result
-        if (mappingBranch == 1) {
-            return getLevelObfuscated();
-        } else if (mappingBranch == 2) {
-            return getLevelModern();
-        } else if (mappingBranch == 3) {
-            return getLevelObfuscatedPre11605();
+        try {
+            Object minecraft = cachedMinecraft();
+            if (minecraft == null) {
+                return null;
+            }
+            if (cachedLevelField == null) {
+                cachedLevelField = Minecraft.class.getField(mappingBranch == 1 ? "f_91073_"
+                        : mappingBranch == 3 ? "field_71441_e" : "level");
+            }
+            return cachedLevelField.get(minecraft);
+        } catch (Exception e) {
+            debugLog("Error getting level (branch " + mappingBranch + "): " + e.getMessage());
+            return null;
         }
+    }
 
-        return null;
+    private Object cachedMinecraft() throws Exception {
+        if (cachedMinecraft != null) {
+            return cachedMinecraft;
+        }
+        if (cachedGetInstance == null) {
+            cachedGetInstance = Minecraft.class.getMethod(mappingBranch == 1 ? "m_91087_"
+                    : mappingBranch == 3 ? "func_71410_x" : "getInstance");
+        }
+        Object minecraft = cachedGetInstance.invoke(null);
+        if (minecraft != null) {
+            cachedMinecraft = minecraft;
+        }
+        return minecraft;
     }
 
     private String getCurrentDimensionID() {
@@ -259,7 +287,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
         debugLog("Getting current dimension ID (obfuscated mappings)");
 
         try {
-            Object level = getLevelObfuscated();
+            Object level = getLevel();
 
             if (level == null) {
                 return "minecraft:overworld";
@@ -287,14 +315,17 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
         debugLog("Getting current dimension ID (modern mappings)");
 
         try {
-            Object level = getLevelModern();
+            Object level = getLevel();
 
             if (level == null) {
                 return "minecraft:overworld";
             }
 
             // Get dimension key using modern method
-            Object dimensionKey = level.getClass().getMethod("dimension").invoke(level);
+            if (cachedDimensionMethod == null) {
+                cachedDimensionMethod = level.getClass().getMethod("dimension");
+            }
+            Object dimensionKey = cachedDimensionMethod.invoke(level);
             debugLog("Got dimension key using dimension");
 
             // Modern version doesn't have working location(), parse from toString
@@ -322,7 +353,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
         debugLog("Getting current dimension ID (obfuscated pre-1.16.5)");
 
         try {
-            Object world = getLevelObfuscatedPre11605();
+            Object world = getLevel();
 
             if (world == null) {
                 return "minecraft:overworld";
@@ -343,72 +374,6 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
         } catch (Exception e) {
             debugLog("Error in obfuscated pre-1.16.5 method: " + e.getClass().getName() + " - " + e.getMessage());
             return "minecraft:overworld";
-        }
-    }
-
-    private Object getLevelObfuscated() {
-        try {
-            // Get Minecraft instance using obfuscated method
-            Class<?> minecraftClass = Minecraft.class;
-            Object minecraft = minecraftClass.getMethod("m_91087_").invoke(null);
-            debugLog("Got Minecraft instance using m_91087_");
-
-            if (minecraft == null) {
-                return null;
-            }
-
-            // Get level field using obfuscated name
-            Object level = minecraft.getClass().getField("f_91073_").get(minecraft);
-            debugLog("Got level field f_91073_");
-
-            return level;
-        } catch (Exception e) {
-            debugLog("Error getting level (obfuscated): " + e.getClass().getName() + " - " + e.getMessage());
-            return null;
-        }
-    }
-
-    private Object getLevelModern() {
-        try {
-            // Get Minecraft instance using modern method
-            Class<?> minecraftClass = Minecraft.class;
-            Object minecraft = minecraftClass.getMethod("getInstance").invoke(null);
-            debugLog("Got Minecraft instance using getInstance");
-
-            if (minecraft == null) {
-                return null;
-            }
-
-            // Get level field using modern name
-            Object level = minecraft.getClass().getField("level").get(minecraft);
-            debugLog("Got level field");
-
-            return level;
-        } catch (Exception e) {
-            debugLog("Error getting level (modern): " + e.getClass().getName() + " - " + e.getMessage());
-            return null;
-        }
-    }
-
-    private Object getLevelObfuscatedPre11605() {
-        try {
-            // Get Minecraft instance using obfuscated method
-            Class<?> minecraftClass = Minecraft.class;
-            Object minecraft = minecraftClass.getMethod("func_71410_x").invoke(null);
-            debugLog("Got Minecraft instance using func_71410_x");
-
-            if (minecraft == null) {
-                return null;
-            }
-
-            // Get world field using obfuscated name
-            Object world = minecraft.getClass().getField("field_71441_e").get(minecraft);
-            debugLog("Got world field field_71441_e " + world);
-
-            return world;
-        } catch (Exception e) {
-            debugLog("Error getting level (pre-1.16.5): " + e.getClass().getName() + " - " + e.getMessage());
-            return null;
         }
     }
 

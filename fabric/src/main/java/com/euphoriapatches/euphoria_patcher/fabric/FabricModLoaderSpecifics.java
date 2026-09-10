@@ -8,6 +8,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.Identifier;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 
 public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
@@ -15,6 +17,13 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
     private final Path shaderpacksPath;
     private final Path configDirectory;
     private static Boolean useYarnMappings = null; // null = not yet determined
+
+    // Cached reflection handles for the modern branch, since getLevel() runs every frame
+    private static Class<?> modernMcClass;
+    private static Method modernGetInstance;
+    private static Field modernLevelField;
+    private static Method modernDimensionMethod;
+    private static Object modernMcInstance; // Minecraft singleton - set once, never reassigned
 
     public FabricModLoaderSpecifics() {
         this.shaderpacksPath = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
@@ -210,8 +219,10 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
                 return "minecraft:overworld";
             }
 
-            Class<?> levelClass = level.getClass();
-            Object dimension = levelClass.getMethod("dimension").invoke(level);
+            if (modernDimensionMethod == null) {
+                modernDimensionMethod = level.getClass().getMethod("dimension");
+            }
+            Object dimension = modernDimensionMethod.invoke(level);
             String dimensionString = dimension.toString();
             debugLog("Dimension toString(): " + dimensionString);
 
@@ -244,18 +255,35 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
 
     private Object getLevelModern() {
         try {
-            Class<?> mcClass = Class.forName("net.minecraft.client.Minecraft");
-            Object mcInstance = mcClass.getMethod("getInstance").invoke(null);
-
+            Object mcInstance = modernMinecraftInstance();
             if (mcInstance == null) {
                 return null;
             }
-
-            return mcClass.getField("level").get(mcInstance);
+            if (modernLevelField == null) {
+                modernLevelField = modernMcClass.getField("level");
+            }
+            return modernLevelField.get(mcInstance);
         } catch (Exception e) {
             debugLog("Error getting level (reflection): " + e.getMessage());
             return null;
         }
+    }
+
+    private Object modernMinecraftInstance() throws Exception {
+        if (modernMcInstance != null) {
+            return modernMcInstance;
+        }
+        if (modernMcClass == null) {
+            modernMcClass = Class.forName("net.minecraft.client.Minecraft");
+        }
+        if (modernGetInstance == null) {
+            modernGetInstance = modernMcClass.getMethod("getInstance");
+        }
+        Object mcInstance = modernGetInstance.invoke(null);
+        if (mcInstance != null) {
+            modernMcInstance = mcInstance;
+        }
+        return mcInstance;
     }
 
     private void debugLog(String message) {

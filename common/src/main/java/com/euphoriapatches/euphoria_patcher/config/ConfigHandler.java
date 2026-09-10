@@ -17,6 +17,7 @@ public class ConfigHandler {
     public static String alternativeShaderNames = "";
     public static boolean autoMergeBlockProperties = false;
     public static String doEmbedShaderSettingsInScreenshots = EmbedShaderSettingsMode.ENABLED; // enabled, disabled, debug
+    public static int extraDimensionShaderCacheSize = 2;
 
     public static void configStuff() {
         // Initialize config system (handles migration on first call)
@@ -85,6 +86,14 @@ public class ConfigHandler {
                 "\nModes: 'enabled' (embeds invisibly), 'disabled' (no embedding), 'debug' (embeds normally and saves a visual -debug screenshot to verify bit placement. Purely a visual check, no extra data stored)." +
                 "\nDefault = enabled",
                 new String[]{EmbedShaderSettingsMode.ENABLED, EmbedShaderSettingsMode.DISABLED, EmbedShaderSettingsMode.DEBUG}).toLowerCase(Locale.ROOT);
+
+        extraDimensionShaderCacheSize = Config.readWriteConfig("advanced", "extraDimensionShaderCacheSize", 2,
+                "Number of extra shader copies to keep in RAM per dimension. Prevents long reload times when switching between dimensions." +
+                "\nUses ~50 MB RAM per extra dimension. Lower if there is limited memory available." +
+                "\nIt only caches the extra dimension(s) once visited." +
+                "\nIf more dimensions than this threshold are visited, the oldest cached dimension will be removed." +
+                "\n0 = rebuild on every change (slower but no extra ram usage), 2 = two extra dimensions apart from the current one can be cached. Increase if frequently visiting more modded dimensions or decrease if you have limited memory." +
+                "\nDefault = 2");
 
         boolean configAutoMergeBlockProperties = Config.readWriteConfig("advanced", "autoMergeBlockProperties", false,
                 "Option that enables or disables automatic merging of the fragmented block.properties files into the main block.properties file." +

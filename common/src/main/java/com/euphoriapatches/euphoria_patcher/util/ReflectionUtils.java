@@ -186,6 +186,9 @@ public class ReflectionUtils {
      * @return The value of the field, or null if not found
      */
     public static Object getFieldValue(Object target, String fieldName) {
+        if (target == null) {
+            return null;
+        }
         Class<?> clazz;
         Object instance = target;
 
@@ -227,6 +230,56 @@ public class ReflectionUtils {
     }
 
     /**
+     * Sets the value of a field on an object (or a static field when {@code target} is a
+     * {@link Class} or class-name String), walking the class hierarchy and overriding access
+     * checks.
+     *
+     * @param target    Target instance, or class reference.
+     * @param fieldName Target field identifier.
+     * @param value     Value to assign to the field.
+     * @return boolean indicating success or failure
+     */
+    public static boolean setFieldValue(Object target, String fieldName, Object value) {
+        if (target == null) {
+            return false;
+        }
+        Class<?> clazz;
+        Object instance = target;
+
+        try {
+            if (target instanceof String) {
+                clazz = Class.forName((String) target);
+                instance = null;
+            } else if (target instanceof Class<?>) {
+                clazz = (Class<?>) target;
+                instance = null;
+            } else {
+                clazz = target.getClass();
+            }
+
+            while (clazz != null) {
+                try {
+                    Field field = clazz.getDeclaredField(fieldName);
+                    field.setAccessible(true);
+                    field.set(instance, value);
+                    return true;
+                } catch (NoSuchFieldException e) {
+                    clazz = clazz.getSuperclass();
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            debugLog("Class not found: " + target);
+            return false;
+        } catch (Exception e) {
+            debugLog("Error setting field " + fieldName + ": " + e.getMessage());
+            return false;
+        }
+
+        debugLog("Field " + fieldName + " not found in class hierarchy");
+        return false;
+    }
+
+    /**
      * Tries each candidate field name in order and returns the first non-null value found.
      *
      * @param target     Target instance, {@link Class}, or class-name String for static fields.
@@ -255,6 +308,9 @@ public class ReflectionUtils {
      * @return Method return value, or {@code null} on failure / {@code void} methods.
      */
     public static Object invokeMethod(Object target, String methodName, Class<?>[] parameterTypes, Object... args) {
+        if (target == null) {
+            return null;
+        }
         Class<?> clazz;
         Object instance = target;
 
@@ -288,6 +344,10 @@ public class ReflectionUtils {
 
         debugLog("Method " + methodName + " not found in class hierarchy");
         return null;
+    }
+
+    public static Object invokeMethod(Object target, String methodName) {
+        return invokeMethod(target, methodName, new Class<?>[0]);
     }
 
     /**

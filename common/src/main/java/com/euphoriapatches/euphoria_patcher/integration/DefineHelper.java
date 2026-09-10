@@ -26,6 +26,8 @@ public final class DefineHelper {
 
     private static int injectCount = 0;
     public static boolean isShaderLoaderRunning = false;
+    public static volatile boolean currentShaderpackIsEuphoria = false;
+    public static volatile boolean currentShaderpackFirstLoaded = false;
 
     private DefineHelper() {}
 
@@ -134,7 +136,9 @@ public final class DefineHelper {
             }
 
             Path currentShaderpack = ShaderLoader.getCurrentShaderpackPath();
-            if (currentShaderpack != null && shaderDetector.isEuphoriaPatchesShader(currentShaderpack)) {
+            boolean isEuphoriaShader = currentShaderpack != null && shaderDetector.isEuphoriaPatchesShader(currentShaderpack);
+            currentShaderpackIsEuphoria = isEuphoriaShader;
+            if (isEuphoriaShader) {
                 if (PotatoFileMonitor.shouldAddPotatoRemovedDefine(currentShaderpack)) {
                     emitter.define("EUPHORIA_PATCHES_POTATO_REMOVED");
                     debugLog("Adding EUPHORIA_PATCHES_POTATO_REMOVED define - potato.png not found");
@@ -195,7 +199,8 @@ public final class DefineHelper {
             }
 
             int injectedCountAmount = isOptifine ? 100 : 2; //Yeah... OptiFine does MANY Macro injections
-            if (injectCount <= injectedCountAmount) {
+            currentShaderpackFirstLoaded = injectCount <= injectedCountAmount;
+            if (currentShaderpackFirstLoaded) {
                 emitter.define("EUPHORIA_PATCHES_FIRST_LOADED");
                 debugLog("Adding EUPHORIA_PATCHES_FIRST_LOADED define");
 

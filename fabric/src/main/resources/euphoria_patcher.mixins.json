@@ -36,6 +36,8 @@
     "IrisLegacyConfigPropertiesMixin",
     "IrisLegacyShaderPackScreenMixin",
     "IrisShaderPackScreenMixin",
+    "IrisModernPipelineManagerMixin",
+    "IrisLegacyPipelineManagerMixin",
     "NativeImageMixin",
     "NativeImageMixinYarn",
     "PreparedRenderTypeMixin",

@@ -29,6 +29,8 @@
   "client": [
     "ClientTickMixin",
     "IrisHeaderEntryMixin",
+    "IrisModernPipelineManagerMixin",
+    "IrisLegacyPipelineManagerMixin",
     "ReloadShadersOnDimensionChangeMixin",
     "IrisElementRowMixin",
     "EnderDragonRendererMixin",

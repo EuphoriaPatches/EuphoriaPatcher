@@ -35,6 +35,8 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String LEGACY_IRIS_EXTENDED_DATA_HELPER_CLASS = "net.coderbot.iris.vertices.ExtendedDataHelper";
     public static final String MODERN_SHADER_PACK_CLASS = "net.irisshaders.iris.shaderpack.ShaderPack";
     public static final String LEGACY_SHADER_PACK_CLASS = "net.coderbot.iris.shaderpack.ShaderPack";
+    public static final String MODERN_PIPELINE_MANAGER_CLASS = "net.irisshaders.iris.pipeline.PipelineManager";
+    public static final String LEGACY_PIPELINE_MANAGER_CLASS = "net.coderbot.iris.pipeline.PipelineManager";
     public static final String NATIVE_IMAGE_CLASS = "com.mojang.blaze3d.platform.NativeImage";
     public static final String SCREENSHOT_CLASS = "net.minecraft.client.Screenshot";
     public static final String IRIS_SHADER_PACK_SCREEN_CLASS = "net.irisshaders.iris.gui.screen.ShaderPackScreen";
@@ -160,6 +162,14 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("IrisLegacyShaderPackMixin")) {
             return checkClassExists(LEGACY_SHADER_PACK_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisModernPipelineManagerMixin")) {
+            return checkClassExists(MODERN_PIPELINE_MANAGER_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisLegacyPipelineManagerMixin")) {
+            return checkClassExists(LEGACY_PIPELINE_MANAGER_CLASS);
         }
 
         if (mixinClassName.contains("NativeImageMixin")) {

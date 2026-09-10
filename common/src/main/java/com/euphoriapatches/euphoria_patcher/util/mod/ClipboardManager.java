@@ -26,7 +26,6 @@ public final class ClipboardManager {
     }
 
     public static void checkPending() {
-        debugLog("Checking for pending clipboard copy");
         String url = pendingUrl;
         if (url == null) {
             return;

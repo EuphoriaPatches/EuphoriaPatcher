@@ -44,6 +44,8 @@ public class IrisReloadManager {
      * This should be called from the main game thread
      */
     public static void checkPendingReload() {
+        DimensionShaderRefresh.processPending();
+
         if (pendingReload && pendingIrisClass != null) {
             try {
                 debugLog("Processing pending shader reload on main thread");

@@ -17,6 +17,7 @@
     "ReloadShadersOnDimensionChangeMixin",
     "ClientTickMixin",
     "IrisHeaderEntryMixin",
+    "IrisModernPipelineManagerMixin",
     "RenderTypeMixin",
     "EnderDragonRendererMixin",
     "IrisModernExclusiveUniformsMixin",

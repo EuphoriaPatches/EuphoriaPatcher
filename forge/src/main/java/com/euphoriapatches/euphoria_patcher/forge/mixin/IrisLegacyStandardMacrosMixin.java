@@ -2,7 +2,6 @@ package com.euphoriapatches.euphoria_patcher.forge.mixin;
 
 import com.euphoriapatches.euphoria_patcher.integration.DefineHelper;
 import com.euphoriapatches.euphoria_patcher.integration.Target;
-import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
@@ -14,7 +13,6 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 import java.util.ArrayList;
 import java.util.List;
 
-@Debug(export = true)
 @Pseudo
 @Mixin(targets = EuphoriaMixinPlugin.LEGACY_IRIS_CLASS, remap = false)
 public class IrisLegacyStandardMacrosMixin {

@@ -1,12 +1,10 @@
 package com.euphoriapatches.euphoria_patcher.fabric.mixin;
 
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
-import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Unique;
 
-@Debug(export = true)
 @Pseudo
 @Mixin(targets = EuphoriaMixinPlugin.LEGACY_IRIS_OPTION_MENU_CONTAINER_CLASS, remap = false)
 public class IrisLegacyOptionMenuContainerMixin {

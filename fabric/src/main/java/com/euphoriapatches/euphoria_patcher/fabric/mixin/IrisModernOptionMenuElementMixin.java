@@ -2,7 +2,6 @@ package com.euphoriapatches.euphoria_patcher.fabric.mixin;
 
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.integration.iris.ProfileElementTracker;
-import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Unique;
@@ -14,7 +13,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
-@Debug(export = true)
 @Pseudo
 @Mixin(targets = EuphoriaMixinPlugin.IRIS_OPTION_MENU_ELEMENT_CLASS, remap = false)
 public class IrisModernOptionMenuElementMixin {

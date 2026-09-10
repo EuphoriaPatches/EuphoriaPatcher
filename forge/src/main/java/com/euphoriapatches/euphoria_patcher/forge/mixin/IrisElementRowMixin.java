@@ -4,7 +4,6 @@ import org.spongepowered.asm.mixin.*;
 
 import static com.euphoriapatches.euphoria_patcher.forge.mixin.EuphoriaMixinPlugin.IRIS_ELEMENT_ROW_CLASS;
 
-@Debug(export = true)
 @Pseudo
 @Mixin(targets = IRIS_ELEMENT_ROW_CLASS, remap = false)
 public class IrisElementRowMixin {

@@ -23,7 +23,6 @@ import java.nio.file.Path;
 
 import static com.euphoriapatches.euphoria_patcher.neoforge.mixin.EuphoriaMixinPlugin.IRIS_HEADER_ENTRY_CLASS;
 
-@Debug(export = true)
 @Pseudo
 @Mixin(targets = IRIS_HEADER_ENTRY_CLASS, remap = false)
 public class IrisHeaderEntryMixin {

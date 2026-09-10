@@ -2,7 +2,6 @@ package com.euphoriapatches.euphoria_patcher.forge.mixin;
 
 import com.euphoriapatches.euphoria_patcher.integration.iris.DimensionShaderRefresh;
 import net.minecraft.client.Minecraft;
-import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Dynamic;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -10,7 +9,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Debug(export = true)
 @Mixin(Minecraft.class)
 @Pseudo
 public class ReloadShadersOnDimensionChangeMixin {

@@ -1,7 +1,6 @@
 package com.euphoriapatches.euphoria_patcher.fabric.mixin;
 
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
-import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Unique;
@@ -14,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-@Debug(export = true)
 @Pseudo
 @Mixin(targets = EuphoriaMixinPlugin.LEGACY_IRIS_SHADER_PROPERTIES_CLASS, remap = false)
 public class IrisLegacyShaderPropertiesMixin {

@@ -16,7 +16,6 @@ import java.nio.file.Path;
 
 import static com.euphoriapatches.euphoria_patcher.forge.mixin.EuphoriaMixinPlugin.IRIS_HEADER_ENTRY_CLASS;
 
-@Debug(export = true)
 @Pseudo
 @Mixin(targets = IRIS_HEADER_ENTRY_CLASS, remap = false)
 public class IrisHeaderEntryMixin {

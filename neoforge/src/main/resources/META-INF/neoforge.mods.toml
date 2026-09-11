@@ -14,6 +14,8 @@ logoFile="icon.png" # Optional logo file
 authors="${mod_authors}" # Optional authors
 displayTest="IGNORE_ALL_VERSION" # Controls server connection screen behavior
 description='''${mod_description}''' # Mod description
+bannerFile="icon.png"
+iconFile="icon.png"
 
 [[mixins]]
 config="${mod_id}.mixins.json" # Mixin config file

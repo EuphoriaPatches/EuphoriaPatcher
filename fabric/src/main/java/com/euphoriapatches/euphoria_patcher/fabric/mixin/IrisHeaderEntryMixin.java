@@ -319,13 +319,24 @@ public class IrisHeaderEntryMixin {
 
             java.lang.reflect.Constructor<?> constructor = null;
             Class<?> consumerClass = null;
+            boolean useUri = false;
 
             for (java.lang.reflect.Constructor<?> ctor : confirmLinkScreenClass.getConstructors()) {
                 Class<?>[] paramTypes = ctor.getParameterTypes();
-                if (paramTypes.length == 3 && paramTypes[1] == String.class && paramTypes[2] == boolean.class) {
-                    constructor = ctor;
-                    consumerClass = paramTypes[0];
-                    break;
+                if (paramTypes.length == 3 && paramTypes[2] == boolean.class) {
+                    if (paramTypes[1] == String.class) {
+                        // Minecraft <= 26.2: ConfirmLinkScreen(BooleanConsumer, String, boolean)
+                        constructor = ctor;
+                        consumerClass = paramTypes[0];
+                        useUri = false;
+                        break;
+                    } else if (paramTypes[1] == java.net.URI.class) {
+                        // Minecraft 26.3+: ConfirmLinkScreen(BooleanConsumer, URI, boolean)
+                        constructor = ctor;
+                        consumerClass = paramTypes[0];
+                        useUri = true;
+                        break;
+                    }
                 }
             }
 
@@ -349,7 +360,8 @@ public class IrisHeaderEntryMixin {
                 }
             );
 
-            Object confirmScreen = constructor.newInstance(booleanConsumer, euphoriaPatcher$EuphoriaURL, true);
+            Object urlArg = useUri ? java.net.URI.create(euphoriaPatcher$EuphoriaURL) : euphoriaPatcher$EuphoriaURL;
+            Object confirmScreen = constructor.newInstance(booleanConsumer, urlArg, true);
             euphoriaPatcher$setScreen(minecraft, confirmScreen);
         } catch (Exception e) {
             euphoriaPatcher$debugLog("Error handling button click (Modern): " + e.getMessage());
@@ -370,6 +382,14 @@ public class IrisHeaderEntryMixin {
     @Unique
     private void euphoriaPatcher$openUrl() {
         try {
+            // Minecraft 26.3+: Blaze3D.openUri(URI) replaced Util.getPlatform().openUri(String)
+            try {
+                Class<?> blaze3dClass = Class.forName("com.mojang.blaze3d.Blaze3D");
+                blaze3dClass.getMethod("openUri", java.net.URI.class).invoke(null, java.net.URI.create(euphoriaPatcher$EuphoriaURL));
+                euphoriaPatcher$debugLog("Successfully opened URL (Modern)");
+                return;
+            } catch (ClassNotFoundException | NoSuchMethodException ignored) {}
+
             Class<?> utilClass;
             try {
                 utilClass = Class.forName("net.minecraft.Util");

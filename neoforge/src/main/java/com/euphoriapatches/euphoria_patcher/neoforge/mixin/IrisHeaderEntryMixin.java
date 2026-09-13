@@ -9,7 +9,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.navigation.ScreenDirection;
-import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -312,8 +311,42 @@ public class IrisHeaderEntryMixin {
                 return;
             }
 
-            ConfirmLinkScreen confirmScreen = new ConfirmLinkScreen(
-                    confirmed -> {
+            Class<?> confirmLinkScreenClass = Class.forName("net.minecraft.client.gui.screens.ConfirmLinkScreen");
+
+            java.lang.reflect.Constructor<?> constructor = null;
+            Class<?> consumerClass = null;
+            boolean useUri = false;
+
+            for (java.lang.reflect.Constructor<?> ctor : confirmLinkScreenClass.getConstructors()) {
+                Class<?>[] paramTypes = ctor.getParameterTypes();
+                if (paramTypes.length == 3 && paramTypes[2] == boolean.class) {
+                    if (paramTypes[1] == String.class) {
+                        // Minecraft <= 26.2: ConfirmLinkScreen(BooleanConsumer, String, boolean)
+                        constructor = ctor;
+                        consumerClass = paramTypes[0];
+                        useUri = false;
+                        break;
+                    } else if (paramTypes[1] == java.net.URI.class) {
+                        // Minecraft 26.3+: ConfirmLinkScreen(BooleanConsumer, URI, boolean)
+                        constructor = ctor;
+                        consumerClass = paramTypes[0];
+                        useUri = true;
+                        break;
+                    }
+                }
+            }
+
+            if (constructor == null || consumerClass == null) {
+                euphoriaPatcher$debugLog("Could not find ConfirmLinkScreen constructor");
+                return;
+            }
+
+            Object booleanConsumer = java.lang.reflect.Proxy.newProxyInstance(
+                consumerClass.getClassLoader(),
+                new Class<?>[] { consumerClass },
+                (proxy, method, args) -> {
+                    if (args != null && args.length > 0 && args[0] instanceof Boolean) {
+                        boolean confirmed = (boolean) args[0];
                         if (confirmed) {
                             euphoriaPatcher$openUrl();
                         }
@@ -322,11 +355,13 @@ public class IrisHeaderEntryMixin {
                         } catch (Exception e) {
                             euphoriaPatcher$debugLog("Error returning to previous screen: " + e.getMessage());
                         }
-                    },
-                    euphoriaPatcher$EuphoriaURL,
-                    true
+                    }
+                    return null;
+                }
             );
 
+            Object urlArg = useUri ? java.net.URI.create(euphoriaPatcher$EuphoriaURL) : euphoriaPatcher$EuphoriaURL;
+            Object confirmScreen = constructor.newInstance(booleanConsumer, urlArg, true);
             euphoriaPatcher$setScreen(minecraft, confirmScreen);
         } catch (Exception e) {
             euphoriaPatcher$debugLog("Error handling button click: " + e.getMessage());
@@ -369,6 +404,14 @@ public class IrisHeaderEntryMixin {
     @Unique
     private void euphoriaPatcher$openUrl() {
         try {
+            // Minecraft 26.3+: Blaze3D.openUri(URI) replaced Util.getPlatform().openUri(String)
+            try {
+                Class<?> blaze3dClass = Class.forName("com.mojang.blaze3d.Blaze3D");
+                blaze3dClass.getMethod("openUri", java.net.URI.class).invoke(null, java.net.URI.create(euphoriaPatcher$EuphoriaURL));
+                euphoriaPatcher$debugLog("Successfully opened URL");
+                return;
+            } catch (ClassNotFoundException | NoSuchMethodException ignored) {}
+
             Class<?> utilClass;
             try {
                 utilClass = Class.forName("net.minecraft.Util");

@@ -304,6 +304,13 @@ public class SodiumMessagePopupMixin {
         } catch (Throwable ignored) {
         }
         try {
+            // Minecraft 26.3+: Blaze3D.openUri(URI) replaced Util.getPlatform().openUri(String)
+            Class<?> blaze3dClass = Class.forName("com.mojang.blaze3d.Blaze3D");
+            blaze3dClass.getMethod("openUri", java.net.URI.class).invoke(null, java.net.URI.create(euphoriaPatcher$URL));
+            return;
+        } catch (Throwable ignored) {
+        }
+        try {
             Class<?> util = ReflectionUtils.firstClass("net.minecraft.Util", "net.minecraft.util.Util");
             Object platform = util.getMethod("getPlatform").invoke(null);
             platform.getClass().getMethod("openUri", String.class).invoke(platform, euphoriaPatcher$URL);

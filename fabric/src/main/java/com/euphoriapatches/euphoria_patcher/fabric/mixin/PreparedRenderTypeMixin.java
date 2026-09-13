@@ -50,28 +50,63 @@ public class PreparedRenderTypeMixin {
                     "dragon_rays", "dragon_rays_depth"
             )));
 
+    // 26.2: drawFromBuffer(GpuBuffer, GpuBuffer, IndexType, int, int, int) does the actual draw
     @Inject(
             method = "drawFromBuffer(Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/IndexType;III)V",
             at = @At("HEAD"),
-            remap = false
+            remap = false,
+            require = 0
     )
     private void euphoriaPatcher$beginDraw(@Coerce Object vertexBuffer, @Coerce Object indexBuffer, @Coerce Object indexType, int baseVertex, int firstIndex, int indexCount, CallbackInfo ci) {
-        String name = RenderTypeTracker.getName(this);
-        if (name == null || !euphoriaPatcher$DEATH_RAY_TYPES.contains(name)) return;
-
-        euphoriaPatcher$beginDeathRays();
+        euphoriaPatcher$beginDrawIfDeathRays();
     }
 
     @Inject(
             method = "drawFromBuffer(Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/IndexType;III)V",
             at = @At("TAIL"),
-            remap = false
+            remap = false,
+            require = 0
     )
     private void euphoriaPatcher$endDraw(@Coerce Object vertexBuffer, @Coerce Object indexBuffer, @Coerce Object indexType, int baseVertex, int firstIndex, int indexCount, CallbackInfo ci) {
-        String name = RenderTypeTracker.getName(this);
+        euphoriaPatcher$endDrawIfDeathRays();
+    }
+
+    // 26.3+: drawFromBuffer/drawFromBufferOit were split out and both delegate to the private draw(ExecuteInfo, RenderPass, RenderPipeline) method
+    @Inject(method = "draw", at = @At("HEAD"), remap = false, require = 0)
+    private void euphoriaPatcher$beginDrawModern(@Coerce Object info, @Coerce Object renderPass, @Coerce Object renderPipeline, CallbackInfo ci) {
+        euphoriaPatcher$beginDrawIfDeathRays();
+    }
+
+    @Inject(method = "draw", at = @At("TAIL"), remap = false, require = 0)
+    private void euphoriaPatcher$endDrawModern(@Coerce Object info, @Coerce Object renderPass, @Coerce Object renderPipeline, CallbackInfo ci) {
+        euphoriaPatcher$endDrawIfDeathRays();
+    }
+
+    @Unique
+    private void euphoriaPatcher$beginDrawIfDeathRays() {
+        String name = euphoriaPatcher$resolveName(this);
+        if (name == null || !euphoriaPatcher$DEATH_RAY_TYPES.contains(name)) return;
+
+        euphoriaPatcher$beginDeathRays();
+    }
+
+    @Unique
+    private void euphoriaPatcher$endDrawIfDeathRays() {
+        String name = euphoriaPatcher$resolveName(this);
         if (name == null || !euphoriaPatcher$DEATH_RAY_TYPES.contains(name)) return;
 
         euphoriaPatcher$endDeathRays();
+    }
+
+    @Unique
+    private static String euphoriaPatcher$resolveName(Object preparedRenderType) {
+        try {
+            // 26.3+: PreparedRenderType carries its own name() record accessor
+            return (String) preparedRenderType.getClass().getMethod("name").invoke(preparedRenderType);
+        } catch (Exception e) {
+            // 26.2: name is captured separately via RenderTypeMixin$captureNameOnPrepare
+            return RenderTypeTracker.getName(preparedRenderType);
+        }
     }
 
     @Unique

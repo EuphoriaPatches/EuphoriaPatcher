@@ -8,8 +8,6 @@ import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,7 +39,7 @@ public class ModFolderVersionChecker {
 
         debugLog("Found " + modFiles.length + " EuphoriaPatcher mod file(s)");
 
-        Arrays.sort(modFiles, Comparator.comparing(File::getName).reversed());
+        boolean foundNewer = false;
 
         for (File modFile : modFiles) {
             Matcher matcher = VERSION_PATTERN.matcher(modFile.getName());
@@ -54,7 +52,7 @@ public class ModFolderVersionChecker {
                 if (mainComparison > 0) {
                     debugLog("Found newer version: " + fileMainVersion);
                     EuphoriaPatcher.log(0, "Found newer version: " + modFile.getName());
-                    return true;
+                    foundNewer = true;
                 } else if (mainComparison < 0) {
                     debugLog("Found older version: " + fileMainVersion + ", attempting to delete");
                     try {
@@ -70,7 +68,7 @@ public class ModFolderVersionChecker {
                 }
             }
         }
-        debugLog("No newer version found");
-        return false;
+        debugLog(foundNewer ? "Newer version found" : "No newer version found");
+        return foundNewer;
     }
 }

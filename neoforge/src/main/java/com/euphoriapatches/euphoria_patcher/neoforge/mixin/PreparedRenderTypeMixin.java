@@ -93,14 +93,27 @@ public class PreparedRenderTypeMixin {
     }
 
     @Unique
-    private static String euphoriaPatcher$resolveName(Object preparedRenderType) {
+    private static final Method euphoriaPatcher$NAME_METHOD = euphoriaPatcher$findNameMethod();
+
+    @Unique
+    private static Method euphoriaPatcher$findNameMethod() {
         try {
-            // 26.3+: PreparedRenderType carries its own name() record accessor
-            return (String) preparedRenderType.getClass().getMethod("name").invoke(preparedRenderType);
-        } catch (Exception e) {
-            // 26.2: name is captured separately via RenderTypeMixin$captureNameOnPrepare
-            return RenderTypeTracker.getName(preparedRenderType);
+            return Class.forName(PREPARED_RENDER_TYPE_CLASS).getMethod("name");
+        } catch (Throwable t) {
+            return null;
         }
+    }
+
+    @Unique
+    private static String euphoriaPatcher$resolveName(Object preparedRenderType) {
+        if (euphoriaPatcher$NAME_METHOD != null) {
+            try {
+                return (String) euphoriaPatcher$NAME_METHOD.invoke(preparedRenderType);
+            } catch (Exception ignored) {
+            }
+        }
+        // 26.2: name is captured separately via RenderTypeMixin$captureNameOnPrepare
+        return RenderTypeTracker.getName(preparedRenderType);
     }
 
     @Unique

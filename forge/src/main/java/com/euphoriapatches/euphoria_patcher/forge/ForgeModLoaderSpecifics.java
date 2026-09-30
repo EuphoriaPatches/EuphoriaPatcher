@@ -29,7 +29,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
     private static Method cachedDimensionMethod;
     private static Object cachedMinecraft; // Minecraft singleton - set once, never reassigned
 
-    // Cached biome lookup, the biome is only re-queried when the player changes block or level
+    // Cached biome lookup, re-queried at most once per tick
     private static Field cachedPlayerField;
     private static Method cachedBlockPositionMethod;
     private static Biomes.ReflectiveLookup biomeLookup;
@@ -126,6 +126,10 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
         if (biomeLookupUnsupported) return null;
 
         try {
+            if (biomeCache.isValid()) {
+                return biomeCache.getBiomeId();
+            }
+
             Object level = getLevel();
             if (level == null) {
                 return null;
@@ -150,10 +154,6 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
                         : player.getClass().getMethod("blockPosition");
             }
             Object pos = cachedBlockPositionMethod.invoke(player);
-            if (biomeCache.isValid(level, pos)) {
-                return biomeCache.getBiomeId();
-            }
-
             if (biomeLookup == null) {
                 if (mappingBranch == 1) { // 1.18.2 - 1.20.x: getBiome -> Holder, unwrapKey
                     biomeLookup = new Biomes.ReflectiveLookup(new String[]{"m_204166_"}, "net.minecraft.core.Holder", "m_203543_");
@@ -165,7 +165,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             if (!Objects.equals(biomeId, biomeCache.getBiomeId())) {
                 debugLog("Current biome ID: " + biomeId);
             }
-            return biomeCache.update(level, pos, biomeId);
+            return biomeCache.update(biomeId);
         } catch (NoSuchMethodException | NoSuchFieldException | ClassNotFoundException | LinkageError e) {
             // Mappings don't match this version, don't retry every frame
             debugLog("Biome lookup unsupported (branch " + mappingBranch + "): " + e);

@@ -27,7 +27,7 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
     private static Method modernDimensionMethod;
     private static Object modernMcInstance; // Minecraft singleton - set once, never reassigned
 
-    // Cached biome lookup, the biome is only re-queried when the player changes block or level
+    // Cached biome lookup, re-queried at most once per tick
     private static final Biomes.Cache biomeCache = new Biomes.Cache();
     private static boolean biomeLookupUnsupported = false;
     private static Field modernPlayerField;
@@ -157,6 +157,10 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
         if (useYarnMappings == null || biomeLookupUnsupported) return null;
 
         try {
+            if (biomeCache.isValid()) {
+                return biomeCache.getBiomeId();
+            }
+
             Object level;
             Object pos;
             if (useYarnMappings) {
@@ -169,15 +173,11 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
             if (level == null || pos == null) {
                 return null;
             }
-            if (biomeCache.isValid(level, pos)) {
-                return biomeCache.getBiomeId();
-            }
-
             String biomeId = useYarnMappings ? YarnBiomeAccess.getBiomeId(level, pos) : modernBiomeLookup.lookup(level, pos);
             if (!Objects.equals(biomeId, biomeCache.getBiomeId())) {
                 debugLog("Current biome ID: " + biomeId);
             }
-            return biomeCache.update(level, pos, biomeId);
+            return biomeCache.update(biomeId);
         } catch (NoSuchMethodException | NoSuchFieldException | ClassNotFoundException | LinkageError e) {
             // Mappings don't match this version, don't retry every frame
             debugLog("Biome lookup unsupported: " + e);

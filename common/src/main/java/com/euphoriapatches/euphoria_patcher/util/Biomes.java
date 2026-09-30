@@ -4,8 +4,8 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 
 public final class Biomes {
-    // Possible that while chunks load incorrect biome is cached, so we refresh it after some time
-    private static final long REVALIDATE_NANOS = 1_000_000_000L;
+    // Biome is re-queried at most once per tick
+    private static final long REVALIDATE_NANOS = 50_000_000L; // 50ms
 
     private Biomes() {}
 
@@ -38,25 +38,23 @@ public final class Biomes {
     }
 
     /**
-     * Caches the last biome lookup, keyed on level and block position
+     * Reuses the last biome lookup for one tick
      */
     public static final class Cache {
-        private Object level;
-        private Object pos;
         private String biomeId;
         private long lastLookup;
+        private boolean hasValue = false;
 
-        public boolean isValid(Object level, Object pos) {
-            return level == this.level && pos.equals(this.pos) && System.nanoTime() - lastLookup < REVALIDATE_NANOS;
+        public boolean isValid() {
+            return hasValue && System.nanoTime() - lastLookup < REVALIDATE_NANOS;
         }
 
         public String getBiomeId() {
             return biomeId;
         }
 
-        public String update(Object level, Object pos, String biomeId) {
-            this.level = level;
-            this.pos = pos;
+        public String update(String biomeId) {
+            this.hasValue = true;
             this.biomeId = biomeId;
             this.lastLookup = System.nanoTime();
             return biomeId;

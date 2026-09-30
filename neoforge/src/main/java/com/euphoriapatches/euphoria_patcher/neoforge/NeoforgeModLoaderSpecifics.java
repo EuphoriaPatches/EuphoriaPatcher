@@ -20,7 +20,7 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
     private final Path shaderpacksPath;
     private final Path configDirectory;
 
-    // Biome only needs re-querying when the player changes block or level
+    // Cached biome lookup, re-queried at most once per tick
     private static final Biomes.Cache biomeCache = new Biomes.Cache();
 
     public NeoforgeModLoaderSpecifics() {
@@ -125,6 +125,10 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
     @Override
     public String getCurrentBiomeName() {
         try {
+            if (biomeCache.isValid()) {
+                return biomeCache.getBiomeId();
+            }
+
             Minecraft minecraft = Minecraft.getInstance();
             Level level = minecraft.level;
             LocalPlayer player = minecraft.player;
@@ -133,16 +137,12 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
             }
 
             BlockPos pos = player.blockPosition();
-            if (biomeCache.isValid(level, pos)) {
-                return biomeCache.getBiomeId();
-            }
-
             // ResourceKey is parsed from toString() since location() was renamed in newer versions
             String biomeId = Biomes.parseId(level.getBiome(pos).unwrapKey());
             if (!Objects.equals(biomeId, biomeCache.getBiomeId())) {
                 debugLog("Current biome ID: " + biomeId);
             }
-            return biomeCache.update(level, pos, biomeId);
+            return biomeCache.update(biomeId);
         } catch (Throwable t) {
             debugLog("Error getting current biome: " + t.getMessage());
             return null;

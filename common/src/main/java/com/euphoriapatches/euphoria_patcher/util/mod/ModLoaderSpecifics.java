@@ -94,6 +94,18 @@ public abstract class ModLoaderSpecifics {
      */
     public abstract Object getLevel();
 
+    /**
+     * Get the name of the current biome the player is in with the namespaced ID format (e.g., "minecraft:plains").
+     * @return biome name string, or null if unavailable
+     */
+    public abstract String getCurrentBiomeName();
+
+    /**
+     * Check if the current biome is modded via the namespace
+     * @return true if the current biome is modded, false otherwise
+     */
+    public abstract boolean isCurrentBiomeModded();
+
     // Convenience static methods that delegate to the instance
 
     /**
@@ -173,5 +185,21 @@ public abstract class ModLoaderSpecifics {
      */
     public static Object getLevelStatic() {
         return getInstance().getLevel();
+    }
+
+    /**
+     * Get the name of the current biome the player is in with the namespaced ID format (e.g., "minecraft:plains").
+     * @return biome name string, or null if unavailable
+     */
+    public static String getCurrentBiomeNameStatic() {
+        return getInstance().getCurrentBiomeName();
+    }
+
+    /**
+     * Check if the current biome is modded via the namespace
+     * @return true if the current biome is modded, false otherwise
+     */
+    public static boolean isCurrentBiomeModdedStatic() {
+        return getInstance().isCurrentBiomeModded();
     }
 }

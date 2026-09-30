@@ -1,5 +1,6 @@
 package com.euphoriapatches.euphoria_patcher.fabric;
 
+import com.euphoriapatches.euphoria_patcher.util.Biomes;
 import com.euphoriapatches.euphoria_patcher.util.Dimensions;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
@@ -11,6 +12,7 @@ import net.minecraft.util.Identifier;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
+import java.util.Objects;
 
 public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
 
@@ -24,6 +26,14 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
     private static Field modernLevelField;
     private static Method modernDimensionMethod;
     private static Object modernMcInstance; // Minecraft singleton - set once, never reassigned
+
+    // Cached biome lookup, the biome is only re-queried when the player changes block or level
+    private static final Biomes.Cache biomeCache = new Biomes.Cache();
+    private static boolean biomeLookupUnsupported = false;
+    private static Field modernPlayerField;
+    private static Method modernBlockPositionMethod;
+    private static final Biomes.ReflectiveLookup modernBiomeLookup =
+            new Biomes.ReflectiveLookup(new String[]{"getBiome"}, "net.minecraft.core.Holder", "unwrapKey");
 
     public FabricModLoaderSpecifics() {
         this.shaderpacksPath = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
@@ -139,6 +149,67 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
             return getLevelModern();
         }
         return null;
+    }
+
+    @Override
+    public String getCurrentBiomeName() {
+        if (useYarnMappings == null) discoverMappingBranch();
+        if (useYarnMappings == null || biomeLookupUnsupported) return null;
+
+        try {
+            Object level;
+            Object pos;
+            if (useYarnMappings) {
+                level = getLevelYarn();
+                pos = level != null ? YarnBiomeAccess.getPlayerBlockPos(MinecraftClient.getInstance()) : null;
+            } else {
+                level = getLevelModern();
+                pos = level != null ? getPlayerBlockPosModern() : null;
+            }
+            if (level == null || pos == null) {
+                return null;
+            }
+            if (biomeCache.isValid(level, pos)) {
+                return biomeCache.getBiomeId();
+            }
+
+            String biomeId = useYarnMappings ? YarnBiomeAccess.getBiomeId(level, pos) : modernBiomeLookup.lookup(level, pos);
+            if (!Objects.equals(biomeId, biomeCache.getBiomeId())) {
+                debugLog("Current biome ID: " + biomeId);
+            }
+            return biomeCache.update(level, pos, biomeId);
+        } catch (NoSuchMethodException | NoSuchFieldException | ClassNotFoundException | LinkageError e) {
+            // Mappings don't match this version, don't retry every frame
+            debugLog("Biome lookup unsupported: " + e);
+            biomeLookupUnsupported = true;
+            return null;
+        } catch (Throwable t) {
+            debugLog("Error getting current biome: " + t);
+            return null;
+        }
+    }
+
+    @Override
+    public boolean isCurrentBiomeModded() {
+        return Biomes.isModded(getCurrentBiomeName());
+    }
+
+    private Object getPlayerBlockPosModern() throws Exception {
+        Object mcInstance = modernMinecraftInstance();
+        if (mcInstance == null) {
+            return null;
+        }
+        if (modernPlayerField == null) {
+            modernPlayerField = modernMcClass.getField("player");
+        }
+        Object player = modernPlayerField.get(mcInstance);
+        if (player == null) {
+            return null;
+        }
+        if (modernBlockPositionMethod == null) {
+            modernBlockPositionMethod = player.getClass().getMethod("blockPosition");
+        }
+        return modernBlockPositionMethod.invoke(player);
     }
 
     private String getCurrentDimensionID(){

@@ -63,6 +63,16 @@ public class Forge1710ModLoaderSpecifics extends ModLoaderSpecifics {
         return null;
     }
 
+    @Override
+    public String getCurrentBiomeName() {
+        return null;
+    }
+
+    @Override
+    public boolean isCurrentBiomeModded() {
+        return false;
+    }
+
     @SuppressWarnings("unused")
     private void debugLog(String message) {
         EuphoriaLogger.debugLog("[Forge1710ModLoaderSpecifics] " + message);

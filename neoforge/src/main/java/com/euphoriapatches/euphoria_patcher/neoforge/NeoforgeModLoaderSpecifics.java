@@ -1,8 +1,11 @@
 package com.euphoriapatches.euphoria_patcher.neoforge;
 
+import com.euphoriapatches.euphoria_patcher.util.Biomes;
 import com.euphoriapatches.euphoria_patcher.util.Dimensions;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;
@@ -10,11 +13,15 @@ import net.neoforged.fml.loading.FMLPaths;
 import net.minecraft.client.Minecraft;
 
 import java.nio.file.Path;
+import java.util.Objects;
 
 public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
 
     private final Path shaderpacksPath;
     private final Path configDirectory;
+
+    // Biome only needs re-querying when the player changes block or level
+    private static final Biomes.Cache biomeCache = new Biomes.Cache();
 
     public NeoforgeModLoaderSpecifics() {
         this.shaderpacksPath = FMLPaths.GAMEDIR.get().resolve("shaderpacks");
@@ -113,6 +120,38 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
             debugLog("Error getting level: " + t.getMessage());
             return null;
         }
+    }
+
+    @Override
+    public String getCurrentBiomeName() {
+        try {
+            Minecraft minecraft = Minecraft.getInstance();
+            Level level = minecraft.level;
+            LocalPlayer player = minecraft.player;
+            if (level == null || player == null) {
+                return null;
+            }
+
+            BlockPos pos = player.blockPosition();
+            if (biomeCache.isValid(level, pos)) {
+                return biomeCache.getBiomeId();
+            }
+
+            // ResourceKey is parsed from toString() since location() was renamed in newer versions
+            String biomeId = Biomes.parseId(level.getBiome(pos).unwrapKey());
+            if (!Objects.equals(biomeId, biomeCache.getBiomeId())) {
+                debugLog("Current biome ID: " + biomeId);
+            }
+            return biomeCache.update(level, pos, biomeId);
+        } catch (Throwable t) {
+            debugLog("Error getting current biome: " + t.getMessage());
+            return null;
+        }
+    }
+
+    @Override
+    public boolean isCurrentBiomeModded() {
+        return Biomes.isModded(getCurrentBiomeName());
     }
 
     private String getCurrentDimensionID() {

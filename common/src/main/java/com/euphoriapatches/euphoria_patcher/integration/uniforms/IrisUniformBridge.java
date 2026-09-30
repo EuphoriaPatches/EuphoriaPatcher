@@ -17,12 +17,8 @@ import java.util.function.Supplier;
 @SuppressWarnings("unused")
 public class IrisUniformBridge implements UniformDeclarer {
 
-    public enum Frequency {
-        ONCE, PER_TICK, PER_FRAME, CUSTOM
-    }
-
     private static boolean initialized = false;
-    private static final Object[] irisFrequencies = new Object[4];
+    private static final Object[] irisFrequencies = new Object[Frequency.values().length];
     private static final Map<String, Method> methodCache = new HashMap<>();
     // Target vector class expected per uniform method (e.g., Vector3f), extracted directly
     // from Iris's live method signature to handle JOML package changes across Iris versions.
@@ -109,21 +105,24 @@ public class IrisUniformBridge implements UniformDeclarer {
 
     // --- Primitive Overloads ---
 
-    public void uniform1i(Frequency freq, String name, IntSupplier value) {
+    @Override
+    public void uniform1i(String name, IntSupplier value, Frequency freq) {
         invoke("uniform1i", "IntSupplier", freq, name, value);
     }
 
-    public void uniform1b(Frequency freq, String name, BooleanSupplier value) {
+    @Override
+    public void uniform1b(String name, BooleanSupplier value, Frequency freq) {
         invoke("uniform1b", "BooleanSupplier", freq, name, value);
     }
 
     // Note: Iris provides standard JDK Int/Double overloads for uniform1f because
     // standard Java 8 lacks a primitive FloatSupplier. Use these to pass float data without allocation overhead.
-    public void uniform1f(Frequency freq, String name, DoubleSupplier value) {
+    @Override
+    public void uniform1f(String name, DoubleSupplier value, Frequency freq) {
         invoke("uniform1f", "DoubleSupplier", freq, name, value);
     }
 
-    public void uniform1f(Frequency freq, String name, IntSupplier value) {
+    public void uniform1f(String name, IntSupplier value, Frequency freq) {
         invoke("uniform1f", "IntSupplier", freq, name, value);
     }
 
@@ -131,7 +130,8 @@ public class IrisUniformBridge implements UniformDeclarer {
     // Sets vectors via primitives directly into Iris's runtime JOML class,
     // avoiding compile-time dependencies (signature resolved via UniformHelper.vectorClasses).
 
-    public void uniform2f(Frequency freq, String name, DoubleSupplier x, DoubleSupplier y) {
+    @Override
+    public void uniform2f(String name, DoubleSupplier x, DoubleSupplier y, Frequency freq) {
         IrisVectorBridge.ReusableVector2f bridge = new IrisVectorBridge.ReusableVector2f(vectorClasses.get("uniform2f"));
         Supplier<Object> runtimeSupplier = () -> {
             bridge.update((float) x.getAsDouble(), (float) y.getAsDouble());
@@ -140,7 +140,8 @@ public class IrisUniformBridge implements UniformDeclarer {
         invoke("uniform2f", "Supplier", freq, name, runtimeSupplier);
     }
 
-    public void uniform2i(Frequency freq, String name, IntSupplier x, IntSupplier y) {
+    @Override
+    public void uniform2i(String name, IntSupplier x, IntSupplier y, Frequency freq) {
         IrisVectorBridge.ReusableVector2i bridge = new IrisVectorBridge.ReusableVector2i(vectorClasses.get("uniform2i"));
         Supplier<Object> runtimeSupplier = () -> {
             bridge.update(x.getAsInt(), y.getAsInt());
@@ -149,7 +150,8 @@ public class IrisUniformBridge implements UniformDeclarer {
         invoke("uniform2i", "Supplier", freq, name, runtimeSupplier);
     }
 
-    public void uniform3f(Frequency freq, String name, DoubleSupplier x, DoubleSupplier y, DoubleSupplier z) {
+    @Override
+    public void uniform3f(String name, DoubleSupplier x, DoubleSupplier y, DoubleSupplier z, Frequency freq) {
         IrisVectorBridge.ReusableVector3f bridge = new IrisVectorBridge.ReusableVector3f(vectorClasses.get("uniform3f"));
         Supplier<Object> runtimeSupplier = () -> {
             bridge.update((float) x.getAsDouble(), (float) y.getAsDouble(), (float) z.getAsDouble());
@@ -158,7 +160,8 @@ public class IrisUniformBridge implements UniformDeclarer {
         invoke("uniform3f", "Supplier", freq, name, runtimeSupplier);
     }
 
-    public void uniform3i(Frequency freq, String name, IntSupplier x, IntSupplier y, IntSupplier z) {
+    @Override
+    public void uniform3i(String name, IntSupplier x, IntSupplier y, IntSupplier z, Frequency freq) {
         IrisVectorBridge.ReusableVector3i bridge = new IrisVectorBridge.ReusableVector3i(vectorClasses.get("uniform3i"));
         Supplier<Object> runtimeSupplier = () -> {
             bridge.update(x.getAsInt(), y.getAsInt(), z.getAsInt());
@@ -167,7 +170,8 @@ public class IrisUniformBridge implements UniformDeclarer {
         invoke("uniform3i", "Supplier", freq, name, runtimeSupplier);
     }
 
-    public void uniform3d(Frequency freq, String name, DoubleSupplier x, DoubleSupplier y, DoubleSupplier z) {
+    @Override
+    public void uniform3d(String name, DoubleSupplier x, DoubleSupplier y, DoubleSupplier z, Frequency freq) {
         IrisVectorBridge.ReusableVector3d bridge = new IrisVectorBridge.ReusableVector3d(vectorClasses.get("uniform3d"));
         Supplier<Object> runtimeSupplier = () -> {
             bridge.update(x.getAsDouble(), y.getAsDouble(), z.getAsDouble());
@@ -176,7 +180,8 @@ public class IrisUniformBridge implements UniformDeclarer {
         invoke("uniform3d", "Supplier", freq, name, runtimeSupplier);
     }
 
-    public void uniform4f(Frequency freq, String name, DoubleSupplier x, DoubleSupplier y, DoubleSupplier z, DoubleSupplier w) {
+    @Override
+    public void uniform4f(String name, DoubleSupplier x, DoubleSupplier y, DoubleSupplier z, DoubleSupplier w, Frequency freq) {
         IrisVectorBridge.ReusableVector4f bridge = new IrisVectorBridge.ReusableVector4f(vectorClasses.get("uniform4f"));
         Supplier<Object> runtimeSupplier = () -> {
             bridge.update((float) x.getAsDouble(), (float) y.getAsDouble(), (float) z.getAsDouble(), (float) w.getAsDouble());
@@ -186,52 +191,51 @@ public class IrisUniformBridge implements UniformDeclarer {
     }
 
     // --- UniformDeclarer implementation ---
-    // EuphoriaUniforms.declareAll only needs PER_FRAME, so these just forward to the
-    // frequency-taking overloads above.
+    // Uniforms declared without a frequency default to PER_FRAME.
 
     @Override
     public void uniform1b(String name, BooleanSupplier value) {
-        uniform1b(Frequency.PER_FRAME, name, value);
+        uniform1b(name, value, Frequency.PER_FRAME);
     }
 
     @Override
     public void uniform1i(String name, IntSupplier value) {
-        uniform1i(Frequency.PER_FRAME, name, value);
+        uniform1i(name, value, Frequency.PER_FRAME);
     }
 
     @Override
     public void uniform1f(String name, DoubleSupplier value) {
-        uniform1f(Frequency.PER_FRAME, name, value);
+        uniform1f(name, value, Frequency.PER_FRAME);
     }
 
     @Override
     public void uniform2f(String name, DoubleSupplier x, DoubleSupplier y) {
-        uniform2f(Frequency.PER_FRAME, name, x, y);
+        uniform2f(name, x, y, Frequency.PER_FRAME);
     }
 
     @Override
     public void uniform2i(String name, IntSupplier x, IntSupplier y) {
-        uniform2i(Frequency.PER_FRAME, name, x, y);
+        uniform2i(name, x, y, Frequency.PER_FRAME);
     }
 
     @Override
     public void uniform3f(String name, DoubleSupplier x, DoubleSupplier y, DoubleSupplier z) {
-        uniform3f(Frequency.PER_FRAME, name, x, y, z);
+        uniform3f(name, x, y, z, Frequency.PER_FRAME);
     }
 
     @Override
     public void uniform3i(String name, IntSupplier x, IntSupplier y, IntSupplier z) {
-        uniform3i(Frequency.PER_FRAME, name, x, y, z);
+        uniform3i(name, x, y, z, Frequency.PER_FRAME);
     }
 
     @Override
     public void uniform3d(String name, DoubleSupplier x, DoubleSupplier y, DoubleSupplier z) {
-        uniform3d(Frequency.PER_FRAME, name, x, y, z);
+        uniform3d(name, x, y, z, Frequency.PER_FRAME);
     }
 
     @Override
     public void uniform4f(String name, DoubleSupplier x, DoubleSupplier y, DoubleSupplier z, DoubleSupplier w) {
-        uniform4f(Frequency.PER_FRAME, name, x, y, z, w);
+        uniform4f(name, x, y, z, w, Frequency.PER_FRAME);
     }
 
     private static void debugLog(String message) {

@@ -110,6 +110,9 @@ public final class DefineHelper {
             emitter.define("EUPHORIA_PATCHES_UNIFORMS");
             debugLog("Adding EUPHORIA_PATCHES_UNIFORMS define");
 
+            emitter.define("EUPHORIA_PATCHES_MODDED_BIOME_UNIFORM");
+            debugLog("Adding EUPHORIA_PATCHES_MODDED_BIOME_UNIFORM define");
+
             // Thanks to GeForceLegend for finding this bug fix! https://github.com/IrisShaders/Iris/pull/3246
             emitter.define("EUPHORIA_PATCHES_AT_MIDBLOCK_FIX");
             debugLog("Adding EUPHORIA_PATCHES_AT_MIDBLOCK_FIX define");

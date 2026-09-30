@@ -162,6 +162,16 @@ public class DevPatchGenerator {
             public Object getLevel() {
                 return null;
             }
+
+            @Override
+            public String getCurrentBiomeName() {
+                return "";
+            }
+
+            @Override
+            public boolean isCurrentBiomeModded() {
+                return false;
+            }
         });
     }
 

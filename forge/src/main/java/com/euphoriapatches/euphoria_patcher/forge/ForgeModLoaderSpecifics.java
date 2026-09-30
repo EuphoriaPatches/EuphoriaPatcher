@@ -1,7 +1,9 @@
 package com.euphoriapatches.euphoria_patcher.forge;
 
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.Biomes;
 import com.euphoriapatches.euphoria_patcher.util.Dimensions;
+import com.euphoriapatches.euphoria_patcher.util.ReflectionUtils;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
@@ -11,6 +13,7 @@ import net.minecraftforge.fml.loading.FMLPaths;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
+import java.util.Objects;
 
 
 public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
@@ -25,6 +28,13 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
     private static Field cachedLevelField;
     private static Method cachedDimensionMethod;
     private static Object cachedMinecraft; // Minecraft singleton - set once, never reassigned
+
+    // Cached biome lookup, the biome is only re-queried when the player changes block or level
+    private static Field cachedPlayerField;
+    private static Method cachedBlockPositionMethod;
+    private static Biomes.ReflectiveLookup biomeLookup;
+    private static boolean biomeLookupUnsupported = false;
+    private static final Biomes.Cache biomeCache = new Biomes.Cache();
 
     public ForgeModLoaderSpecifics() {
         this.shaderpacksPath = FMLPaths.GAMEDIR.get().resolve("shaderpacks");
@@ -109,6 +119,67 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             debugLog("Error getting level (branch " + mappingBranch + "): " + e.getMessage());
             return null;
         }
+    }
+
+    @Override
+    public String getCurrentBiomeName() {
+        if (biomeLookupUnsupported) return null;
+
+        try {
+            Object level = getLevel();
+            if (level == null) {
+                return null;
+            }
+            if (mappingBranch == 3) {
+                // Can't be bothered to make this work on 1.16 lol
+                debugLog("Biome lookup unsupported on pre-1.17 mappings");
+                biomeLookupUnsupported = true;
+                return null;
+            }
+            if (cachedPlayerField == null) {
+                cachedPlayerField = Minecraft.class.getField(mappingBranch == 1 ? "f_91074_" : "player");
+            }
+            Object player = cachedPlayerField.get(cachedMinecraft());
+            if (player == null) {
+                return null;
+            }
+
+            if (cachedBlockPositionMethod == null) {
+                cachedBlockPositionMethod = mappingBranch == 1
+                        ? ReflectionUtils.tryMethods(player.getClass(), "m_20183_", "m_142538_") // 1.19+, 1.18.2
+                        : player.getClass().getMethod("blockPosition");
+            }
+            Object pos = cachedBlockPositionMethod.invoke(player);
+            if (biomeCache.isValid(level, pos)) {
+                return biomeCache.getBiomeId();
+            }
+
+            if (biomeLookup == null) {
+                if (mappingBranch == 1) { // 1.18.2 - 1.20.x: getBiome -> Holder, unwrapKey
+                    biomeLookup = new Biomes.ReflectiveLookup(new String[]{"m_204166_"}, "net.minecraft.core.Holder", "m_203543_");
+                } else {
+                    biomeLookup = new Biomes.ReflectiveLookup(new String[]{"getBiome"}, "net.minecraft.core.Holder", "unwrapKey");
+                }
+            }
+            String biomeId = biomeLookup.lookup(level, pos);
+            if (!Objects.equals(biomeId, biomeCache.getBiomeId())) {
+                debugLog("Current biome ID: " + biomeId);
+            }
+            return biomeCache.update(level, pos, biomeId);
+        } catch (NoSuchMethodException | NoSuchFieldException | ClassNotFoundException | LinkageError e) {
+            // Mappings don't match this version, don't retry every frame
+            debugLog("Biome lookup unsupported (branch " + mappingBranch + "): " + e);
+            biomeLookupUnsupported = true;
+            return null;
+        } catch (Throwable t) {
+            debugLog("Error getting current biome: " + t);
+            return null;
+        }
+    }
+
+    @Override
+    public boolean isCurrentBiomeModded() {
+        return Biomes.isModded(getCurrentBiomeName());
     }
 
     private Object cachedMinecraft() throws Exception {

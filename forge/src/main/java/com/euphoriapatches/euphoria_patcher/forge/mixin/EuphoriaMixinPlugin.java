@@ -28,6 +28,7 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String OPTIFINE_ENTITY_ALIASES_CLASS = "net.optifine.shaders.EntityAliases";
     public static final String OPTIFINE_SHADER_MACROS_CLASS = "net.optifine.shaders.config.ShaderMacros";
     public static final String OPTIFINE_SHADERS_CLASS = "net.optifine.shaders.Shaders";
+    public static final String OPTIFINE_EXPRESSION_RESOLVER_CLASS = "net.optifine.shaders.uniform.ShaderExpressionResolver";
     public static final String ENDER_DRAGON_RENDERER_CLASS = "net.minecraft.client.renderer.entity.EnderDragonRenderer";
     public static final String IRIS_EXCLUSIVE_UNIFORMS_CLASS = "net.irisshaders.iris.uniforms.IrisExclusiveUniforms";
     public static final String IRIS_EXCLUSIVE_UNIFORMS_CLASS_LEGACY = "net.coderbot.iris.uniforms.IrisExclusiveUniforms";
@@ -134,6 +135,10 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("OptifineShadersUniformsMixin")) {
             return checkClassExists(OPTIFINE_SHADERS_CLASS);
+        }
+
+        if (mixinClassName.contains("OptifineExpressionResolverMixin")) {
+            return checkClassExists(OPTIFINE_EXPRESSION_RESOLVER_CLASS);
         }
 
         if  (mixinClassName.contains("EnderDragonRendererMixin")) {

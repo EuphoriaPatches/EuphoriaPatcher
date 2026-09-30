@@ -16,6 +16,9 @@ public final class EuphoriaUniforms {
         declarer.uniform1b("euphoriaPatchesIsDayAdvancing", ModLoaderSpecifics::isTimeAdvancingStatic);
         debugLog("Declared uniform 'euphoriaPatchesIsDayAdvancing'");
 
+        declarer.uniform1b("euphoriaPatchesIsCurrentBiomeModded", ModLoaderSpecifics::isCurrentBiomeModdedStatic, UniformDeclarer.Frequency.PER_TICK);
+        debugLog("Declared uniform 'euphoriaPatchesIsCurrentBiomeModded'");
+
         declarer.uniform1i("euphoriaPatchesCurrentDayMillis", () -> (int) (System.currentTimeMillis() % 86400000));
         debugLog("Declared uniform 'euphoriaPatchesCurrentDayMillis'");
 

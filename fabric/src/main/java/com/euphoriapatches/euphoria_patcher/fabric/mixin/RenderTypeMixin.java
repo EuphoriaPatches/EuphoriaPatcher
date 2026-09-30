@@ -69,6 +69,7 @@ public class RenderTypeMixin {
     // This method is needed for 26.2 capture
     @Inject(method = "prepare", at = @At("RETURN"), remap = false, require = 0)
     private void euphoriaPatcher$captureNameOnPrepare(CallbackInfoReturnable<Object> cir) {
+        if (!euphoriaPatcher$DEATH_RAY_TYPES.contains(this.name)) return;
         Object prepared = cir.getReturnValue();
         com.euphoriapatches.euphoria_patcher.integration.iris.RenderTypeTracker.put(prepared, this.name);
     }

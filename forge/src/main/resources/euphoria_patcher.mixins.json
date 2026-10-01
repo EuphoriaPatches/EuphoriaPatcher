@@ -42,6 +42,8 @@
     "ScreenshotMixin",
     "IrisShaderPackScreenMixin",
     "IrisLegacyShaderPackScreenMixin",
+    "IrisModernErrorReportMixin",
+    "IrisLegacyErrorReportMixin",
     "IrisConfigPropertiesMixin",
     "IrisLegacyConfigPropertiesMixin",
     "SodiumMessagePopupMixin",

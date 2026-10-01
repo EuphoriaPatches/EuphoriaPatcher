@@ -226,6 +226,14 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
             return checkClassExists(IRIS_SHADER_PACK_SCREEN_CLASS);
         }
 
+        if (mixinClassName.contains("IrisModernErrorReportMixin")) {
+            return checkClassExists(MODERN_IRIS_MAIN_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisLegacyErrorReportMixin")) {
+            return checkClassExists(LEGACY_IRIS_MAIN_CLASS);
+        }
+
         if (mixinClassName.contains("IrisConfigPropertiesMixin") && !mixinClassName.contains("Legacy")) {
             return checkClassExists(MODERN_IRIS_MAIN_CLASS);
         }

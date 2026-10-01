@@ -25,6 +25,7 @@
     "NativeImageMixin",
     "ScreenshotMixin",
     "IrisShaderPackScreenMixin",
+    "IrisModernErrorReportMixin",
     "IrisConfigPropertiesMixin",
     "SodiumMessagePopupMixin",
     "SodiumMessagePopupContainerMixin"

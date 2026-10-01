@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.neoforge.mixin;
 
 import com.euphoriapatches.euphoria_patcher.integration.iris.IrisReloadManager;
+import com.euphoriapatches.euphoria_patcher.integration.iris.ShaderErrorReporter;
 import com.euphoriapatches.euphoria_patcher.util.mod.ClipboardManager;
 import net.minecraft.client.Minecraft;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,5 +16,6 @@ public class ClientTickMixin {
     private void onClientTick(CallbackInfo ci) {
         IrisReloadManager.checkPendingReload();
         ClipboardManager.checkPending();
+        ShaderErrorReporter.checkPending();
     }
 }

@@ -83,6 +83,40 @@ public class ReflectionUtils {
     }
 
     /**
+     * Returns the constant of {@code enumClass} called {@code name}, or {@code null} if it isn't an enum or has no
+     * such constant.
+     */
+    public static Object enumConstant(Class<?> enumClass, String name) {
+        Object[] constants = enumClass.getEnumConstants();
+        if (constants == null) {
+            return null;
+        }
+        for (Object constant : constants) {
+            if (((Enum<?>) constant).name().equals(name)) {
+                return constant;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Whether the class declares a method with this name, at any visibility
+     * Returns {@code false} if the class can't be loaded.
+     */
+    public static boolean hasDeclaredMethod(String className, String methodName) {
+        try {
+            for (Method method : Class.forName(className).getDeclaredMethods()) {
+                if (method.getName().equals(methodName)) {
+                    return true;
+                }
+            }
+        } catch (ClassNotFoundException | LinkageError e) {
+            debugLog("Class " + className + " not available: " + e.getMessage());
+        }
+        return false;
+    }
+
+    /**
      * Returns the first of the given class names that can be loaded, or null if none can.
      * Handy for a type that is named differently across mapping sets.
      */
@@ -363,5 +397,18 @@ public class ReflectionUtils {
             }
         }
         return null;
+    }
+
+    // Like {@link #invokeMethod(Object, String[], Class[], Object...)} but for no-arg methods.
+    public static Object invokePublicMethod(Object target, String[] methodNames, Class<?>[] parameterTypes, Object... args) {
+        if (target == null) {
+            return null;
+        }
+        try {
+            return tryMethods(target.getClass(), parameterTypes, methodNames).invoke(target, args);
+        } catch (ReflectiveOperationException e) {
+            debugLog("Could not call " + methodNames[0] + " on " + target.getClass().getName() + ": " + e);
+            return null;
+        }
     }
 }

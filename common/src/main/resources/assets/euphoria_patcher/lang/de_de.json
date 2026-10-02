@@ -15,5 +15,9 @@
   "euphoria_patcher.donation.line4.highlight": "das Projekt unterstützen",
   "euphoria_patcher.donation.button": "Projekt unterstützen",
   "fml.menu.mods.info.description.euphoria_patcher": "Ein Mod, der das Euphoria Patches Add-on mit Complementary Shaders kombiniert.\nAktiviere und ändere die Euphoria Patches Einstellungen in den Shaderpack Einstellungen\nMelde Probleme auf Discord!",
-  "modmenu.descriptionTranslation.euphoria_patcher": "Ein Mod, der das Euphoria Patches Add-on mit Complementary Shaders kombiniert.\nAktiviere und ändere die Euphoria Patches Einstellungen in den Shaderpack Einstellungen\nMelde Probleme auf Discord!"
+  "modmenu.descriptionTranslation.euphoria_patcher": "Ein Mod, der das Euphoria Patches Add-on mit Complementary Shaders kombiniert.\nAktiviere und ändere die Euphoria Patches Einstellungen in den Shaderpack Einstellungen\nMelde Probleme auf Discord!",
+  "euphoria_patcher.shader_error.failed": "Das Shaderpack konnte nicht kompiliert werden! Bitte melde den Fehler an den Shader-Entwickler. %s",
+  "euphoria_patcher.shader_error.copy": "Infos kopieren",
+  "euphoria_patcher.shader_error.report": "Melde es dem Shader Entwickler hier: %s",
+  "euphoria_patcher.shader_error.report.link": "Auf Discord melden"
 }

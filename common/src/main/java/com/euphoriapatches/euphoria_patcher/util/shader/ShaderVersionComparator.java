@@ -128,6 +128,7 @@ public class ShaderVersionComparator {
                     String fileName = path.getFileName().toString();
                     if (fileName.contains(brandName) &&
                         !fileName.contains(patchName) &&
+                        !isTestOrDevVersion(fileName) &&
                         isNewerShaderVersion(fileName)) {
                         boolean isFile = Files.isRegularFile(path) && fileName.endsWith(".zip");
                         boolean isDir = Files.isDirectory(path);
@@ -171,6 +172,51 @@ public class ShaderVersionComparator {
         return highestVersionPath;
     }
 
+    /** Finds path of highest dev version but only if the user has no comp release
+     * @return Path to the highest dev version, or null if there is none or a release is also present
+     */
+    public Path findDevOnlyComplementaryVersion() {
+        Path highestDevPath = null;
+        int[] highestDevVersion = null;
+
+        try {
+            if (shaderpacks == null || !Files.exists(shaderpacks)) {
+                return null;
+            }
+
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks)) {
+                for (Path path : stream) {
+                    String name = path.getFileName().toString();
+                    if (!name.contains(brandName) || name.contains(patchName)) {
+                        continue;
+                    }
+                    boolean isFile = Files.isRegularFile(path) && name.endsWith(".zip");
+                    if (!isFile && !Files.isDirectory(path)) {
+                        continue;
+                    }
+
+                    if (!isTestOrDevVersion(name)) {
+                        if (name.matches(".*_r\\d+\\.\\d+(?:\\.\\d+)?.*")) {
+                            debugLog("Found release version " + name + ", not a dev-only setup");
+                            return null;
+                        }
+                        continue;
+                    }
+
+                    int[] devVersion = extractComplementaryVersionNumbers(name);
+                    if (highestDevVersion == null || VersionComparator.compareVersionArrays(devVersion, highestDevVersion) > 0) {
+                        highestDevVersion = devVersion;
+                        highestDevPath = path;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            debugLog("Error checking for dev shader versions: " + e.getMessage());
+        }
+
+        return highestDevPath;
+    }
+
     /**
      * Checks if a path is an older version of Complementary shader
      */
@@ -180,7 +226,8 @@ public class ShaderVersionComparator {
         // First check if it's a Complementary shader without the patch
         boolean isComplementary = name.contains(brandName) &&
                                  name.matches(".*_r\\d+\\.\\d+(?:\\.\\d+)?.*") &&
-                                 !name.contains(patchName);
+                                 !name.contains(patchName) &&
+                                 !isTestOrDevVersion(name);
 
         if (isComplementary) {
             // Extract version numbers and compare

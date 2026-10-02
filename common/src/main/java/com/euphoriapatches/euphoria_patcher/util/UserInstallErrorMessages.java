@@ -25,8 +25,14 @@ public class UserInstallErrorMessages {
     public static void handleShaderNotFound(ShaderVersionComparator versionComparator) {
         debugLog("Handling shader not found scenario");
 
-        // First check if an update is available
-        if (UpdateChecker.isNewerCompVersionAvailable()) {
+        // Dev Complementary versions are never patched
+        Path devOnlyVersion = versionComparator.findDevOnlyComplementaryVersion();
+
+        if (devOnlyVersion != null) {
+            debugLog("Only a dev Complementary version found: " + devOnlyVersion.getFileName());
+            handleCompDevVersionDetected(devOnlyVersion.getFileName().toString(), versionComparator);
+        } else if (UpdateChecker.isNewerCompVersionAvailable()) {
+            // An update is available
             EuphoriaPatcher.log(3, 8, "=== SHADER NOT FOUND ===");
             EuphoriaPatcher.log(3, 8, "Required: " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION.replace("_", ""));
             EuphoriaPatcher.log(3, 8, "");
@@ -98,7 +104,10 @@ public class UserInstallErrorMessages {
      */
     public static void handleSizeMismatch(String fileName, String originalFileName, ShaderVersionComparator versionComparator) {
         debugLog("Handling size mismatch for file: " + fileName);
-        if (versionComparator != null && versionComparator.isNewerShaderVersion(fileName)) {
+        if (versionComparator != null && (ShaderVersionComparator.isTestOrDevVersion(fileName) || ShaderVersionComparator.isTestOrDevVersion(originalFileName))) {
+            debugLog("Detected dev Complementary version");
+            handleCompDevVersionDetected(originalFileName, versionComparator);
+        } else if (versionComparator != null && versionComparator.isNewerShaderVersion(fileName)) {
             debugLog("Detected newer shader version");
             handleNewerVersionDetected(fileName, originalFileName, versionComparator);
         } else if (fileName.matches(EuphoriaPatcher.BRAND_NAME + ".*" + EuphoriaPatcher.VERSION + ".*")) {
@@ -110,6 +119,44 @@ public class UserInstallErrorMessages {
         }
 
         startWatcherAndTrackFile(fileName);
+    }
+
+    /**
+     * Handle if a user only has a comp dev version installed
+     */
+    private static void handleCompDevVersionDetected(String originalFileName, ShaderVersionComparator versionComparator) {
+        boolean hasVersion = versionComparator.extractComplementaryVersionNumbers(originalFileName)[0] > 0;
+        String detectedVersion = versionComparator.getComplementaryVersionFromFileName(originalFileName);
+
+        EuphoriaPatcher.log(3, 8, "=== DEV SHADER VERSION ===");
+        EuphoriaPatcher.log(3, 8, "Found shader: " + originalFileName + (hasVersion ? " (version " + detectedVersion + ")" : ""));
+        EuphoriaPatcher.log(3, 8, "Required shader: " + EuphoriaPatcher.BRAND_NAME + "Shaders " + EuphoriaPatcher.VERSION);
+        EuphoriaPatcher.log(3, 8, EuphoriaPatcher.PATCH_NAME + " is not made to patch dev versions of " + EuphoriaPatcher.BRAND_NAME + ".");
+        EuphoriaPatcher.log(3, 8, "");
+
+        if (UpdateChecker.isNewerCompVersionAvailable()) {
+            EuphoriaPatcher.log(3, 8, "SOLUTION:");
+            EuphoriaPatcher.log(3, 8, "Step 1: Update " + EuphoriaPatcher.PATCH_NAME + " to the latest version: " + UpdateChecker.getNewModVersion());
+            EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.EP_DOWNLOAD_URL);
+            copyLinkMessage();
+            EuphoriaPatcher.log(3, 8, "");
+            EuphoriaPatcher.log(3, 8, "Step 2: Download the compatible release shader version: Complementary_r" + UpdateChecker.getComplementaryVersion());
+            EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
+            EuphoriaPatcher.log(3, 8, "");
+            EuphoriaPatcher.log(3, 8, "Step 3: Paste the downloaded zip file into your shaderpacks folder.");
+        } else if (hasVersion && versionComparator.isNewerShaderVersion(originalFileName)) {
+            EuphoriaPatcher.log(3, 8, "SOLUTION 1: Wait for a " + EuphoriaPatcher.PATCH_NAME + " update that supports the release of " + detectedVersion);
+            EuphoriaPatcher.log(3, 8, "SOLUTION 2: Download the compatible release shader version " + EuphoriaPatcher.VERSION);
+            EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
+            copyLinkMessage();
+        } else {
+            EuphoriaPatcher.log(3, 8, "SOLUTION:");
+            EuphoriaPatcher.log(3, 8, "Step 1: Download the latest compatible release shader version " + EuphoriaPatcher.VERSION);
+            EuphoriaPatcher.log(3, 8, "Download from: " + EuphoriaPatcher.COMP_DOWNLOAD_URL);
+            copyLinkMessage();
+            EuphoriaPatcher.log(3, 8, "");
+            EuphoriaPatcher.log(3, 8, "Step 2: Paste the downloaded zip file into your shaderpacks folder.");
+        }
     }
 
     /**

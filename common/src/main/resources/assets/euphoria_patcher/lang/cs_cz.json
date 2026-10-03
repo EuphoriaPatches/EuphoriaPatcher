@@ -15,5 +15,9 @@
   "euphoria_patcher.donation.line2.highlight": "Euphoria Patches",
   "euphoria_patcher.donation.line3.highlight": "nespočetně hodin",
   "euphoria_patcher.donation.line4.highlight": "podpoření projektu",
-  "euphoria_patcher.donation.button": "Podpořit projekt"
+  "euphoria_patcher.donation.button": "Podpořit projekt",
+  "euphoria_patcher.shader_error.failed": "Nepodařilo se kompilovat balíček shaderů! Nahlaš prosím chybu vývojáři shaderu. %s",
+  "euphoria_patcher.shader_error.copy": "Kopírovat info",
+  "euphoria_patcher.shader_error.report": "Nahlaš to vývojáři shaderu zde: %s",
+  "euphoria_patcher.shader_error.report.link": "Nahlásit na Discordu"
 }

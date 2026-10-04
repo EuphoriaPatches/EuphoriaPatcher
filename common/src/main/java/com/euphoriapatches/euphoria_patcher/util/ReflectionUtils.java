@@ -213,6 +213,23 @@ public class ReflectionUtils {
     }
 
     /**
+     * Field counterpart of {@link #tryMethods(Class, String...)}
+    */
+    public static Field tryFields(Class<?> declaringClass, String... fieldNames) throws NoSuchFieldException {
+        for (Class<?> clazz = declaringClass; clazz != null; clazz = clazz.getSuperclass()) {
+            for (String fieldName : fieldNames) {
+                try {
+                    Field field = clazz.getDeclaredField(fieldName);
+                    field.setAccessible(true);
+                    return field;
+                } catch (NoSuchFieldException ignored) {
+                }
+            }
+        }
+        throw new NoSuchFieldException(declaringClass.getName() + ": none of " + String.join(", ", fieldNames));
+    }
+
+    /**
      * Retrieves the value of a field from an object.
      *
      * @param target    The object from which to retrieve the field value

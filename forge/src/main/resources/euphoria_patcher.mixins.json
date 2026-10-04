@@ -46,6 +46,7 @@
     "IrisLegacyErrorReportMixin",
     "IrisConfigPropertiesMixin",
     "IrisLegacyConfigPropertiesMixin",
+    "MultiPlayerGameModeMixin",
     "SodiumMessagePopupMixin",
     "SodiumMessagePopupContainerMixin"
   ],

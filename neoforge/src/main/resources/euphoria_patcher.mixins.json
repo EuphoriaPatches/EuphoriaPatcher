@@ -27,6 +27,7 @@
     "IrisShaderPackScreenMixin",
     "IrisModernErrorReportMixin",
     "IrisConfigPropertiesMixin",
+    "MultiPlayerGameModeMixin",
     "SodiumMessagePopupMixin",
     "SodiumMessagePopupContainerMixin"
   ]

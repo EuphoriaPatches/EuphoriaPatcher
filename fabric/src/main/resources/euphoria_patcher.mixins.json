@@ -36,6 +36,8 @@
     "IrisLegacyErrorReportMixin",
     "IrisConfigPropertiesMixin",
     "IrisLegacyConfigPropertiesMixin",
+    "MultiPlayerGameModeMixin",
+    "MultiPlayerGameModeMixinYarn",
     "IrisLegacyShaderPackScreenMixin",
     "IrisShaderPackScreenMixin",
     "IrisModernPipelineManagerMixin",

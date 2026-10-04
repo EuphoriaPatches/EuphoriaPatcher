@@ -3,6 +3,7 @@ package com.euphoriapatches.euphoria_patcher.integration;
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.config.ConfigHandler;
 import com.euphoriapatches.euphoria_patcher.features.shader_settings.UpdateShaderConfig;
+import com.euphoriapatches.euphoria_patcher.integration.uniforms.EuphoriaUniforms;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.monitoring.PotatoFileMonitor;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
@@ -110,8 +111,7 @@ public final class DefineHelper {
             emitter.define("EUPHORIA_PATCHES_UNIFORMS");
             debugLog("Adding EUPHORIA_PATCHES_UNIFORMS define");
 
-            emitter.define("EUPHORIA_PATCHES_MODDED_BIOME_UNIFORM");
-            debugLog("Adding EUPHORIA_PATCHES_MODDED_BIOME_UNIFORM define");
+            addEuphoriaSpecificUniformDefines(emitter);
 
             // Thanks to GeForceLegend for finding this bug fix! https://github.com/IrisShaders/Iris/pull/3246
             emitter.define("EUPHORIA_PATCHES_AT_MIDBLOCK_FIX");
@@ -290,6 +290,16 @@ public final class DefineHelper {
         return ModChecker.isModPresent(ModChecker.ModNames.SERENE_SEASONS) ||
                ModChecker.isModPresent(ModChecker.ModNames.FABRIC_SEASONS) ||
                ModChecker.isModPresent(ModChecker.ModNames.ECLIPTIC_SEASONS);
+    }
+
+    private static void addEuphoriaSpecificUniformDefines(DefineEmitter emitter) {
+        for (String uniformName : EuphoriaUniforms.uniformNames()) {
+            String uniformPart = uniformName.substring("euphoriaPatches".length());
+            String uppercaseSnakeCase = uniformPart.replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ROOT);
+            String defineName = "EUPHORIA_PATCHES_" + uppercaseSnakeCase + "_UNIFORM";
+            emitter.define(defineName);
+            debugLog("Adding '" + defineName + "' define for uniform '" + uniformName + "'");
+        }
     }
 
     private static void appendMacroLine(StringBuilder sb, String name) {

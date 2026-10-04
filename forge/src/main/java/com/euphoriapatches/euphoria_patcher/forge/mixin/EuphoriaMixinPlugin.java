@@ -30,6 +30,8 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String OPTIFINE_SHADERS_CLASS = "net.optifine.shaders.Shaders";
     public static final String OPTIFINE_EXPRESSION_RESOLVER_CLASS = "net.optifine.shaders.uniform.ShaderExpressionResolver";
     public static final String ENDER_DRAGON_RENDERER_CLASS = "net.minecraft.client.renderer.entity.EnderDragonRenderer";
+    public static final String MACE_ITEM_CLASS = "net.minecraft.world.item.MaceItem";
+    public static final String MULTI_PLAYER_GAME_MODE_CLASS = "net.minecraft.client.multiplayer.MultiPlayerGameMode";
     public static final String IRIS_EXCLUSIVE_UNIFORMS_CLASS = "net.irisshaders.iris.uniforms.IrisExclusiveUniforms";
     public static final String IRIS_EXCLUSIVE_UNIFORMS_CLASS_LEGACY = "net.coderbot.iris.uniforms.IrisExclusiveUniforms";
     public static final String MODERN_IRIS_EXTENDED_DATA_HELPER_CLASS = "net.irisshaders.iris.vertices.ExtendedDataHelper";
@@ -143,6 +145,10 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if  (mixinClassName.contains("EnderDragonRendererMixin")) {
             return checkClassExists(ENDER_DRAGON_RENDERER_CLASS);
+        }
+
+        if (mixinClassName.contains("MultiPlayerGameModeMixin")) {
+            return checkClassExists(MULTI_PLAYER_GAME_MODE_CLASS) && checkClassExists(MACE_ITEM_CLASS);
         }
 
         if (mixinClassName.contains("IrisModernExclusiveUniformsMixin")) {

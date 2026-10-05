@@ -1,5 +1,6 @@
 package com.euphoriapatches.euphoria_patcher.integration.uniforms;
 
+import com.euphoriapatches.euphoria_patcher.integration.clouds.CloudTracker;
 import com.euphoriapatches.euphoria_patcher.integration.mace.MaceTracker;
 import com.euphoriapatches.euphoria_patcher.integration.seasons.SeasonsProvider;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
@@ -43,6 +44,9 @@ public final class EuphoriaUniforms {
 
         // 0-1 progress of the animation started by the last mace smash, 0 if there never was one
         declarer.uniform1f("euphoriaPatchesMaceSmashProgress", MaceTracker::getSmashProgress);
+
+        // Vanilla clouds alpha, 1.21.11+ only, fallback to 1.0, used to detect if a dimension has disabled clouds
+        declarer.uniform1f("euphoriaPatchesCloudAlpha", CloudTracker::getAlpha);
 
         // Season-related uniforms
 

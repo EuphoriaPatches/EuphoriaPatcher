@@ -139,6 +139,7 @@ public final class EuphoriaShaderPackCache {
                 }
                 debugLog("Swapped to cached ShaderPack for '" + dimension + "' (gen " + generation
                         + ", cache " + packsByDimension.size() + "/" + cacheLimit() + ")");
+                logCachedDimensions();
                 return SwapResult.DONE;
             }
 
@@ -152,8 +153,14 @@ public final class EuphoriaShaderPackCache {
             }
             debugLog("Built + swapped ShaderPack for '" + dimension + "' (gen " + generation
                     + ", cache " + packsByDimension.size() + "/" + cacheLimit() + ")");
+            logCachedDimensions();
             return SwapResult.DONE;
         }
+    }
+
+    // Least recently used first, the cache is access-ordered. Call while holding LOCK
+    private static void logCachedDimensions() {
+        debugLog("Cached dimensions: " + (packsByDimension.isEmpty() ? "none" : String.join(", ", packsByDimension.keySet())));
     }
 
     private static Object cacheGet(String dimension) {

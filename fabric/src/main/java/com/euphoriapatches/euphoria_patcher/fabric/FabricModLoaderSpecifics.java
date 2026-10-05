@@ -2,6 +2,7 @@ package com.euphoriapatches.euphoria_patcher.fabric;
 
 import com.euphoriapatches.euphoria_patcher.util.Biomes;
 import com.euphoriapatches.euphoria_patcher.util.Dimensions;
+import com.euphoriapatches.euphoria_patcher.util.ReflectionUtils;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import net.fabricmc.api.EnvType;
@@ -200,14 +201,14 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
             return null;
         }
         if (modernPlayerField == null) {
-            modernPlayerField = modernMcClass.getField("player");
+            modernPlayerField = ReflectionUtils.accessible(modernMcClass.getField("player"));
         }
         Object player = modernPlayerField.get(mcInstance);
         if (player == null) {
             return null;
         }
         if (modernBlockPositionMethod == null) {
-            modernBlockPositionMethod = player.getClass().getMethod("blockPosition");
+            modernBlockPositionMethod = ReflectionUtils.accessible(player.getClass().getMethod("blockPosition"));
         }
         return modernBlockPositionMethod.invoke(player);
     }
@@ -291,7 +292,7 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
             }
 
             if (modernDimensionMethod == null) {
-                modernDimensionMethod = level.getClass().getMethod("dimension");
+                modernDimensionMethod = ReflectionUtils.accessible(level.getClass().getMethod("dimension"));
             }
             Object dimension = modernDimensionMethod.invoke(level);
             String dimensionString = dimension.toString();
@@ -331,7 +332,7 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
                 return null;
             }
             if (modernLevelField == null) {
-                modernLevelField = modernMcClass.getField("level");
+                modernLevelField = ReflectionUtils.accessible(modernMcClass.getField("level"));
             }
             return modernLevelField.get(mcInstance);
         } catch (Exception e) {
@@ -348,7 +349,7 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
             modernMcClass = Class.forName("net.minecraft.client.Minecraft");
         }
         if (modernGetInstance == null) {
-            modernGetInstance = modernMcClass.getMethod("getInstance");
+            modernGetInstance = ReflectionUtils.accessible(modernMcClass.getMethod("getInstance"));
         }
         Object mcInstance = modernGetInstance.invoke(null);
         if (mcInstance != null) {

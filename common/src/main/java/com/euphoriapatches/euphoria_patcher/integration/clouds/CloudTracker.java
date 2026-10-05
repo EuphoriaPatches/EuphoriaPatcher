@@ -84,7 +84,7 @@ public final class CloudTracker {
             return (((Integer) color >>> 24) & 0xFF) / 255.0F;
         }
         if (vectorAlphaMethod == null) {
-            vectorAlphaMethod = ReflectionUtils.tryMethods(color.getClass(), VECTOR_ALPHA);
+            vectorAlphaMethod = ReflectionUtils.accessible(ReflectionUtils.tryMethods(color.getClass(), VECTOR_ALPHA));
         }
         return (float) vectorAlphaMethod.invoke(color);
     }
@@ -114,6 +114,11 @@ public final class CloudTracker {
         attributeProbeMethod = ReflectionUtils.tryMethods(mainCameraMethod.getReturnType(), ATTRIBUTE_PROBE_METHODS);
         probeGetValueMethod = ReflectionUtils.tryMethods(attributeProbeMethod.getReturnType(),
                 new Class<?>[]{cloudColorField.getType(), float.class}, PROBE_GET_VALUE);
+        ReflectionUtils.accessible(deltaTrackerMethod);
+        ReflectionUtils.accessible(partialTickMethod);
+        ReflectionUtils.accessible(mainCameraMethod);
+        ReflectionUtils.accessible(attributeProbeMethod);
+        ReflectionUtils.accessible(probeGetValueMethod);
         resolved = true;
         debugLog("Cloud alpha source resolved");
     }

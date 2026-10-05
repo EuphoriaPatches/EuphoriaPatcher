@@ -111,8 +111,8 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
                 return null;
             }
             if (cachedLevelField == null) {
-                cachedLevelField = Minecraft.class.getField(mappingBranch == 1 ? "f_91073_"
-                        : mappingBranch == 3 ? "field_71441_e" : "level");
+                cachedLevelField = ReflectionUtils.accessible(Minecraft.class.getField(mappingBranch == 1 ? "f_91073_"
+                        : mappingBranch == 3 ? "field_71441_e" : "level"));
             }
             return cachedLevelField.get(minecraft);
         } catch (Exception e) {
@@ -141,7 +141,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
                 return null;
             }
             if (cachedPlayerField == null) {
-                cachedPlayerField = Minecraft.class.getField(mappingBranch == 1 ? "f_91074_" : "player");
+                cachedPlayerField = ReflectionUtils.accessible(Minecraft.class.getField(mappingBranch == 1 ? "f_91074_" : "player"));
             }
             Object player = cachedPlayerField.get(cachedMinecraft());
             if (player == null) {
@@ -149,9 +149,9 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             }
 
             if (cachedBlockPositionMethod == null) {
-                cachedBlockPositionMethod = mappingBranch == 1
+                cachedBlockPositionMethod = ReflectionUtils.accessible(mappingBranch == 1
                         ? ReflectionUtils.tryMethods(player.getClass(), "m_20183_", "m_142538_") // 1.19+, 1.18.2
-                        : player.getClass().getMethod("blockPosition");
+                        : player.getClass().getMethod("blockPosition"));
             }
             Object pos = cachedBlockPositionMethod.invoke(player);
             if (biomeLookup == null) {
@@ -187,8 +187,8 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
             return cachedMinecraft;
         }
         if (cachedGetInstance == null) {
-            cachedGetInstance = Minecraft.class.getMethod(mappingBranch == 1 ? "m_91087_"
-                    : mappingBranch == 3 ? "func_71410_x" : "getInstance");
+            cachedGetInstance = ReflectionUtils.accessible(Minecraft.class.getMethod(mappingBranch == 1 ? "m_91087_"
+                    : mappingBranch == 3 ? "func_71410_x" : "getInstance"));
         }
         Object minecraft = cachedGetInstance.invoke(null);
         if (minecraft != null) {
@@ -394,7 +394,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
 
             // Get dimension key using modern method
             if (cachedDimensionMethod == null) {
-                cachedDimensionMethod = level.getClass().getMethod("dimension");
+                cachedDimensionMethod = ReflectionUtils.accessible(level.getClass().getMethod("dimension"));
             }
             Object dimensionKey = cachedDimensionMethod.invoke(level);
             debugLog("Got dimension key using dimension");

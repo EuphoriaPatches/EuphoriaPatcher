@@ -14,6 +14,29 @@ public class ReflectionUtils {
 	}
 
     /**
+     * Makes methods accessible to skip per call access-checks.
+     * At failure just return the method and act as if nothing happened
+     */
+    public static Method accessible(Method method) {
+        try {
+            method.setAccessible(true);
+        } catch (RuntimeException e) {
+            debugLog("Could not make " + method.getName() + " accessible: " + e);
+        }
+        return method;
+    }
+
+    /** Field counterpart of {@link #accessible(Method)}, {@code Field.get} does the same per-call access check. */
+    public static Field accessible(Field field) {
+        try {
+            field.setAccessible(true);
+        } catch (RuntimeException e) {
+            debugLog("Could not make " + field.getName() + " accessible: " + e);
+        }
+        return field;
+    }
+
+    /**
      * Checks if a class exists in the current classpath.
      *
      * @param className The fully qualified class name to check

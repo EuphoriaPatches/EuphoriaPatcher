@@ -98,7 +98,7 @@ public class GameRuleChecker {
             cachedRuleKey = ReflectionUtils.getFieldValue(gameRulesClass, "ADVANCE_TIME");
         }
         if (cachedMethod == null)
-            cachedMethod = gameRules.getClass().getMethod("get", cachedRuleKey.getClass());
+            cachedMethod = ReflectionUtils.accessible(gameRules.getClass().getMethod("get", cachedRuleKey.getClass()));
 
         return (boolean) cachedMethod.invoke(gameRules, cachedRuleKey);
     }
@@ -106,8 +106,8 @@ public class GameRuleChecker {
     private boolean modern() throws Exception {
         if (modernMcClass == null) {
             modernMcClass               = Class.forName("net.minecraft.client.Minecraft");
-            modernGetInstance           = modernMcClass.getMethod("getInstance");
-            modernGetSingleplayerServer = modernMcClass.getMethod("getSingleplayerServer");
+            modernGetInstance           = ReflectionUtils.accessible(modernMcClass.getMethod("getInstance"));
+            modernGetSingleplayerServer = ReflectionUtils.accessible(modernMcClass.getMethod("getSingleplayerServer"));
             Class<?> gameRulesClass     = Class.forName("net.minecraft.world.level.gamerules.GameRules");
             cachedRuleKey               = ReflectionUtils.getFieldValue(gameRulesClass, "ADVANCE_TIME");
         }
@@ -120,11 +120,11 @@ public class GameRuleChecker {
                 ? null : modernGetGameRules.invoke(server);
 
         if (modernGetGameRules == null) {
-            modernGetGameRules = server.getClass().getMethod("getGameRules");
+            modernGetGameRules = ReflectionUtils.accessible(server.getClass().getMethod("getGameRules"));
             gameRules          = modernGetGameRules.invoke(server);
         }
         if (cachedMethod == null)
-            cachedMethod = gameRules.getClass().getMethod("get", cachedRuleKey.getClass());
+            cachedMethod = ReflectionUtils.accessible(gameRules.getClass().getMethod("get", cachedRuleKey.getClass()));
 
         return (boolean) cachedMethod.invoke(gameRules, cachedRuleKey);
     }

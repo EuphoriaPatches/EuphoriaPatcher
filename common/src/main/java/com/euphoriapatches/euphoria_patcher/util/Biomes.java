@@ -86,9 +86,9 @@ public final class Biomes {
 
         public String lookup(Object level, Object pos) throws Exception {
             if (getBiome == null) {
-                getBiome = findGetBiome(level, pos);
+                getBiome = ReflectionUtils.accessible(findGetBiome(level, pos));
                 if (unwrapKeyName != null) {
-                    unwrapKey = Class.forName(holderClassName).getMethod(unwrapKeyName);
+                    unwrapKey = ReflectionUtils.accessible(Class.forName(holderClassName).getMethod(unwrapKeyName));
                 }
             }
             Object result = getBiome.invoke(level, pos);

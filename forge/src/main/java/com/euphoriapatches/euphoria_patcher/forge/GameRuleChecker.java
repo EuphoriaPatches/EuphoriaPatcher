@@ -97,7 +97,7 @@ public class GameRuleChecker {
     private boolean srgClient() throws Throwable {
         if (cachedSrgMinecraftClass == null) {
             cachedSrgMinecraftClass = Class.forName("net.minecraft.client.Minecraft");
-            cachedSrgGetInstance    = cachedSrgMinecraftClass.getMethod("m_91087_");
+            cachedSrgGetInstance    = ReflectionUtils.accessible(cachedSrgMinecraftClass.getMethod("m_91087_"));
             cachedSrgLevelField     = cachedSrgMinecraftClass.getField("f_91073_");
         }
 
@@ -108,7 +108,7 @@ public class GameRuleChecker {
         if (level == null) return true;
 
         if (cachedSrgGetGameRules == null)
-            cachedSrgGetGameRules = level.getClass().getMethod("m_46469_");
+            cachedSrgGetGameRules = ReflectionUtils.accessible(level.getClass().getMethod("m_46469_"));
 
         Object gameRules = cachedSrgGetGameRules.invoke(level);
 
@@ -118,7 +118,7 @@ public class GameRuleChecker {
         }
 
         if (cachedSrgGetBoolean == null)
-            cachedSrgGetBoolean = gameRules.getClass().getMethod("m_46207_", cachedSrgRuleKey.getClass());
+            cachedSrgGetBoolean = ReflectionUtils.accessible(gameRules.getClass().getMethod("m_46207_", cachedSrgRuleKey.getClass()));
 
         return (boolean) cachedSrgGetBoolean.invoke(gameRules, cachedSrgRuleKey);
     }
@@ -126,7 +126,7 @@ public class GameRuleChecker {
     private void ensureMinecraftInstance() throws Exception {
         if (cachedMinecraftClass == null) {
             cachedMinecraftClass = Class.forName("net.minecraft.client.Minecraft");
-            cachedGetInstance    = cachedMinecraftClass.getMethod("getInstance");
+            cachedGetInstance    = ReflectionUtils.accessible(cachedMinecraftClass.getMethod("getInstance"));
         }
     }
 
@@ -142,7 +142,7 @@ public class GameRuleChecker {
         if (level == null) return true;
 
         if (cachedGetGameRulesFromLevel == null)
-            cachedGetGameRulesFromLevel = level.getClass().getMethod("getGameRules");
+            cachedGetGameRulesFromLevel = ReflectionUtils.accessible(level.getClass().getMethod("getGameRules"));
 
         Object gameRules = cachedGetGameRulesFromLevel.invoke(level);
 
@@ -152,7 +152,7 @@ public class GameRuleChecker {
         }
 
         if (cachedGetBooleanOld == null)
-            cachedGetBooleanOld = gameRules.getClass().getMethod("getBoolean", cachedRuleKeyOld.getClass());
+            cachedGetBooleanOld = ReflectionUtils.accessible(gameRules.getClass().getMethod("getBoolean", cachedRuleKeyOld.getClass()));
 
         return (boolean) cachedGetBooleanOld.invoke(gameRules, cachedRuleKeyOld);
     }
@@ -160,9 +160,9 @@ public class GameRuleChecker {
     private boolean serverOld() throws Throwable {
         ensureMinecraftInstance();
         if (cachedHasSingleplayerServer == null)
-            cachedHasSingleplayerServer = cachedMinecraftClass.getMethod("hasSingleplayerServer");
+            cachedHasSingleplayerServer = ReflectionUtils.accessible(cachedMinecraftClass.getMethod("hasSingleplayerServer"));
         if (cachedGetSingleplayerServer == null)
-            cachedGetSingleplayerServer = cachedMinecraftClass.getMethod("getSingleplayerServer");
+            cachedGetSingleplayerServer = ReflectionUtils.accessible(cachedMinecraftClass.getMethod("getSingleplayerServer"));
 
         Object minecraft = cachedGetInstance.invoke(null);
         if (minecraft == null) return true;
@@ -174,7 +174,7 @@ public class GameRuleChecker {
         if (server == null) return true;
 
         if (cachedGetGameRulesFromServer == null)
-            cachedGetGameRulesFromServer = server.getClass().getMethod("getGameRules");
+            cachedGetGameRulesFromServer = ReflectionUtils.accessible(server.getClass().getMethod("getGameRules"));
 
         Object gameRules = cachedGetGameRulesFromServer.invoke(server);
 
@@ -184,7 +184,7 @@ public class GameRuleChecker {
         }
 
         if (cachedGetBooleanOld == null)
-            cachedGetBooleanOld = gameRules.getClass().getMethod("getBoolean", cachedRuleKeyOld.getClass());
+            cachedGetBooleanOld = ReflectionUtils.accessible(gameRules.getClass().getMethod("getBoolean", cachedRuleKeyOld.getClass()));
 
         return (boolean) cachedGetBooleanOld.invoke(gameRules, cachedRuleKeyOld);
     }
@@ -192,9 +192,9 @@ public class GameRuleChecker {
     private boolean serverNew() throws Throwable {
         ensureMinecraftInstance();
         if (cachedIsLocalServer == null)
-            cachedIsLocalServer = cachedMinecraftClass.getMethod("isLocalServer");
+            cachedIsLocalServer = ReflectionUtils.accessible(cachedMinecraftClass.getMethod("isLocalServer"));
         if (cachedGetSingleplayerServer == null)
-            cachedGetSingleplayerServer = cachedMinecraftClass.getMethod("getSingleplayerServer");
+            cachedGetSingleplayerServer = ReflectionUtils.accessible(cachedMinecraftClass.getMethod("getSingleplayerServer"));
 
         Object minecraft = cachedGetInstance.invoke(null);
         if (minecraft == null) return true;
@@ -206,11 +206,11 @@ public class GameRuleChecker {
         if (server == null) return true;
 
         if (cachedGetWorldData == null)
-            cachedGetWorldData = server.getClass().getMethod("getWorldData");
+            cachedGetWorldData = ReflectionUtils.accessible(server.getClass().getMethod("getWorldData"));
         Object worldData = cachedGetWorldData.invoke(server);
 
         if (cachedGetGameRulesFromWorldData == null)
-            cachedGetGameRulesFromWorldData = worldData.getClass().getMethod("getGameRules");
+            cachedGetGameRulesFromWorldData = ReflectionUtils.accessible(worldData.getClass().getMethod("getGameRules"));
         Object gameRules = cachedGetGameRulesFromWorldData.invoke(worldData);
 
         if (cachedRuleKeyNew == null) {
@@ -219,7 +219,7 @@ public class GameRuleChecker {
         }
 
         if (cachedGetNew == null)
-            cachedGetNew = gameRules.getClass().getMethod("get", cachedRuleKeyNew.getClass());
+            cachedGetNew = ReflectionUtils.accessible(gameRules.getClass().getMethod("get", cachedRuleKeyNew.getClass()));
 
         return (boolean) cachedGetNew.invoke(gameRules, cachedRuleKeyNew);
     }
@@ -227,7 +227,7 @@ public class GameRuleChecker {
     private boolean modern() throws Throwable {
         ensureMinecraftInstance();
         if (cachedGetSingleplayerServer == null)
-            cachedGetSingleplayerServer = cachedMinecraftClass.getMethod("getSingleplayerServer");
+            cachedGetSingleplayerServer = ReflectionUtils.accessible(cachedMinecraftClass.getMethod("getSingleplayerServer"));
 
         Object minecraft = cachedGetInstance.invoke(null);
         if (minecraft == null) return true;
@@ -236,7 +236,7 @@ public class GameRuleChecker {
         if (server == null) return true;
 
         if (cachedGetGameRulesFromServerNew == null)
-            cachedGetGameRulesFromServerNew = server.getClass().getMethod("getGameRules");
+            cachedGetGameRulesFromServerNew = ReflectionUtils.accessible(server.getClass().getMethod("getGameRules"));
         Object gameRules = cachedGetGameRulesFromServerNew.invoke(server);
 
         if (cachedRuleKeyNew == null) {
@@ -245,7 +245,7 @@ public class GameRuleChecker {
         }
 
         if (cachedGetNew == null)
-            cachedGetNew = gameRules.getClass().getMethod("get", cachedRuleKeyNew.getClass());
+            cachedGetNew = ReflectionUtils.accessible(gameRules.getClass().getMethod("get", cachedRuleKeyNew.getClass()));
 
         return (boolean) cachedGetNew.invoke(gameRules, cachedRuleKeyNew);
     }

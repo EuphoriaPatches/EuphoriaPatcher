@@ -15,5 +15,9 @@
   "euphoria_patcher.donation.line2.highlight": "Euphoria Patches",
   "euphoria_patcher.donation.line3.highlight": "数え切れないほどの時間",
   "euphoria_patcher.donation.line4.highlight": "プロジェクトをサポートする",
-  "euphoria_patcher.donation.button": "プロジェクトをサポート"
+  "euphoria_patcher.donation.button": "プロジェクトをサポート",
+  "euphoria_patcher.shader_error.failed": "シェーダーパックのコンパイルに失敗しました！エラー内容をシェーダー開発者に報告してください。%s",
+  "euphoria_patcher.shader_error.copy": "情報をコピー",
+  "euphoria_patcher.shader_error.report": "ここからシェーダー開発者に報告してください: %s",
+  "euphoria_patcher.shader_error.report.link": "Discordで報告"
 }

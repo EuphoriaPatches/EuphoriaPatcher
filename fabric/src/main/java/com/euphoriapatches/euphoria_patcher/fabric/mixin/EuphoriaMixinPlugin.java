@@ -32,6 +32,8 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String MULTI_PLAYER_GAME_MODE_CLASS = "net.minecraft.client.multiplayer.MultiPlayerGameMode";
     public static final String MULTI_PLAYER_GAME_MODE_CLASS_YARN = "net.minecraft.class_636";
     public static final String MACE_ITEM_CLASS_YARN = "net.minecraft.class_9362";
+    public static final String PARTICLE_UTILS_CLASS = "net.minecraft.util.ParticleUtils";
+    public static final String PARTICLE_UTILS_CLASS_YARN = "net.minecraft.class_5945";
     public static final String IRIS_EXCLUSIVE_UNIFORMS_CLASS = "net.irisshaders.iris.uniforms.IrisExclusiveUniforms";
     public static final String IRIS_EXCLUSIVE_UNIFORMS_CLASS_LEGACY = "net.coderbot.iris.uniforms.IrisExclusiveUniforms";
     public static final String PREPARED_RENDER_TYPE_CLASS = "net.minecraft.client.renderer.rendertype.PreparedRenderType";
@@ -148,6 +150,14 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("RenderTypeMixinYarn")) {
             return checkClassExists(RENDER_TYPE_CLASS_YARN) && checkClassExists(MINECRAFT_CLIENT_YARN_CLASS) && !checkClassExists(RENDER_STATE_SHARD_CLASS);
+        }
+
+        if (mixinClassName.contains("MaceParticlesMixinYarn")) {
+            return checkClassExists(PARTICLE_UTILS_CLASS_YARN) && checkClassExists(MACE_ITEM_CLASS_YARN);
+        }
+
+        if (mixinClassName.contains("MaceParticlesMixin") && !mixinClassName.contains("Yarn")) {
+            return checkClassExists(PARTICLE_UTILS_CLASS) && checkClassExists(MACE_ITEM_CLASS);
         }
 
         if (mixinClassName.contains("MultiPlayerGameModeMixinYarn")) {

@@ -47,6 +47,7 @@
     "IrisConfigPropertiesMixin",
     "IrisLegacyConfigPropertiesMixin",
     "MultiPlayerGameModeMixin",
+    "MaceParticlesMixin",
     "SodiumMessagePopupMixin",
     "SodiumMessagePopupContainerMixin"
   ],

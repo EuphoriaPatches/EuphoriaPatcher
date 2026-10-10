@@ -25,6 +25,8 @@ public interface UniformDeclarer {
 
     void uniform3f(String name, DoubleSupplier x, DoubleSupplier y, DoubleSupplier z);
 
+    // OptiFine uploads this as an ivec4 (w = 0), Iris as an ivec3. In the shader declare ivec3 under IS_IRIS
+    // and ivec4 otherwise, and always read it with .xyz
     void uniform3i(String name, IntSupplier x, IntSupplier y, IntSupplier z);
 
     void uniform3d(String name, DoubleSupplier x, DoubleSupplier y, DoubleSupplier z);

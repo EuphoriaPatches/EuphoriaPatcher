@@ -28,6 +28,7 @@
     "IrisModernErrorReportMixin",
     "IrisConfigPropertiesMixin",
     "MultiPlayerGameModeMixin",
+    "MaceParticlesMixin",
     "SodiumMessagePopupMixin",
     "SodiumMessagePopupContainerMixin"
   ]

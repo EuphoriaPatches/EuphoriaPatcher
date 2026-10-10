@@ -42,8 +42,16 @@ public final class EuphoriaUniforms {
 
         declarer.uniform1i("euphoriaPatchesCurrentDayMillisLocal", EuphoriaUniforms::msSinceMidnightLocal);
 
-        // 0-1 progress of the animation started by the last mace smash, 0 if there never was one
-        declarer.uniform1f("euphoriaPatchesMaceSmashProgress", MaceTracker::getSmashProgress);
+        // Mace shockwaves (any player's smash), 2 at once. Block position of each wave as an exact int vector
+        // OptiFine uploads this as an ivec4 (w = 0), so the shader declares an ivec4 there and an ivec3 on Iris
+        declarer.uniform3i("euphoriaPatchesMaceWavePos0",
+                () -> MaceTracker.getWaveX(0), () -> MaceTracker.getWaveY(0), () -> MaceTracker.getWaveZ(0));
+        declarer.uniform3i("euphoriaPatchesMaceWavePos1",
+                () -> MaceTracker.getWaveX(1), () -> MaceTracker.getWaveY(1), () -> MaceTracker.getWaveZ(1));
+        // x = progress of wave 0 (0-1, -1 = inactive), y = strength of wave 0 (0-1), zw the same for wave 1
+        declarer.uniform4f("euphoriaPatchesMaceWaveState",
+                () -> MaceTracker.getWaveProgress(0), () -> MaceTracker.getWaveStrength(0),
+                () -> MaceTracker.getWaveProgress(1), () -> MaceTracker.getWaveStrength(1));
 
         // Vanilla clouds alpha, 1.21.11+ only, fallback to 1.0, used to detect if a dimension has disabled clouds
         declarer.uniform1f("euphoriaPatchesCloudAlpha", CloudTracker::getAlpha);

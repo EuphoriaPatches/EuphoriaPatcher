@@ -38,6 +38,8 @@
     "IrisLegacyConfigPropertiesMixin",
     "MultiPlayerGameModeMixin",
     "MultiPlayerGameModeMixinYarn",
+    "MaceParticlesMixin",
+    "MaceParticlesMixinYarn",
     "IrisLegacyShaderPackScreenMixin",
     "IrisShaderPackScreenMixin",
     "IrisModernPipelineManagerMixin",

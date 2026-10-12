@@ -6,14 +6,28 @@ import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
+import java.util.regex.Pattern;
 
 public class Dimensions {
     public static final String SHADER_DIMENSION_PROPERTIES_LOCATION = "shaders/dimension.properties";
+
+    private static final Pattern PREPROCESSOR_LINE = Pattern.compile("^\\s*#(if|ifdef|ifndef|elif|else|endif)\\b");
+
+    // dimension.properties key -> dimension category
+    private static final Map<String, String> CATEGORY_KEYS = new LinkedHashMap<>();
+    static {
+        CATEGORY_KEYS.put("dimension.world0", "overworld");
+        CATEGORY_KEYS.put("dimension.world-1", "nether");
+        CATEGORY_KEYS.put("dimension.world1", "end");
+    }
 
     // Cache to store dimension ID -> dimension category mappings
     private static final Map<String, String> dimensionCache = new HashMap<>();
@@ -213,46 +227,43 @@ public class Dimensions {
     }
 
     /**
-     * Parse dimension properties from a reader
+     * Parse dimension properties from a reader.
+     * <p>
+     * Split at preprocessor to avoid lower lines overwriting  earlier ones.
+     * The results are merged afterwards, so Nether IDs from both blocks are combined, End IDs likewise.
+     *
      * @param reader The reader containing dimension.properties content
      * @return Map of dimension IDs to dimension categories
      * @throws IOException If there's an error reading from the reader
      */
     private static Map<String, String> parseDimensionPropertiesFromReader(BufferedReader reader) throws IOException {
         Map<String, String> dimensionMap = new HashMap<>();
-        StringBuilder currentLine = new StringBuilder();
+        StringBuilder segment = new StringBuilder();
         String line;
 
         while ((line = reader.readLine()) != null) {
-            // Skip comments and empty lines
-            if (line.trim().isEmpty() || line.trim().startsWith("#")) {
-                continue;
-            }
-
-            // Handle line continuation
-            if (line.endsWith("\\")) {
-                currentLine.append(line, 0, line.length() - 1).append(" ");
-                continue;
-            } else if (currentLine.length() > 0) {
-                currentLine.append(line);
-                line = currentLine.toString();
-                currentLine.setLength(0);
-            }
-
-            // Process dimension mapping lines
-            if (line.startsWith("dimension.world0=")) {
-                // Overworld mappings
-                addDimensionsToMap(line.substring("dimension.world0=".length()), "overworld", dimensionMap);
-            } else if (line.startsWith("dimension.world-1=")) {
-                // Nether mappings
-                addDimensionsToMap(line.substring("dimension.world-1=".length()), "nether", dimensionMap);
-            } else if (line.startsWith("dimension.world1=")) {
-                // End mappings
-                addDimensionsToMap(line.substring("dimension.world1=".length()), "end", dimensionMap);
+            if (PREPROCESSOR_LINE.matcher(line).find()) {
+                loadSegment(segment.toString(), dimensionMap);
+                segment.setLength(0);
+            } else {
+                segment.append(line).append('\n');
             }
         }
+        loadSegment(segment.toString(), dimensionMap);
 
         return dimensionMap;
+    }
+
+    private static void loadSegment(String segment, Map<String, String> dimensionMap) throws IOException {
+        Properties properties = new Properties();
+        properties.load(new StringReader(segment));
+
+        for (Map.Entry<String, String> entry : CATEGORY_KEYS.entrySet()) {
+            String value = properties.getProperty(entry.getKey());
+            if (value != null) {
+                addDimensionsToMap(value, entry.getValue(), dimensionMap);
+            }
+        }
     }
 
     /**

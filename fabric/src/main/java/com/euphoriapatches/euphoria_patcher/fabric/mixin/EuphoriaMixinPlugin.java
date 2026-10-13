@@ -49,6 +49,9 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String NATIVE_IMAGE_CLASS_YARN = "net.minecraft.class_1011";
     public static final String SCREENSHOT_CLASS = "net.minecraft.client.Screenshot";
     public static final String SCREENSHOT_CLASS_YARN = "net.minecraft.class_318";
+    public static final String RENDER_SYSTEM_CLASS = "com.mojang.blaze3d.systems.RenderSystem";
+    public static final String IRIS_PIPELINES_CLASS = "net.irisshaders.iris.pipeline.IrisPipelines";
+    public static final String SHADER_INSTANCE_CLASS_YARN = "net.minecraft.class_5944";
     public static final String IRIS_SHADER_PACK_SCREEN_CLASS = "net.irisshaders.iris.gui.screen.ShaderPackScreen";
     public static final String LEGACY_IRIS_SHADER_PACK_SCREEN_CLASS = "net.coderbot.iris.gui.screen.ShaderPackScreen";
     public static final String MODERN_IRIS_MAIN_CLASS = "net.irisshaders.iris.Iris";
@@ -218,6 +221,15 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("NativeImageMixin") && !mixinClassName.contains("Yarn")) {
             return checkClassExists(NATIVE_IMAGE_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisPipelinesTransformMixin")) {
+            // Only exists in Iris for 1.21.5+
+            return checkClassExists(IRIS_PIPELINES_CLASS);
+        }
+
+        if (mixinClassName.contains("RenderSystemShaderTransformMixin")) {
+            return checkClassExists(RENDER_SYSTEM_CLASS) && checkClassExists(SHADER_INSTANCE_CLASS_YARN);
         }
 
         if (mixinClassName.contains("ScreenshotMixinYarn")) {

@@ -28,6 +28,9 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
     public static final String MODERN_PIPELINE_MANAGER_CLASS = "net.irisshaders.iris.pipeline.PipelineManager";
     public static final String NATIVE_IMAGE_CLASS = "com.mojang.blaze3d.platform.NativeImage";
     public static final String SCREENSHOT_CLASS = "net.minecraft.client.Screenshot";
+    public static final String RENDER_SYSTEM_CLASS = "com.mojang.blaze3d.systems.RenderSystem";
+    public static final String IRIS_PIPELINES_CLASS = "net.irisshaders.iris.pipeline.IrisPipelines";
+    public static final String SHADER_INSTANCE_CLASS = "net.minecraft.client.renderer.ShaderInstance";
     public static final String IRIS_SHADER_PACK_SCREEN_CLASS = "net.irisshaders.iris.gui.screen.ShaderPackScreen";
     public static final String MODERN_IRIS_MAIN_CLASS = "net.irisshaders.iris.Iris";
 
@@ -108,6 +111,16 @@ public class EuphoriaMixinPlugin implements IMixinConfigPlugin {
 
         if (mixinClassName.contains("NativeImageMixin")) {
             return checkClassExists(NATIVE_IMAGE_CLASS);
+        }
+
+        if (mixinClassName.contains("IrisPipelinesTransformMixin")) {
+            // Only exists in Iris for 1.21.5+
+            return checkClassExists(IRIS_PIPELINES_CLASS);
+        }
+
+        if (mixinClassName.contains("RenderSystemShaderTransformMixin")) {
+            // From 1.21.4 at the latest setShader no longer takes a Supplier of ShaderInstance
+            return checkClassExists(RENDER_SYSTEM_CLASS) && checkClassExists(SHADER_INSTANCE_CLASS);
         }
 
         if (mixinClassName.contains("ScreenshotMixin")) {

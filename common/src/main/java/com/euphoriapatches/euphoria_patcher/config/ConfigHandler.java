@@ -18,6 +18,7 @@ public class ConfigHandler {
     public static boolean autoMergeBlockProperties = false;
     public static String doEmbedShaderSettingsInScreenshots = EmbedShaderSettingsMode.ENABLED; // enabled, disabled, debug
     public static int extraDimensionShaderCacheSize = 2;
+    public static boolean doTransformCustomShaders = true;
 
     public static void configStuff() {
         // Initialize config system (handles migration on first call)
@@ -94,6 +95,13 @@ public class ConfigHandler {
                 "\nIf more dimensions than this threshold are visited, the oldest cached dimension will be removed." +
                 "\n0 = rebuild on every change (slower but no extra ram usage), 2 = two extra dimensions apart from the current one can be cached. Increase if frequently visiting more modded dimensions or decrease if you have limited memory." +
                 "\nDefault = 2");
+
+        doTransformCustomShaders = Config.readWriteConfig("advanced", "doTransformCustomShaders", true,
+                "Option that makes some modded effects render like their vanilla counterpart with Euphoria Patches." +
+                "\nSome mods draw stuff with their own shader, which shaderpacks can't see, so the effect shows up wrong or not at all." +
+                "\nThis is hardcoded per mod." +
+                "\nThe modded effect's own look is lost, disable this if an effect looks wrong or disappears. Only has an effect on Iris and Oculus." +
+                "\nDefault = true");
 
         boolean configAutoMergeBlockProperties = Config.readWriteConfig("advanced", "autoMergeBlockProperties", false,
                 "Option that enables or disables automatic merging of the fragmented block.properties files into the main block.properties file." +

@@ -24,6 +24,8 @@
     "PreparedRenderTypeMixin",
     "NativeImageMixin",
     "ScreenshotMixin",
+    "RenderSystemShaderTransformMixin",
+    "IrisPipelinesTransformMixin",
     "IrisShaderPackScreenMixin",
     "IrisModernErrorReportMixin",
     "IrisConfigPropertiesMixin",

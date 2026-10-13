@@ -49,6 +49,8 @@
     "PreparedRenderTypeMixin",
     "ScreenshotMixin",
     "ScreenshotMixinYarn",
+    "RenderSystemShaderTransformMixin",
+    "IrisPipelinesTransformMixin",
     "ReloadShadersOnDimensionChangeMixin",
     "ReloadShadersOnDimensionChangeMixinYarn",
     "RenderTypeMixin",

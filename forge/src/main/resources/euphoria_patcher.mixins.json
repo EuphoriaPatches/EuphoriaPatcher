@@ -40,6 +40,8 @@
     "OptifineExpressionResolverMixin",
     "NativeImageMixin",
     "ScreenshotMixin",
+    "RenderSystemShaderTransformMixin",
+    "IrisPipelinesTransformMixin",
     "IrisShaderPackScreenMixin",
     "IrisLegacyShaderPackScreenMixin",
     "IrisModernErrorReportMixin",

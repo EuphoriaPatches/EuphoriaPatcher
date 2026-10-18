@@ -19,6 +19,8 @@ public final class ShaderTransformTable {
         add(TransformTarget.ENTITY_TRANSLUCENT, "alexscaves:rendertype_bubbled", "alexscaves:rendertype_ferrouslime_gel",
         "alexscaves:pipeline/ferrouslime_gel", "alexscaves:pipeline/entity_unlit_translucent");
 
+        add(TransformTarget.ENTITY_EMISSIVE, "alexscaves:rendertype_red_ghost", "alexscaves:pipeline/red_ghost");
+
         // AE2
         add(TransformTarget.LIGHTNING,"ae2:pipeline/storage_cell_leds");
 

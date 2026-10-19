@@ -13,9 +13,8 @@ repositories {
 
 dependencies {
 	// Common dependencies that ALL mod loaders need
-	implementation 'io.sigpipe:jbsdiff:1.0'
+	implementation "com.euphoriapatches:shaderpatcher:${shaderpatcher_version}"
 	implementation 'com.google.code.gson:gson:2.8.9'
-	implementation 'org.apache.commons:commons-compress:1.21'
 	implementation 'commons-io:commons-io:2.11.0'
 	implementation 'commons-codec:commons-codec:1.15'
 	compileOnly 'com.google.guava:guava:32.1.2-jre'

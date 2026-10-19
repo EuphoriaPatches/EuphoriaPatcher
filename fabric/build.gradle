@@ -49,7 +49,7 @@ dependencies {
 
 	// Dependencies to be shadowed (common dependencies need to be shaded into final jar)
 	shade project(':common')
-	shade 'io.sigpipe:jbsdiff:1.0'
+	shade "com.euphoriapatches:shaderpatcher:${shaderpatcher_version}"
 	shade 'com.google.code.gson:gson:2.8.9'
 	shade('com.google.guava:guava:32.1.2-jre') {
 		// Keep Guava shaded, but do not pull transitive annotation/helper jars.
@@ -57,7 +57,6 @@ dependencies {
 	}
 
 	// Apache Commons dependencies - these need to be shadowed
-	shade 'org.apache.commons:commons-compress:1.21'
 	shade 'commons-io:commons-io:2.11.0'
 	shade 'commons-codec:commons-codec:1.15'
 }
@@ -75,7 +74,7 @@ shadowJar {
 
 	// Relocate the problematic libraries to avoid conflicts
 	relocate 'org.apache.commons', 'com.euphoriapatches.shadow.org.apache.commons'
-	relocate 'io.sigpipe.jbsdiff', 'com.euphoriapatches.shadow.io.sigpipe.jbsdiff'
+	relocate 'com.euphoriapatches.shaderpatcher', 'com.euphoriapatches.shadow.shaderpatcher'
 	relocate 'com.google', 'com.euphoriapatches.shadow.com.google'
 
 	// Include license file

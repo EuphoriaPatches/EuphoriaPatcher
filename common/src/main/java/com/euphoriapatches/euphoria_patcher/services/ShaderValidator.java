@@ -2,7 +2,8 @@ package com.euphoriapatches.euphoria_patcher.services;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
-import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
+import com.euphoriapatches.euphoria_patcher.util.shader.ShaderVersionComparator;
+import com.euphoriapatches.shaderpatcher.exception.ShaderPatcherException;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -252,8 +253,9 @@ public class ShaderValidator {
     }
 
     /**
-     * Validates a shader by extracting, re-archiving, and checking byte size
-     * This is a heavy operation used to identify unpatched base shaders
+     * Checks whether a shader pack has the byte size of the base shader this mod patches.
+     * The ShaderPatcher library builds the archive of the pack and compares its size, which is a heavy operation
+     * used to identify unpatched base shaders that have been renamed.
      *
      * @param path Path to the shader file or directory
      * @param filesScanned Current count of files scanned (for progress reporting)
@@ -264,44 +266,20 @@ public class ShaderValidator {
         try {
             debugLog("Validating shader by byte size (" + filesScanned + "/" + totalFiles + "): " + path.getFileName());
 
-            Path tempDir = ArchiveOperations.createTempDirectory();
-            if (tempDir == null) {
-                debugLog("Failed to create temp directory for byte size validation");
-                return false;
-            }
-            debugLog("Created temp directory: " + tempDir);
-
+            // Packs named like a dev/test version are never patched
             String baseName = path.getFileName().toString().replace(".zip", "");
-            debugLog("Base name for extraction: " + baseName);
-
-            // Extract if it's a zip file
-            Path baseExtracted = tempDir.resolve(baseName);
-            baseExtracted = ArchiveOperations.extract(path, baseExtracted, "extracting archive");
-            if (baseExtracted == null) {
-                debugLog("Failed to extract base for byte size validation");
-                ArchiveOperations.deleteTempDirectory(tempDir);
+            if (ShaderVersionComparator.isTestOrDevVersion(baseName + ".tar")) {
+                debugLog("Test/fix version detected in quiet check: " + baseName);
                 return false;
             }
-            debugLog("Successfully extracted to: " + baseExtracted);
 
-            // Archive for byte size comparison
-            Path baseArchived = tempDir.resolve(baseName + ".tar");
-            baseArchived = ArchiveOperations.archive(baseExtracted, baseArchived);
-            if (baseArchived == null) {
-                debugLog("Failed to archive base for byte size validation");
-                ArchiveOperations.deleteTempDirectory(tempDir);
-                return false;
-            }
-            debugLog("Successfully archived to: " + baseArchived);
-
-            // Check byte size quietly
-            boolean result = ArchiveOperations.verifyBaseArchiveQuiet(baseArchived);
+            // Size only: the hash is checked later, when the shader is actually patched
+            boolean result = PatchLibrary.get().matchesBase(path, false);
             debugLog("Byte size verification result for " + path.getFileName() + ": " + result);
-
-            // Clean up
-            ArchiveOperations.deleteTempDirectory(tempDir);
-
             return result;
+        } catch (ShaderPatcherException e) {
+            debugLog("Cannot validate by byte size: " + e.getMessage());
+            return false;
         } catch (Exception e) {
             debugLog("Exception during byte size validation: " + e.getMessage());
             return false;

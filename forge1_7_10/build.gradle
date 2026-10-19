@@ -59,9 +59,8 @@ dependencies {
     compileOnly(project(':common'))
 
     // Dependencies to be shadowed - using standard implementation
-    shade('io.sigpipe:jbsdiff:1.0')
+    shade "com.euphoriapatches:shaderpatcher:${shaderpatcher_version}"
     shade('com.google.code.gson:gson:2.8.9')
-    shade('org.apache.commons:commons-compress:1.21')
     shade('commons-io:commons-io:2.11.0')
     shade('commons-codec:commons-codec:1.15')
 }
@@ -75,9 +74,9 @@ shadowJar {
     from(project(':common').sourceSets.main.output)
 
     // Relocate shadowed dependencies to avoid conflicts
-    relocate 'io.sigpipe', "${project.group}.shadow.io.sigpipe"
     relocate 'com.google.gson', "${project.group}.shadow.com.google.gson"
     relocate 'org.apache.commons', "${project.group}.shadow.org.apache.commons"
+    relocate 'com.euphoriapatches.shaderpatcher', "${project.group}.shadow.shaderpatcher"
 
     // Don't minimize as common module is shaded in, which breaks minimization
 

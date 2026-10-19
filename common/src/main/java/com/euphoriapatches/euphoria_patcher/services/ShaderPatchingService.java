@@ -3,23 +3,28 @@ package com.euphoriapatches.euphoria_patcher.services;
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector.ShaderInfo;
 import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
-import com.euphoriapatches.euphoria_patcher.io.ArchiveUtils;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
-import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.compress.compressors.CompressorException;
+import com.euphoriapatches.euphoria_patcher.util.UserInstallErrorMessages;
+import com.euphoriapatches.euphoria_patcher.util.shader.ShaderVersionComparator;
+import com.euphoriapatches.shaderpatcher.PatchResult;
+import com.euphoriapatches.shaderpatcher.ShaderPatcher;
+import com.euphoriapatches.shaderpatcher.exception.BaseHashMismatchException;
+import com.euphoriapatches.shaderpatcher.exception.BaseSizeMismatchException;
+import com.euphoriapatches.shaderpatcher.exception.InvalidPackException;
+import com.euphoriapatches.shaderpatcher.exception.OutputExistsException;
+import com.euphoriapatches.shaderpatcher.exception.PackIoException;
+import com.euphoriapatches.shaderpatcher.exception.PatchNotFoundException;
+import com.euphoriapatches.shaderpatcher.exception.ShaderPatcherException;
 import org.apache.commons.io.FileUtils;
-
-import io.sigpipe.jbsdiff.InvalidHeaderException;
-import io.sigpipe.jbsdiff.ui.FileUI;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.Objects;
 
 /**
- * Handles shader patching operations
+ * Handles shader patching operations.
+ * The verification and patching itself is done by the ShaderPatcher library, which reports every problem as an
+ * exception. This class is the single place where those exceptions are turned into messages for the user.
  */
 public class ShaderPatchingService {
     private final String patchName;
@@ -48,29 +53,106 @@ public class ShaderPatchingService {
             }
 
             // Get base name and remove .zip extension
-            String baseName = info.baseFile.getFileName().toString().replace(".zip", "");
-            baseName = ShaderNamingService.cleanBaseName(baseName);
+            String originalFileName = info.baseFile.getFileName().toString();
+            String baseName = ShaderNamingService.cleanBaseName(originalFileName.replace(".zip", ""));
+            // Name under which the error handlers know the archive of the base shader
+            String archiveName = baseName + ".tar";
 
-            String patchedName = baseName + " + " + patchName + patchVersion;
+            // Work on a private copy: the shader the user has is never modified. The copy is named after the base
+            // shader because the library derives the name of the patched shader from it.
+            Path baseCopy = temp.resolve(baseName);
+            try {
+                ShaderPatcher.extract(info.baseFile, baseCopy);
+            } catch (ShaderPatcherException e) {
+                return handleFailure(e, archiveName, originalFileName);
+            }
+            normalizeShaderStyleInCommon(baseCopy);
 
-            Path baseExtracted = temp.resolve(baseName);
-            baseExtracted = ArchiveOperations.extract(info.baseFile, baseExtracted, "extracting archive");
-            if (baseExtracted == null) return false;
+            ShaderPatcher patcher = PatchLibrary.get();
 
-            normalizeShaderStyleInCommon(baseExtracted);
+            // A base shader that is named like a dev/test version is never patched, even if it matches the release
+            if (ShaderVersionComparator.isTestOrDevVersion(archiveName)) {
+                debugLog("Test/fix version detected: " + originalFileName);
+                try {
+                    patcher.verifyBase(baseCopy);
+                    UserInstallErrorMessages.handleDevVersion(archiveName, originalFileName);
+                } catch (BaseHashMismatchException e) {
+                    UserInstallErrorMessages.handleDevVersion(archiveName, originalFileName);
+                } catch (ShaderPatcherException e) {
+                    return handleFailure(e, archiveName, originalFileName);
+                }
+                return false;
+            }
 
-            Path baseArchived = temp.resolve(baseName + ".tar");
-            baseArchived = ArchiveOperations.archive(baseExtracted, baseArchived);
+            PatchResult result = patcher.apply(baseCopy, shaderpacks);
+            Path patchedFile = result.getOutputDir();
+            debugLog("Patched shader written to: " + patchedFile);
 
-            if (baseArchived != null && !ArchiveOperations.verifyBaseArchive(baseArchived, info.baseFile.getFileName().toString())) return false;
-
-            return applyPatch(baseArchived, temp, patchedName, info.styleUnbound, info.styleReimagined);
+            debugLog("Applying style settings...");
+            applyStyleSettings(patchedFile, info.styleUnbound, info.styleReimagined);
+            log(1, patchName + " was successfully installed. Enjoy! -SpacEagle17");
+            return true;
+        } catch (ShaderPatcherException e) {
+            return handleFailure(e, null, info.baseFile != null ? info.baseFile.getFileName().toString() : null);
+        } catch (IOException e) {
+            debugLog("Error applying patch file: " + e.getMessage());
+            log(3, "Error applying patch file: " + e.getMessage());
+            log(3, EuphoriaLogger.getStackTrace(e));
+            return false;
         } finally {
             ArchiveOperations.deleteTempDirectory(temp);
         }
     }
 
+    /**
+     * Turns a failure reported by the library into the matching message for the user. Always returns false.
+     */
+    private boolean handleFailure(ShaderPatcherException e, String archiveName, String originalFileName) {
+        debugLog("Patching failed: " + e);
+        if (archiveName == null && originalFileName != null) {
+            archiveName = ShaderNamingService.cleanBaseName(originalFileName.replace(".zip", "")) + ".tar";
+        }
 
+        if (e instanceof BaseSizeMismatchException || e instanceof InvalidPackException) {
+            // An unreadable archive is handled like a wrong one: the user needs to supply the correct shader
+            UserInstallErrorMessages.handleSizeMismatch(archiveName, originalFileName, getVersionComparator());
+        } else if (e instanceof BaseHashMismatchException) {
+            if (ShaderVersionComparator.isTestOrDevVersion(archiveName)) {
+                UserInstallErrorMessages.handleDevVersion(archiveName, originalFileName);
+            } else {
+                UserInstallErrorMessages.handleHashMismatch(archiveName, originalFileName);
+            }
+        } else if (e instanceof PatchNotFoundException) {
+            // Patch resource not found - this is a critical error
+            log(3, 12, "========================");
+            log(3, 12, "CRITICAL BUILD ERROR");
+            log(3, 12, "========================");
+            log(3, 12, "Patch file not found in mod resources!");
+            log(3, 12, "Expected: " + PatchLibrary.PATCH_RESOURCE);
+            log(3, 12, "");
+            log(3, 12, "This indicates the mod was built incorrectly.");
+            log(3, 12, "The patch file should be in the JAR resources.");
+            log(3, 12, "");
+            log(3, 12, "Please report this issue to the mod developer");
+            log(3, 12, "at: https://github.com/EuphoriaPatches/EuphoriaPatcher/issues");
+            log(3, 12, "========================");
+        } else if (e instanceof OutputExistsException) {
+            log(2, "The patched shader already exists: " + e.getPath());
+        } else if (e instanceof PackIoException) {
+            log(3, "Error while patching: " + e.getMessage());
+            log(3, EuphoriaLogger.getStackTrace(e));
+        } else {
+            // Damaged patch file and anything else
+            log(3, "Error applying patch file: " + e.getMessage());
+            log(3, EuphoriaLogger.getStackTrace(e));
+        }
+        return false;
+    }
+
+    private static ShaderVersionComparator getVersionComparator() {
+        EuphoriaPatcher instance = EuphoriaPatcher.getInstance();
+        return instance != null ? instance.getVersionComparator() : null;
+    }
 
     /**
      * Update common file to normalize shader style
@@ -83,69 +165,6 @@ public class ShaderPatchingService {
         } catch (IOException e) {
             log(3, "Error normalizing shader style in common file: " + e.getMessage());
         }
-    }
-
-    /**
-     * Apply patch
-     */
-    public boolean applyPatch(Path baseArchived, Path temp, String patchedName, boolean styleUnbound, boolean styleReimagined) {
-        Path patchedArchive = temp.resolve(patchedName + ".tar");
-        Path patchedFile = shaderpacks.resolve(patchedName);
-
-        return applyProductionPatch(baseArchived, patchedArchive, temp.resolve(patchedName + ".patch"),
-                patchedFile, styleUnbound, styleReimagined);
-    }
-
-    /**
-     * Apply production patch
-     */
-    public boolean applyProductionPatch(Path baseArchived, Path patchedArchive, Path patchFile, Path patchedFile, boolean styleUnbound, boolean styleReimagined) {
-        String patchResourceName = patchName + patchVersion + ".patch";
-        debugLog("Attempting to load patch resource: " + patchResourceName);
-
-        try (InputStream patchStream = getClass().getClassLoader().getResourceAsStream(patchResourceName)) {
-            if (patchStream != null) {
-                debugLog("Patch resource found, copying to: " + patchFile);
-                FileUtils.copyInputStreamToFile(Objects.requireNonNull(patchStream), patchFile.toFile());
-
-                debugLog("Applying patch from " + baseArchived + " to " + patchedArchive);
-                FileUI.patch(baseArchived.toFile(), patchedArchive.toFile(), patchFile.toFile());
-
-                debugLog("Extracting patched archive to: " + patchedFile);
-                try {
-                    ArchiveUtils.extract(patchedArchive, patchedFile);
-                } catch (IOException | ArchiveException e) {
-                    log(2, "Error extracting archive: " + e.getMessage());
-                    debugLog("Error extracting archive: " + e.getMessage());
-                    return false;
-                }
-
-                debugLog("Applying style settings...");
-                applyStyleSettings(patchedFile, styleUnbound, styleReimagined);
-                log(1, patchName + " was successfully installed. Enjoy! -SpacEagle17");
-                return true;
-            } else {
-                // Patch resource not found - this is a critical error
-                debugLog("CRITICAL ERROR: Patch resource not found: " + patchResourceName);
-                log(3, 12, "========================");
-                log(3, 12, "CRITICAL BUILD ERROR");
-                log(3, 12, "========================");
-                log(3, 12, "Patch file not found in mod resources!");
-                log(3, 12, "Expected: " + patchResourceName);
-                log(3, 12, "");
-                log(3, 12, "This indicates the mod was built incorrectly.");
-                log(3, 12, "The patch file should be in the JAR resources.");
-                log(3, 12, "");
-                log(3, 12, "Please report this issue to the mod developer");
-                log(3, 12, "at: https://github.com/EuphoriaPatches/EuphoriaPatcher/issues");
-                log(3, 12, "========================");
-            }
-        } catch (IOException | CompressorException | InvalidHeaderException e) {
-            debugLog("Error applying patch file: " + e.getMessage());
-            log(3, "Error applying patch file: " + e.getMessage());
-            log(3, EuphoriaLogger.getStackTrace(e));
-        }
-        return false;
     }
 
     /**

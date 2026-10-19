@@ -3,12 +3,12 @@ package com.euphoriapatches.euphoria_patcher;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import io.sigpipe.jbsdiff.ui.FileUI;
+import com.euphoriapatches.shaderpatcher.PatchSpec;
+import com.euphoriapatches.shaderpatcher.generate.GenerateRequest;
+import com.euphoriapatches.shaderpatcher.generate.GeneratedPatch;
+import com.euphoriapatches.shaderpatcher.generate.PatchGenerator;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
-import com.euphoriapatches.euphoria_patcher.io.ArchiveUtils;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
-import com.euphoriapatches.euphoria_patcher.util.HashUtils;
-import org.apache.commons.io.FileUtils;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -374,187 +374,88 @@ public class DevPatchGenerator {
      * Generates the .patch files
      */
     private static void generatePatchFiles(ShaderPair shaderPair) throws Exception {
-        System.out.println(YELLOW + "Creating temporary directory..." + RESET);
-        Path tempDir = Files.createTempDirectory("euphoria-patch-gen-");
+        // Verify version in patched shader
+        System.out.println(YELLOW + "Verifying patched shader version..." + RESET);
+        ShaderDetector detector = new ShaderDetector(BRAND_NAME, PATCH_NAME, VERSION, PATCH_VERSION,
+            null, null, SHADERPACKS_DIR);
+        String patchedVersion = detector.readVersionFromPackJson(shaderPair.patchedShader);
+        String expectedVersion = PATCH_VERSION.replace("_", "");
 
+        if (patchedVersion == null) {
+            System.err.println(RED + "ERROR: Could not read version from patched shader's pack.json!" + RESET);
+            throw new RuntimeException("Missing version in patched shader's pack.json at " + shaderPair.patchedShader.resolve("shaders/pack.json"));
+        }
+
+        if (!patchedVersion.equals(expectedVersion)) {
+            System.err.println(RED + "ERROR: Version mismatch in patched shader!" + RESET);
+            System.err.println("Expected version: " + expectedVersion);
+            System.err.println("Found version: " + patchedVersion);
+            throw new RuntimeException("Patched shader version mismatch. Expected: " + expectedVersion + ", Found: " + patchedVersion);
+        }
+
+        System.out.println(GREEN + "✓ Version verified: " + patchedVersion + RESET);
+
+        // Ensure output directories exist
+        ensureDirectoryExists(RESOURCES_DIR);
+        ensureDirectoryExists(PATCH_FILES_DIR);
+
+        String patchFileName = PATCH_NAME + PATCH_VERSION + ".patch";
+
+        // Delete outdated patch files in resources dir
         try {
-            // Extract base shader (if it's a zip) or copy directory
-            System.out.println(YELLOW + "Extracting base shader..." + RESET);
-            Path baseExtracted = tempDir.resolve("base-extracted");
-            extractOrCopyShader(shaderPair.baseShader, baseExtracted);
-
-            // Extract patched shader (if it's a zip) or copy directory
-            System.out.println(YELLOW + "Extracting patched shader..." + RESET);
-            Path patchedExtracted = tempDir.resolve("patched-extracted");
-            extractOrCopyShader(shaderPair.patchedShader, patchedExtracted);
-
-            // Verify version in patched shader
-            System.out.println(YELLOW + "Verifying patched shader version..." + RESET);
-            ShaderDetector detector = new ShaderDetector(BRAND_NAME, PATCH_NAME, VERSION, PATCH_VERSION,
-                null, null, SHADERPACKS_DIR);
-            String patchedVersion = detector.readVersionFromPackJson(patchedExtracted);
-            String expectedVersion = PATCH_VERSION.replace("_", "");
-
-            if (patchedVersion == null) {
-                System.err.println(RED + "ERROR: Could not read version from patched shader's pack.json!" + RESET);
-                throw new RuntimeException("Missing version in patched shader's pack.json at " + patchedExtracted.resolve("shaders/pack.json"));
-            }
-
-            if (!patchedVersion.equals(expectedVersion)) {
-                System.err.println(RED + "ERROR: Version mismatch in patched shader!" + RESET);
-                System.err.println("Expected version: " + expectedVersion);
-                System.err.println("Found version: " + patchedVersion);
-                throw new RuntimeException("Patched shader version mismatch. Expected: " + expectedVersion + ", Found: " + patchedVersion);
-            }
-
-            System.out.println(GREEN + "✓ Version verified: " + patchedVersion + RESET);
-
-            // Archive base shader to TAR
-            System.out.println(YELLOW + "Creating TAR archive of base shader..." + RESET);
-            Path baseArchived = tempDir.resolve(shaderPair.baseShader.getFileName().toString().replace(".zip", ".tar"));
-            ArchiveUtils.archive(baseExtracted, baseArchived);
-
-            // Log archive info
-            String baseFileName = baseArchived.getFileName().toString();
-            long fileSize = Files.size(baseArchived);
-            System.out.println("Archive Name: " + baseFileName + " Archive size: " + BLUE + fileSize + " bytes" + RESET);
-            String hash = HashUtils.calculateSHA256(baseArchived);
-            System.out.println("Archive SHA-256: " + BLUE + hash + RESET);
-
-            // Archive patched shader to TAR
-            System.out.println(YELLOW + "Creating TAR archive of patched shader..." + RESET);
-            Path patchedArchived = tempDir.resolve("patched.tar");
-            ArchiveUtils.archive(patchedExtracted, patchedArchived);
-
-            // Ensure output directories exist
-            ensureDirectoryExists(RESOURCES_DIR);
-            ensureDirectoryExists(PATCH_FILES_DIR);
-
-            // Generate patch files
-            String patchFileName = PATCH_NAME + PATCH_VERSION + ".patch";
-
-            System.out.println(YELLOW + "Generating patch file: " + patchFileName + RESET);
-            System.out.println(YELLOW + "This may take a moment..." + RESET);
-
-            // Delete outdated patch files in resources dir
-            try {
-                for (Path path : Files.newDirectoryStream(RESOURCES_DIR)) {
-                    String fileName = path.getFileName().toString();
-                    if (fileName.endsWith(".patch")
-                            && fileName.contains(PATCH_NAME)
-                            && !fileName.contains(PATCH_VERSION)) {
-                        System.out.println(YELLOW + "Deleting outdated patch file: " + BLUE + path + RESET);
-                        try {
-                            Files.delete(path);
-                        } catch (IOException e) {
-                            System.err.println(RED + "Failed to delete: " + path + " (" + e.getMessage() + ")" + RESET);
-                        }
+            for (Path path : Files.newDirectoryStream(RESOURCES_DIR)) {
+                String fileName = path.getFileName().toString();
+                if (fileName.endsWith(".patch")
+                        && fileName.contains(PATCH_NAME)
+                        && !fileName.contains(PATCH_VERSION)) {
+                    System.out.println(YELLOW + "Deleting outdated patch file: " + BLUE + path + RESET);
+                    try {
+                        Files.delete(path);
+                    } catch (IOException e) {
+                        System.err.println(RED + "Failed to delete: " + path + " (" + e.getMessage() + ")" + RESET);
                     }
                 }
-            } catch (IOException e) {
-                System.err.println(RED + "Error checking for outdated patch files: " + e.getMessage() + RESET);
             }
+        } catch (IOException e) {
+            System.err.println(RED + "Error checking for outdated patch files: " + e.getMessage() + RESET);
+        }
 
-            // Generate to resources directory
-            Path resourcesPatchFile = RESOURCES_DIR.resolve(patchFileName);
-            FileUI.diff(baseArchived.toFile(), patchedArchived.toFile(), resourcesPatchFile.toFile());
-            System.out.println(GREEN + "✓ Created: " + BLUE + resourcesPatchFile + RESET);
+        System.out.println(YELLOW + "Generating patch file: " + patchFileName + RESET);
+        System.out.println(YELLOW + "This may take a moment..." + RESET);
 
-            // Generate to EuphoriaPatchFiles directory
-            Path patchFilesDirPatch = PATCH_FILES_DIR.resolve(patchFileName);
-            FileUI.diff(baseArchived.toFile(), patchedArchived.toFile(), patchFilesDirPatch.toFile());
-            System.out.println(GREEN + "✓ Created: " + BLUE + patchFilesDirPatch + RESET);
+        // The library archives both shaders, creates the patch, checks that it reproduces the patched shader,
+        // and stores the fingerprint of the base shader inside the patch file (nothing to copy into PatchInfo anymore)
+        PatchSpec spec = PatchSpec.builder()
+                .patchName(PATCH_NAME).patchVersion(PATCH_VERSION)
+                .baseName(BRAND_NAME).baseVersion(VERSION)
+                .build();
+        GeneratedPatch generated = PatchGenerator.generate(GenerateRequest.builder(spec)
+                .base(shaderPair.baseShader)
+                .edited(shaderPair.patchedShader)
+                .editedExclude(DevPatchGenerator::isDevOnlyFile)
+                .addOutputDir(RESOURCES_DIR)
+                .addOutputDir(PATCH_FILES_DIR)
+                .debugLog(message -> System.out.println("  ShaderPatcher: " + message))
+                .build());
 
-        } finally {
-            // Clean up temp directory
-            System.out.println(YELLOW + "Cleaning up temporary files..." + RESET);
-            try {
-                FileUtils.deleteDirectory(tempDir.toFile());
-            } catch (IOException e) {
-                System.err.println(YELLOW + "Warning: Could not delete temp directory: " + e.getMessage() + RESET);
-            }
+        System.out.println("Base archive:    " + BLUE + generated.getMetadata().getBaseFingerprint() + RESET);
+        System.out.println("Patched archive: " + BLUE + generated.getMetadata().getPatchedFingerprint() + RESET);
+        for (Path file : generated.getPatchFiles()) {
+            System.out.println(GREEN + "✓ Created: " + BLUE + file + RESET);
         }
     }
 
     /**
-     * Extracts a shader pack (if it's a zip) or copies it (if it's a directory)
+     * Files of the Euphoria-Patches repository that must not end up in the patch: git/editor folders at the top level,
+     * zips and the helper scripts and templates for developers at any depth
      */
-    private static void extractOrCopyShader(Path shaderPath, Path outputDir) throws Exception {
-        if (Files.isDirectory(shaderPath)) {
-            // Check if it's the Euphoria-Patches directory
-            boolean isEuphoriaPatchesDir = shaderPath.getFileName().toString().equals("Euphoria-Patches");
-
-            if (isEuphoriaPatchesDir) {
-                System.out.println("  " + BLUE + shaderPath.getFileName() + RESET + " is the Euphoria-Patches directory, copying with exclusions...");
-                copyEuphoriaPatchesDirectory(shaderPath, outputDir);
-            } else {
-                // It's already a directory, just copy it
-                System.out.println("  " + BLUE + shaderPath.getFileName() + RESET + " is a directory, copying...");
-                FileUtils.copyDirectory(shaderPath.toFile(), outputDir.toFile());
-            }
-        } else {
-            // It's a file (probably a zip), extract it
-            System.out.println("  " + BLUE + shaderPath.getFileName() + RESET + " is an archive, extracting...");
-            ArchiveUtils.extract(shaderPath, outputDir);
+    private static boolean isDevOnlyFile(String name) {
+        if (name.equals(".github") || name.equals(".vscode")) { // ".git" is always left out by the library
+            return true;
         }
-    }
-
-    /**
-     * Copies the Euphoria-Patches directory while excluding unwanted files/folders
-     */
-    private static void copyEuphoriaPatchesDirectory(Path source, Path target) throws IOException {
-        Files.createDirectories(target);
-
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(source)) {
-            for (Path entry : stream) {
-                String fileName = entry.getFileName().toString();
-
-                // Skip excluded files and directories from root of Euphoria-Patches
-                if (fileName.equals(".git") || fileName.equals(".github") || fileName.equals(".vscode") || fileName.endsWith(".zip")) {
-                    System.out.println("    " + YELLOW + "Skipping: " + fileName + RESET);
-                    continue;
-                }
-
-                Path targetPath = target.resolve(fileName);
-
-                if (Files.isDirectory(entry)) {
-                    // Recursively copy directories with exclusions
-                    copyEuphoriaPatchesDirectoryRecursive(entry, targetPath);
-                } else {
-                    // Copy files
-                    Files.copy(entry, targetPath);
-                }
-            }
-        }
-    }
-
-    /**
-     * Recursively copies a directory while excluding specific files at any depth
-     */
-    private static void copyEuphoriaPatchesDirectoryRecursive(Path source, Path target) throws IOException {
-        Files.createDirectories(target);
-
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(source)) {
-            for (Path entry : stream) {
-                String fileName = entry.getFileName().toString();
-
-                // Skip excluded files at any depth (just check filename, not full path)
-                if (fileName.equals("propertiesFragmenter.py") || fileName.equals("settingsRanges.py") || fileName.equals("TextToGLSLText.py") || fileName.endsWith(".eptext") || fileName.endsWith(".zip")) {
-                    System.out.println("    " + YELLOW + "Skipping: " + source.relativize(entry) + RESET);
-                    continue;
-                }
-
-                Path targetPath = target.resolve(fileName);
-
-                if (Files.isDirectory(entry)) {
-                    // Recursively copy subdirectories
-                    copyEuphoriaPatchesDirectoryRecursive(entry, targetPath);
-                } else {
-                    // Copy files
-                    Files.copy(entry, targetPath);
-                }
-            }
-        }
+        String fileName = name.substring(name.lastIndexOf('/') + 1);
+        return fileName.equals("propertiesFragmenter.py") || fileName.equals("settingsRanges.py")
+                || fileName.equals("TextToGLSLText.py") || fileName.endsWith(".eptext") || fileName.endsWith(".zip");
     }
 
     /**

@@ -33,14 +33,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Gradle itself runs on 21, the other versions are the toolchains of the loader projects
+      # The last version in the list becomes JAVA_HOME, so Gradle itself runs on 21, the others are the toolchains of the loader projects
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: |
-            21
-            17
             8
+            17
+            21
       - uses: gradle/actions/setup-gradle@v4
       - name: Make the Gradle wrapper executable
         run: chmod +x gradlew

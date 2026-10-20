@@ -1,14 +1,12 @@
-package com.euphoriapatches.euphoria_patcher;
+package com.euphoriapatches.euphoria_patcher.tools;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.euphoriapatches.shaderpatcher.PatchSpec;
 import com.euphoriapatches.shaderpatcher.generate.GenerateRequest;
 import com.euphoriapatches.shaderpatcher.generate.GeneratedPatch;
 import com.euphoriapatches.shaderpatcher.generate.PatchGenerator;
-import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
-import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
+import com.euphoriapatches.euphoria_patcher.PatchInfo;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -17,16 +15,22 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
- * Standalone patch generator for development purposes.
- * This can be run directly from IntelliJ to generate .patch files without needing to launch Minecraft.
+ * Patch generator for development purposes, run with {@code ./gradlew :tools:generatePatch}.
+ * It lives in the tools project because it is not part of the mod and works without Minecraft.
  * Usage:
- * 1. Ensure you have the base shader and patched shader in your shaderpacks folder
- * 2. Run this class directly (it has a main method)
+ * 1. Ensure you have the base shader and the Euphoria-Patches folder in your shaderpacks folder
+ *    (the base shader is downloaded from Modrinth if it is missing)
+ * 2. Run the Gradle task
  * 3. The .patch files will be generated in common/src/main/resources and EuphoriaPatchFiles
+ * Name and version of the patch come from {@link PatchInfo}, the same file the mod uses.
  */
-public class DevPatchGenerator {
+public class GeneratePatch {
     // ANSI escape codes for colored output
     private static final String RESET = "\u001B[0m";
     private static final String RED = "\u001B[31m";
@@ -35,8 +39,8 @@ public class DevPatchGenerator {
     private static final String YELLOW = "\u001B[33m";
 
     // Constants - use PatchInfo directly to avoid EuphoriaPatcher initialization
-    private static final String BRAND_NAME = EuphoriaPatcher.BRAND_NAME;
-    private static final String PATCH_NAME = EuphoriaPatcher.PATCH_NAME;
+    private static final String BRAND_NAME = PatchInfo.BRAND_NAME;
+    private static final String PATCH_NAME = PatchInfo.PATCH_NAME;
     private static final String VERSION = PatchInfo.VERSION;
     private static final String PATCH_VERSION = PatchInfo.PATCH_VERSION;
 
@@ -57,9 +61,6 @@ public class DevPatchGenerator {
         System.out.println(BLUE + "=== Euphoria Patches - Dev Patch Generator ===" + RESET);
         System.out.println("IntelliJ Base Directory: " + BLUE + INTELLIJ_BASE_DIR + RESET);
         System.out.println();
-
-        // Initialize a dummy ModLoaderSpecifics to avoid initialization errors
-        initializeDummyModLoaderSpecifics();
 
         // Ensure shaderpacks folder exists
         try {
@@ -110,69 +111,8 @@ public class DevPatchGenerator {
         } catch (Exception e) {
             System.err.println(RED + "ERROR: " + e.getMessage() + RESET);
             e.printStackTrace();
+            System.exit(1); // makes the Gradle task fail
         }
-    }
-
-    /**
-     * Initialize a dummy ModLoaderSpecifics implementation to avoid initialization errors
-     */
-    private static void initializeDummyModLoaderSpecifics() {
-        ModLoaderSpecifics.setInstance(new ModLoaderSpecifics() {
-            @Override
-            public String getInstanceName() {
-                return "PatchGenerator";
-            }
-
-            @Override
-            public Path getShaderpacksPath() {
-                return SHADERPACKS_DIR;
-            }
-
-            @Override
-            public Path getConfigDirectory() {
-                return INTELLIJ_BASE_DIR.resolve("dummy");
-            }
-
-            @Override
-            public boolean serverCheck() {
-                return false;
-            }
-
-            @Override
-            public String getCurrentDimension() {
-                return "overworld";
-            }
-
-            @Override
-            public boolean isCurrentDimensionInMappings() {
-                return true;
-            }
-
-            @Override
-            public boolean setClipboard(String str) {
-                return false;
-            }
-
-            @Override
-            public boolean isTimeAdvancing() {
-                return true;
-            }
-
-            @Override
-            public Object getLevel() {
-                return null;
-            }
-
-            @Override
-            public String getCurrentBiomeName() {
-                return "";
-            }
-
-            @Override
-            public boolean isCurrentBiomeModded() {
-                return false;
-            }
-        });
     }
 
     /**
@@ -330,9 +270,7 @@ public class DevPatchGenerator {
                     Path gitDir = path.resolve(".git");
                     if (Files.exists(gitDir) && Files.isDirectory(gitDir)) {
                         // Verify version from pack.json using ShaderDetector
-                        ShaderDetector detector = new ShaderDetector(BRAND_NAME, PATCH_NAME, VERSION, PATCH_VERSION,
-                            null, null, SHADERPACKS_DIR);
-                        String detectedVersion = detector.readVersionFromPackJson(path);
+                        String detectedVersion = readPackVersion(path);
                         if (detectedVersion != null && detectedVersion.equals(PATCH_VERSION.replace("_", ""))) {
                             System.out.println(GREEN + "Found Euphoria-Patches directory with version " + detectedVersion + RESET);
                             patchedShader = path;
@@ -376,9 +314,7 @@ public class DevPatchGenerator {
     private static void generatePatchFiles(ShaderPair shaderPair) throws Exception {
         // Verify version in patched shader
         System.out.println(YELLOW + "Verifying patched shader version..." + RESET);
-        ShaderDetector detector = new ShaderDetector(BRAND_NAME, PATCH_NAME, VERSION, PATCH_VERSION,
-            null, null, SHADERPACKS_DIR);
-        String patchedVersion = detector.readVersionFromPackJson(shaderPair.patchedShader);
+        String patchedVersion = readPackVersion(shaderPair.patchedShader);
         String expectedVersion = PATCH_VERSION.replace("_", "");
 
         if (patchedVersion == null) {
@@ -424,15 +360,11 @@ public class DevPatchGenerator {
         System.out.println(YELLOW + "This may take a moment..." + RESET);
 
         // The library archives both shaders, creates the patch, checks that it reproduces the patched shader,
-        // and stores the fingerprint of the base shader inside the patch file (nothing to copy into PatchInfo anymore)
-        PatchSpec spec = PatchSpec.builder()
-                .patchName(PATCH_NAME).patchVersion(PATCH_VERSION)
-                .baseName(BRAND_NAME).baseVersion(VERSION)
-                .build();
-        GeneratedPatch generated = PatchGenerator.generate(GenerateRequest.builder(spec)
+        // and stores the fingerprint of the base shader inside the patch file
+        GeneratedPatch generated = PatchGenerator.generate(GenerateRequest.builder(PatchInfo.SPEC)
                 .base(shaderPair.baseShader)
                 .edited(shaderPair.patchedShader)
-                .editedExclude(DevPatchGenerator::isDevOnlyFile)
+                .editedExclude(GeneratePatch::isDevOnlyFile)
                 .addOutputDir(RESOURCES_DIR)
                 .addOutputDir(PATCH_FILES_DIR)
                 .debugLog(message -> System.out.println("  ShaderPatcher: " + message))
@@ -456,6 +388,43 @@ public class DevPatchGenerator {
         String fileName = name.substring(name.lastIndexOf('/') + 1);
         return fileName.equals("propertiesFragmenter.py") || fileName.equals("settingsRanges.py")
                 || fileName.equals("TextToGLSLText.py") || fileName.endsWith(".eptext") || fileName.endsWith(".zip");
+    }
+
+    /**
+     * Reads the version from shaders/pack.json of a shader folder or zip, null if it is not there
+     */
+    private static String readPackVersion(Path shader) {
+        try {
+            String json = null;
+            if (Files.isDirectory(shader)) {
+                Path packJson = shader.resolve("shaders/pack.json");
+                if (Files.exists(packJson)) {
+                    json = new String(Files.readAllBytes(packJson), java.nio.charset.StandardCharsets.UTF_8);
+                }
+            } else {
+                try (ZipFile zip = new ZipFile(shader.toFile())) {
+                    ZipEntry entry = zip.getEntry("shaders/pack.json");
+                    if (entry != null) {
+                        try (InputStream in = zip.getInputStream(entry)) {
+                            ByteArrayOutputStream out = new ByteArrayOutputStream();
+                            byte[] buffer = new byte[8192];
+                            int read;
+                            while ((read = in.read(buffer)) != -1) {
+                                out.write(buffer, 0, read);
+                            }
+                            json = new String(out.toByteArray(), java.nio.charset.StandardCharsets.UTF_8);
+                        }
+                    }
+                }
+            }
+            if (json == null) {
+                return null;
+            }
+            Matcher matcher = Pattern.compile("\"version\"\\s*:\\s*\"([^\"]+)\"").matcher(json);
+            return matcher.find() ? matcher.group(1) : null;
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     /**

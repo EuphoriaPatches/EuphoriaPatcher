@@ -1,0 +1,37 @@
+// Developer tooling, not part of the mod. Run it with: ./gradlew :tools:generatePatch
+plugins {
+	id 'java'
+}
+
+repositories {
+	mavenCentral()
+}
+
+java {
+	toolchain.languageVersion = JavaLanguageVersion.of(17)
+}
+
+// PatchInfo is shared with the mod, so name and version of the patch are only defined once. It only needs the
+// ShaderPatcher library, so it is copied here and compiled with the tools instead of depending on the mod code
+def syncPatchInfo = tasks.register('syncPatchInfo', Copy) {
+	from(rootProject.file('common/src/main/java/com/euphoriapatches/euphoria_patcher/PatchInfo.java'))
+	into(layout.buildDirectory.dir('generated/sources/patchInfo/com/euphoriapatches/euphoria_patcher'))
+}
+sourceSets.main.java.srcDir(layout.buildDirectory.dir('generated/sources/patchInfo'))
+tasks.named('compileJava') {
+	dependsOn(syncPatchInfo)
+}
+
+dependencies {
+	implementation "com.euphoriapatches:shaderpatcher:${shaderpatcher_version}"
+	implementation 'com.google.code.gson:gson:2.8.9'
+}
+
+
+tasks.register('generatePatch', JavaExec) {
+	group = 'shaderpatcher'
+	description = 'Generates the EuphoriaPatches patch file'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.euphoriapatches.euphoria_patcher.tools.GeneratePatch'
+	workingDir = rootProject.projectDir
+}

@@ -23,8 +23,8 @@ import com.euphoriapatches.euphoria_patcher.util.shader.ShaderVersionComparator;
 import java.nio.file.Path;
 
 public class EuphoriaPatcher {
-    public static final String BRAND_NAME = "Complementary";
-    public static final String PATCH_NAME = "EuphoriaPatches";
+    public static final String BRAND_NAME = PatchInfo.BRAND_NAME;
+    public static final String PATCH_NAME = PatchInfo.PATCH_NAME;
     public static final String VERSION = PatchInfo.VERSION;
     public static final String PATCH_VERSION = PatchInfo.PATCH_VERSION;
 
@@ -131,8 +131,7 @@ public class EuphoriaPatcher {
                                                COMMON_LOCATION, SHADER_MYFILE_LOCATION, shaderpacks, shaderDetector);
 
         // Initialize patching service
-        patchingService = new ShaderPatchingService(PATCH_NAME, PATCH_VERSION, COMMON_LOCATION,
-                                                   shaderpacks, namingService);
+        patchingService = new ShaderPatchingService(PATCH_NAME, COMMON_LOCATION, shaderpacks);
     }
 
     public static EuphoriaPatcher getInstance() {

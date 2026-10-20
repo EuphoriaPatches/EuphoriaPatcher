@@ -127,7 +127,7 @@ public class ShaderVersionComparator {
                 for (Path path : stream) {
                     String fileName = path.getFileName().toString();
                     if (fileName.contains(brandName) &&
-                        !fileName.contains(patchName) &&
+                        !isPatchedPack(fileName) &&
                         !isTestOrDevVersion(fileName) &&
                         isNewerShaderVersion(fileName)) {
                         boolean isFile = Files.isRegularFile(path) && fileName.endsWith(".zip");
@@ -187,7 +187,7 @@ public class ShaderVersionComparator {
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(shaderpacks)) {
                 for (Path path : stream) {
                     String name = path.getFileName().toString();
-                    if (!name.contains(brandName) || name.contains(patchName)) {
+                    if (!name.contains(brandName) || isPatchedPack(name)) {
                         continue;
                     }
                     boolean isFile = Files.isRegularFile(path) && name.endsWith(".zip");
@@ -226,7 +226,7 @@ public class ShaderVersionComparator {
         // First check if it's a Complementary shader without the patch
         boolean isComplementary = name.contains(brandName) &&
                                  name.matches(".*_r\\d+\\.\\d+(?:\\.\\d+)?.*") &&
-                                 !name.contains(patchName) &&
+                                 !isPatchedPack(name) &&
                                  !isTestOrDevVersion(name);
 
         if (isComplementary) {
@@ -241,6 +241,10 @@ public class ShaderVersionComparator {
         }
 
         return false;
+    }
+
+    private boolean isPatchedPack(String name) {
+        return name.contains(patchName) || name.contains(" + ");
     }
 
     /**

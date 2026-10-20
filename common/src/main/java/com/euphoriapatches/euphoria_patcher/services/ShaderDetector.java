@@ -997,11 +997,8 @@ public class ShaderDetector {
         }
 
         try {
-            String fileName = baseFile.getFileName().toString();
-            String baseName = fileName.endsWith(".zip") ? fileName.replace(".zip", "") : fileName;
-            baseName = ShaderNamingService.cleanBaseName(baseName);
-
-            return baseFile.resolveSibling(baseName + " + " + patchName + patchVersion);
+            // The library names the patched shader, so the name can never differ from what patching creates
+            return baseFile.resolveSibling(PatchLibrary.get().getOutputName(baseFile));
         } catch (Exception e) {
             log(3, "Error creating patched shader path: " + e.getMessage());
             return null;

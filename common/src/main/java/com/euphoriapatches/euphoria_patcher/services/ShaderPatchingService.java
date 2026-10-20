@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.services;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
+import com.euphoriapatches.euphoria_patcher.PatchInfo;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector.ShaderInfo;
 import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
@@ -28,19 +29,13 @@ import java.nio.file.Path;
  */
 public class ShaderPatchingService {
     private final String patchName;
-    private final String patchVersion;
     private final String commonLocation;
     private final Path shaderpacks;
-    @SuppressWarnings("unused")
-    private final ShaderNamingService namingService;
 
-    public ShaderPatchingService(String patchName, String patchVersion, String commonLocation,
-                                Path shaderpacks, ShaderNamingService namingService) {
+    public ShaderPatchingService(String patchName, String commonLocation, Path shaderpacks) {
         this.patchName = patchName;
-        this.patchVersion = patchVersion;
         this.commonLocation = commonLocation;
         this.shaderpacks = shaderpacks;
-        this.namingService = namingService;
     }
 
     /**
@@ -52,15 +47,13 @@ public class ShaderPatchingService {
                 return false;
             }
 
-            // Get base name and remove .zip extension
             String originalFileName = info.baseFile.getFileName().toString();
-            String baseName = ShaderNamingService.cleanBaseName(originalFileName.replace(".zip", ""));
             // Name under which the error handlers know the archive of the base shader
-            String archiveName = baseName + ".tar";
+            String archiveName = originalFileName.replace(".zip", "") + ".tar";
 
-            // Work on a private copy: the shader the user has is never modified. The copy is named after the base
+            // Work on a private copy: the shader the user has, is never modified. The copy keeps the name of the base
             // shader because the library derives the name of the patched shader from it.
-            Path baseCopy = temp.resolve(baseName);
+            Path baseCopy = temp.resolve(originalFileName);
             try {
                 ShaderPatcher.extract(info.baseFile, baseCopy);
             } catch (ShaderPatcherException e) {
@@ -110,7 +103,7 @@ public class ShaderPatchingService {
     private boolean handleFailure(ShaderPatcherException e, String archiveName, String originalFileName) {
         debugLog("Patching failed: " + e);
         if (archiveName == null && originalFileName != null) {
-            archiveName = ShaderNamingService.cleanBaseName(originalFileName.replace(".zip", "")) + ".tar";
+            archiveName = originalFileName.replace(".zip", "") + ".tar";
         }
 
         if (e instanceof BaseSizeMismatchException || e instanceof InvalidPackException) {
@@ -128,7 +121,7 @@ public class ShaderPatchingService {
             log(3, 12, "CRITICAL BUILD ERROR");
             log(3, 12, "========================");
             log(3, 12, "Patch file not found in mod resources!");
-            log(3, 12, "Expected: " + PatchLibrary.PATCH_RESOURCE);
+            log(3, 12, "Expected: " + PatchInfo.PATCH_RESOURCE);
             log(3, 12, "");
             log(3, 12, "This indicates the mod was built incorrectly.");
             log(3, 12, "The patch file should be in the JAR resources.");

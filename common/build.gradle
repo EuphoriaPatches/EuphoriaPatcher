@@ -88,7 +88,7 @@ task verifyPatchFile {
 			Expected location: common/src/main/resources/${expectedPatchFile}
 			Expected Version:  EuphoriaPatches_${patchVersion}.patch
 			Current Version:   ${actualPatchFile}
-			Fix: Run DevPatchGenerator or copy from EuphoriaPatchFiles/
+			Fix: Run ./gradlew :tools:generatePatch or copy from EuphoriaPatchFiles/
 			""".stripIndent().trim()
 
 			// Only fail the build when publishing, warn otherwise

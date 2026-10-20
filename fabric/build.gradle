@@ -74,7 +74,7 @@ shadowJar {
 
 	// Relocate the problematic libraries to avoid conflicts
 	relocate 'org.apache.commons', 'com.euphoriapatches.shadow.org.apache.commons'
-	relocate 'com.euphoriapatches.shaderpatcher', 'com.euphoriapatches.shadow.shaderpatcher'
+	relocate 'com.euphoriapatches.shaderpatcher', 'com.euphoriapatches.shadow.com.euphoriapatches.shaderpatcher'
 	relocate 'com.google', 'com.euphoriapatches.shadow.com.google'
 
 	// Include license file

@@ -76,7 +76,7 @@ shadowJar {
     // Relocate shadowed dependencies to avoid conflicts
     relocate 'com.google.gson', "${project.group}.shadow.com.google.gson"
     relocate 'org.apache.commons', "${project.group}.shadow.org.apache.commons"
-    relocate 'com.euphoriapatches.shaderpatcher', "${project.group}.shadow.shaderpatcher"
+    relocate 'com.euphoriapatches.shaderpatcher', "${project.group}.shadow.com.euphoriapatches.shaderpatcher"
 
     // Don't minimize as common module is shaded in, which breaks minimization
 

@@ -108,7 +108,7 @@ shadowJar {
     // Relocate packages to avoid conflicts
     relocate 'com.google.gson', 'com.euphoriapatches.shadow.com.google.gson'
     relocate 'org.apache.commons', 'com.euphoriapatches.shadow.org.apache.commons'
-    relocate 'com.euphoriapatches.shaderpatcher', 'com.euphoriapatches.shadow.shaderpatcher'
+    relocate 'com.euphoriapatches.shaderpatcher', 'com.euphoriapatches.shadow.com.euphoriapatches.shaderpatcher'
 
     // Exclude unnecessary files
     exclude 'META-INF/maven/**'

@@ -1,0 +1,54 @@
+name: Build
+
+on:
+  push:
+    paths:
+      - "common/**"
+      - "fabric/**"
+      - "forge/**"
+      - "forge1_7_10/**"
+      - "forgeLegacy/**"
+      - "neoforge/**"
+      - "tools/**"
+      - "build-logic/**"
+      - "build.gradle"
+      - "settings.gradle"
+      - "gradle.properties"
+      - "version.properties"
+      - "gradle/**"
+      - "gradlew"
+      - "gradlew.bat"
+      - ".github/workflows/build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Gradle itself runs on 21, the other versions are the toolchains of the loader projects
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: |
+            21
+            17
+            8
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Make the Gradle wrapper executable
+        run: chmod +x gradlew
+      - name: Build (cleans build/libs, then builds every loader jar into it)
+        run: ./gradlew buildAll --console=plain
+      - name: Upload the jars
+        uses: actions/upload-artifact@v4
+        with:
+          name: EuphoriaPatcher-${{ github.sha }}
+          path: build/libs/*.jar
+          if-no-files-found: error

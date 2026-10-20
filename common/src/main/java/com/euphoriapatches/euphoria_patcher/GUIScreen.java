@@ -76,7 +76,7 @@ public class GUIScreen {
         dialog.setVisible(true);
     }
 
-    private static  JLabel getJLabel(JFrame dialog) {
+    private static JLabel getJLabel(JFrame dialog) {
         JLabel message = getMessage();
         message.addMouseListener(new MouseAdapter() {
             @Override
@@ -91,7 +91,7 @@ public class GUIScreen {
                     }
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(dialog,
-                        "Could not open website. Please Visit: " + URL,
+                        "Could not open website. Please visit: " + URL,
                         "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }

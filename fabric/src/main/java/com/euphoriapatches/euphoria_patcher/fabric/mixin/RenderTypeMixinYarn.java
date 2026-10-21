@@ -44,7 +44,7 @@ public class RenderTypeMixinYarn {
     @Unique
     private static int euphoriaPatcher$backupEntityId = -1;
 
-    @Shadow
+    @Shadow(remap = false)
     private String field_64011;
 
     @Unique
@@ -53,13 +53,13 @@ public class RenderTypeMixinYarn {
                     "dragon_rays", "dragon_rays_depth"
             )));
 
-    @Inject(method = "method_60895", at = @At("HEAD"))
+    @Inject(method = "method_60895", at = @At("HEAD"), remap = false)
     private void euphoriaPatcher$beginDraw(@Coerce Object mesh, CallbackInfo ci) {
         if (!euphoriaPatcher$DEATH_RAY_TYPES.contains(this.field_64011)) return;
         euphoriaPatcher$beginDeathRays();
     }
 
-    @Inject(method = "method_60895", at = @At("TAIL"))
+    @Inject(method = "method_60895", at = @At("TAIL"), remap = false)
     private void euphoriaPatcher$endDraw(@Coerce Object  mesh, CallbackInfo ci) {
         if (!euphoriaPatcher$DEATH_RAY_TYPES.contains(this.field_64011)) return;
         euphoriaPatcher$endDeathRays();

@@ -45,7 +45,7 @@ public class RenderTypeMixin {
     @Unique
     private static int euphoriaPatcher$backupEntityId = -1;
 
-    @Shadow
+    @Shadow(remap = false)
     private String name;
 
     @Unique
@@ -54,13 +54,13 @@ public class RenderTypeMixin {
                     "dragon_rays", "dragon_rays_depth"
             )));
 
-    @Inject(method = "draw", at = @At("HEAD"))
+    @Inject(method = "draw", at = @At("HEAD"), remap = false)
     private void euphoriaPatcher$beginDraw(@Coerce Object mesh, CallbackInfo ci) {
         if (!euphoriaPatcher$DEATH_RAY_TYPES.contains(this.name)) return;
         euphoriaPatcher$beginDeathRays();
     }
 
-    @Inject(method = "draw", at = @At("TAIL"))
+    @Inject(method = "draw", at = @At("TAIL"), remap = false)
     private void euphoriaPatcher$endDraw(@Coerce Object  mesh, CallbackInfo ci) {
         if (!euphoriaPatcher$DEATH_RAY_TYPES.contains(this.name)) return;
         euphoriaPatcher$endDeathRays();

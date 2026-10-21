@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+@SuppressWarnings({"target", "mapping", "unresolvable-target"})
 @Mixin(targets = "net.minecraft.client.Minecraft", remap = false)
 public class ClientTickMixin {
     @Dynamic("Bypasses compiler checks for alternative mapping variants")

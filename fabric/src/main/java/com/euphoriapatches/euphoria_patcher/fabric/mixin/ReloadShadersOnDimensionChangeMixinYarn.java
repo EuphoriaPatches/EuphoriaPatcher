@@ -11,13 +11,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(MinecraftClient.class)
 public class ReloadShadersOnDimensionChangeMixinYarn {
 
-    @Dynamic("Bypasses compiler checks for alternative mapping variants")
-    @Inject(
-            method = {
-                "setWorld",
-                "method_1481"
-            },
-            at = @At("RETURN"))
+    @Dynamic("Intermediary name, not resolvable against the Yarn names")
+    @Inject(method = "method_1481", at = @At("RETURN"), remap = false)
     private void onDimensionChange(CallbackInfo ci) {
         DimensionShaderRefresh.onSetLevelReturn();
     }

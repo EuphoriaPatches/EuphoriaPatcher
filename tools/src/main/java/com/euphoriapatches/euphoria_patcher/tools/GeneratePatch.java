@@ -11,14 +11,14 @@ import com.euphoriapatches.euphoria_patcher.PatchInfo;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import java.util.stream.Stream;
 
 /**
  * Patch generator for development purposes, run with {@code ./gradlew :tools:generatePatch}.
@@ -29,6 +29,7 @@ import java.util.zip.ZipFile;
  * 2. Run the Gradle task
  * 3. The .patch files will be generated in common/src/main/resources and EuphoriaPatchFiles
  * Name and version of the patch come from {@link PatchInfo}, the same file the mod uses.
+ * The versions inside the Euphoria-Patches folder are rewritten to match it, see {@link #syncVersions}.
  */
 public class GeneratePatch {
     // ANSI escape codes for colored output
@@ -269,15 +270,8 @@ public class GeneratePatch {
                 if (name.equals("Euphoria-Patches") && Files.isDirectory(path)) {
                     Path gitDir = path.resolve(".git");
                     if (Files.exists(gitDir) && Files.isDirectory(gitDir)) {
-                        // Verify version from pack.json using ShaderDetector
-                        String detectedVersion = readPackVersion(path);
-                        if (detectedVersion != null && detectedVersion.equals(PATCH_VERSION.replace("_", ""))) {
-                            System.out.println(GREEN + "Found Euphoria-Patches directory with version " + detectedVersion + RESET);
-                            patchedShader = path;
-                        } else {
-                            System.err.println(YELLOW + "Warning: Euphoria-Patches found but version mismatch. Expected: " +
-                                PATCH_VERSION.replace("_", "") + ", Found: " + detectedVersion + RESET);
-                        }
+                        // The versions inside get updated to PatchInfo in generatePatchFiles
+                        patchedShader = path;
                     } else {
                         System.err.println(YELLOW + "Warning: Euphoria-Patches directory found but missing .git folder" + RESET);
                     }
@@ -302,7 +296,7 @@ public class GeneratePatch {
             System.err.println(YELLOW + "Patched shader not found in " + SHADERPACKS_DIR + RESET);
             System.err.println("Need either:");
             System.err.println("  - " + BRAND_NAME + "Reimagined" + VERSION + " + " + PATCH_NAME + PATCH_VERSION);
-            System.err.println("  - Euphoria-Patches directory with .git folder and correct version in pack.json");
+            System.err.println("  - Euphoria-Patches directory with .git folder");
         }
 
         return new ShaderPair(baseShader, patchedShader);
@@ -312,24 +306,10 @@ public class GeneratePatch {
      * Generates the .patch files
      */
     private static void generatePatchFiles(ShaderPair shaderPair) throws Exception {
-        // Verify version in patched shader
-        System.out.println(YELLOW + "Verifying patched shader version..." + RESET);
-        String patchedVersion = readPackVersion(shaderPair.patchedShader);
-        String expectedVersion = PATCH_VERSION.replace("_", "");
-
-        if (patchedVersion == null) {
-            System.err.println(RED + "ERROR: Could not read version from patched shader's pack.json!" + RESET);
-            throw new RuntimeException("Missing version in patched shader's pack.json at " + shaderPair.patchedShader.resolve("shaders/pack.json"));
+        // The Euphoria-Patches folder is the working copy, so it is brought to the versions of PatchInfo
+        if (Files.isDirectory(shaderPair.patchedShader)) {
+            syncVersions(shaderPair.patchedShader);
         }
-
-        if (!patchedVersion.equals(expectedVersion)) {
-            System.err.println(RED + "ERROR: Version mismatch in patched shader!" + RESET);
-            System.err.println("Expected version: " + expectedVersion);
-            System.err.println("Found version: " + patchedVersion);
-            throw new RuntimeException("Patched shader version mismatch. Expected: " + expectedVersion + ", Found: " + patchedVersion);
-        }
-
-        System.out.println(GREEN + "✓ Version verified: " + patchedVersion + RESET);
 
         // Ensure output directories exist
         ensureDirectoryExists(RESOURCES_DIR);
@@ -378,6 +358,43 @@ public class GeneratePatch {
     }
 
     /**
+     * Sets the versions in the Euphoria-Patches folder to the ones of {@link PatchInfo}.
+     */
+    private static void syncVersions(Path folder) throws IOException {
+        String patchVersion = PATCH_VERSION.replace("_", "");
+        String baseVersion = VERSION.replace("_", "");
+
+        // Names can contain non-breaking spaces (U+00A0), the color code is "§d" in lang files and written out in pack.json
+        String space = "[ \\u00A0]+";
+        Pattern patchPattern = Pattern.compile("(?<p>\"version\"\\s*:\\s*\"|Euphoria" + space + "Patches" + space
+                + "(?:\\u00A7d|\\\\u00A7d)?)\\d+(?:\\.\\d+)*");
+        Pattern basePattern = Pattern.compile("(?<p>Complementary(?:" + space + "Shaders)?" + space + ")r\\d+(?:\\.\\d+)*");
+
+        try (DirectoryStream<Path> madeFor = Files.newDirectoryStream(folder, "Made for Complementary Shaders *.txt")) {
+            for (Path file : madeFor) {
+                Files.move(file, folder.resolve("Made for Complementary Shaders " + baseVersion + ".txt"));
+            }
+        }
+
+        try (Stream<Path> paths = Files.walk(folder)) {
+            for (Path file : (Iterable<Path>) paths::iterator) {
+                String relative = folder.relativize(file).toString().replace('\\', '/');
+                if (relative.startsWith(".git") || relative.startsWith(".vscode")
+                        || !relative.matches(".+\\.(json|lang|glsl|txt|md|properties)")) {
+                    continue;
+                }
+                String text = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
+                String updated = patchPattern.matcher(text).replaceAll("${p}" + Matcher.quoteReplacement(patchVersion));
+                updated = basePattern.matcher(updated).replaceAll("${p}" + Matcher.quoteReplacement(baseVersion));
+                if (!updated.equals(text)) {
+                    Files.write(file, updated.getBytes(StandardCharsets.UTF_8));
+                    System.out.println("  Updated " + relative);
+                }
+            }
+        }
+    }
+
+    /**
      * Files of the Euphoria-Patches repository that must not end up in the patch: git/editor folders at the top level,
      * zips and the helper scripts and templates for developers at any depth
      */
@@ -388,43 +405,6 @@ public class GeneratePatch {
         String fileName = name.substring(name.lastIndexOf('/') + 1);
         return fileName.equals("propertiesFragmenter.py") || fileName.equals("settingsRanges.py")
                 || fileName.equals("TextToGLSLText.py") || fileName.endsWith(".eptext") || fileName.endsWith(".zip");
-    }
-
-    /**
-     * Reads the version from shaders/pack.json of a shader folder or zip, null if it is not there
-     */
-    private static String readPackVersion(Path shader) {
-        try {
-            String json = null;
-            if (Files.isDirectory(shader)) {
-                Path packJson = shader.resolve("shaders/pack.json");
-                if (Files.exists(packJson)) {
-                    json = new String(Files.readAllBytes(packJson), java.nio.charset.StandardCharsets.UTF_8);
-                }
-            } else {
-                try (ZipFile zip = new ZipFile(shader.toFile())) {
-                    ZipEntry entry = zip.getEntry("shaders/pack.json");
-                    if (entry != null) {
-                        try (InputStream in = zip.getInputStream(entry)) {
-                            ByteArrayOutputStream out = new ByteArrayOutputStream();
-                            byte[] buffer = new byte[8192];
-                            int read;
-                            while ((read = in.read(buffer)) != -1) {
-                                out.write(buffer, 0, read);
-                            }
-                            json = new String(out.toByteArray(), java.nio.charset.StandardCharsets.UTF_8);
-                        }
-                    }
-                }
-            }
-            if (json == null) {
-                return null;
-            }
-            Matcher matcher = Pattern.compile("\"version\"\\s*:\\s*\"([^\"]+)\"").matcher(json);
-            return matcher.find() ? matcher.group(1) : null;
-        } catch (IOException e) {
-            return null;
-        }
     }
 
     /**

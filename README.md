@@ -45,12 +45,11 @@ If you don't know how to Install Euphoria Patches, read these instructions: **[<
 
 ## Quick highlights
 
-- Auto-detects Complementary base shader (ZIP or directory) in your `shaderpacks/` folder.
-- Byte-size verification of base archives to avoid false positives.
-- Applies a binary .patch to produce patched shader archives (produces both Reimagined and Unbound variants).
-- Creates alternative shader copies using configurable names.
+- Automatically detects Complementary in your `shaderpacks/` folder and creates the patched Euphoria Patches variants (Reimagined and Unbound) for you.
+- Patching is powered by **[<ins>ShaderPatcher</ins>](https://github.com/EuphoriaPatches/ShaderPatcher)**, a standalone library developed in-house that handles detecting, verifying and patching the base shaders.
+- Newly added shaderpacks are patched automatically, no manual steps needed.
 - Live config watcher and optional popup/debug logging.
-- Filesystem watcher: automatically patches newly added shaderpacks.
+- **Mod-exclusive features and fixes:** because Euphoria Patches also ships as a mod, it can add new features and fix issues that are only possible with a mod. This gives an even better shader experience, and no other shader is able to do that.
 
 ## 🔗 Links
 

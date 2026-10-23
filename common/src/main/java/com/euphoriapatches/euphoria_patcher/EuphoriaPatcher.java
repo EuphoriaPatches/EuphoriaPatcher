@@ -19,6 +19,7 @@ import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import com.euphoriapatches.euphoria_patcher.util.shader.BootShaderModificator;
 import com.euphoriapatches.euphoria_patcher.util.shader.SettingsFileDefinesUpdater;
 import com.euphoriapatches.euphoria_patcher.util.shader.ShaderVersionComparator;
+import com.euphoriapatches.shaderpatcher.exception.ShaderPatcherException;
 
 import java.nio.file.Path;
 
@@ -89,6 +90,11 @@ public class EuphoriaPatcher {
         ShaderInfo shaderInfo = shaderDetector.detectInstalledShaders(namingService);
 
         if (!shaderInfo.isAlreadyInstalled) {
+            ShaderPatcherException patchFailure = PatchLibrary.getFailure();
+            if (patchFailure != null) {
+                UserInstallErrorMessages.handlePatchUnavailable(patchFailure);
+                return;
+            }
             if (shaderInfo.baseFile == null) {
                 UserInstallErrorMessages.handleShaderNotFound(versionComparator);
                 return;

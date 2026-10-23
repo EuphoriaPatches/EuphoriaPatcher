@@ -1,7 +1,6 @@
 package com.euphoriapatches.euphoria_patcher.services;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
-import com.euphoriapatches.euphoria_patcher.PatchInfo;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector.ShaderInfo;
 import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
@@ -47,6 +46,8 @@ public class ShaderPatchingService {
                 return false;
             }
 
+            ShaderPatcher patcher = PatchLibrary.get();
+
             String originalFileName = info.baseFile.getFileName().toString();
             // Name under which the error handlers know the archive of the base shader
             String archiveName = originalFileName.replace(".zip", "") + ".tar";
@@ -60,8 +61,6 @@ public class ShaderPatchingService {
                 return handleFailure(e, archiveName, originalFileName);
             }
             normalizeShaderStyleInCommon(baseCopy);
-
-            ShaderPatcher patcher = PatchLibrary.get();
 
             // A base shader that is named like a dev/test version is never patched, even if it matches the release
             if (ShaderVersionComparator.isTestOrDevVersion(archiveName)) {
@@ -116,19 +115,7 @@ public class ShaderPatchingService {
                 UserInstallErrorMessages.handleHashMismatch(archiveName, originalFileName);
             }
         } else if (e instanceof PatchNotFoundException) {
-            // Patch resource not found - this is a critical error
-            log(3, 12, "========================");
-            log(3, 12, "CRITICAL BUILD ERROR");
-            log(3, 12, "========================");
-            log(3, 12, "Patch file not found in mod resources!");
-            log(3, 12, "Expected: " + PatchInfo.PATCH_RESOURCE);
-            log(3, 12, "");
-            log(3, 12, "This indicates the mod was built incorrectly.");
-            log(3, 12, "The patch file should be in the JAR resources.");
-            log(3, 12, "");
-            log(3, 12, "Please report this issue to the mod developer");
-            log(3, 12, "at: https://github.com/EuphoriaPatches/EuphoriaPatcher/issues");
-            log(3, 12, "========================");
+            UserInstallErrorMessages.handlePatchUnavailable(e);
         } else if (e instanceof OutputExistsException) {
             log(2, "The patched shader already exists: " + e.getPath());
         } else if (e instanceof PackIoException) {
@@ -221,11 +208,6 @@ public class ShaderPatchingService {
 
     private void log(int level, String message) {
         EuphoriaPatcher.log(level, message);
-    }
-
-    @SuppressWarnings("SameParameterValue")
-    private void log(int level, int fadeTimer, String message) {
-        EuphoriaPatcher.log(level, fadeTimer, message);
     }
 
     private void debugLog(String message) {

@@ -1,5 +1,6 @@
 {
   "buildDate": "year-month-day",
+  "ciBuild": "unknown",
   "startupMessages": [
     "Crafting shaders without a crafting table...",
     "Creating cloud geometry out of thin air...",

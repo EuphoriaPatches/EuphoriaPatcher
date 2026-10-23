@@ -90,6 +90,12 @@ public class ShaderDetector {
                 return info;
             }
 
+            // Nothing can be patched without the bundled patch, so skip the scan. EuphoriaPatcher reports it to the user
+            if (PatchLibrary.getFailure() != null) {
+                debugLog("Bundled patch is unusable, skipping shader detection");
+                return info;
+            }
+
             // Find all potential shader paths (both files and directories) by name
             List<Path> potentialShaderPaths = new ArrayList<>();
 

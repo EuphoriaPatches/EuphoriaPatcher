@@ -3,6 +3,7 @@ package com.euphoriapatches.euphoria_patcher.monitoring;
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.logging.ErrorShaderGenerator;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.services.PatchLibrary;
 import com.euphoriapatches.euphoria_patcher.services.ShaderDetector;
 import com.euphoriapatches.euphoria_patcher.services.ShaderNamingService;
 import com.euphoriapatches.euphoria_patcher.services.ShaderValidator;
@@ -509,6 +510,12 @@ public class ShaderpacksWatcher {
                 boolean isDir = Files.isDirectory(path);
                 debugLog("Directory validation: " + (isDir ? "valid" : "invalid") + " - " + fileName);
                 return isDir;
+            }
+
+            // The byte size check needs the bundled patch, without it no file can match
+            if (PatchLibrary.getFailure() != null) {
+                debugLog("Bundled patch is unusable, skipping byte size verification: " + fileName);
+                return false;
             }
 
             // If name doesn't match, check if we've already verified this file

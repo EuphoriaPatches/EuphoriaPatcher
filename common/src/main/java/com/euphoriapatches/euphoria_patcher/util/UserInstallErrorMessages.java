@@ -1,10 +1,14 @@
 package com.euphoriapatches.euphoria_patcher.util;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
+import com.euphoriapatches.euphoria_patcher.PatchInfo;
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
+import com.euphoriapatches.euphoria_patcher.io.JsonUtilReader;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.monitoring.ShaderpacksWatcher;
 import com.euphoriapatches.euphoria_patcher.monitoring.ShaderpacksWatcherUtils;
+import com.euphoriapatches.shaderpatcher.exception.PatchNotFoundException;
+import com.euphoriapatches.shaderpatcher.exception.ShaderPatcherException;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import com.euphoriapatches.euphoria_patcher.util.shader.ShaderVersionComparator;
 
@@ -14,6 +18,8 @@ import java.nio.file.Path;
  * Handles error messaging and recovery actions when shader validation fails
  */
 public class UserInstallErrorMessages {
+    private static final String MODRINTH_URL = "https://modrinth.com/mod/4H6sumDB";
+    private static boolean patchUnavailableReported = false;
 
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderMessageErrorHandler] " + message);
@@ -259,6 +265,47 @@ public class UserInstallErrorMessages {
         EuphoriaPatcher.log(3, 8, "Step 2: Paste the downloaded zip file into your shaderpacks folder.");
 
         startWatcherAndTrackFile(fileName);
+    }
+
+    /**
+     * Handle when the patch file is not in the jar and inform the user accordingly
+     * @param cause
+     */
+    public static void handlePatchUnavailable(ShaderPatcherException cause) {
+        if (patchUnavailableReported) return;
+        patchUnavailableReported = true;
+        debugLog("Handling unavailable patch: " + cause);
+
+        if (!(cause instanceof PatchNotFoundException)) {
+            EuphoriaPatcher.log(3, "Error applying patch file: " + cause.getMessage());
+            EuphoriaPatcher.log(3, EuphoriaLogger.getStackTrace(cause));
+            return;
+        }
+
+        // CI jars never contain the patch file, build.gradle writes this flag into randomUtil.json
+        if ("true".equals(JsonUtilReader.getString("ciBuild"))) {
+            EuphoriaPatcher.log(3, 12, "=== CI BUILD: NO PATCH FILE ===");
+            EuphoriaPatcher.log(3, 12, "This is a CI build, it does not contain " + PatchInfo.PATCH_RESOURCE + " and can not create the patched shader by itself.");
+            EuphoriaPatcher.log(3, 12, "");
+            EuphoriaPatcher.log(3, 12, "SOLUTION:");
+            EuphoriaPatcher.log(3, 12, "Step 1: Download the official release of " + EuphoriaPatcher.PATCH_NAME + " from Modrinth: " + MODRINTH_URL);
+            EuphoriaPatcher.log(3, 12, "Step 2: Start the game once with the official release so it creates the patched shader.");
+            EuphoriaPatcher.log(3, 12, "Step 3: Close the game and replace the official release with this CI build again.");
+            EuphoriaPatcher.log(3, 12, "The CI build uses the patched shader that already exists.");
+        } else {
+            EuphoriaPatcher.log(3, 12, "========================");
+            EuphoriaPatcher.log(3, 12, "CRITICAL BUILD ERROR");
+            EuphoriaPatcher.log(3, 12, "========================");
+            EuphoriaPatcher.log(3, 12, "Patch file not found in mod resources!");
+            EuphoriaPatcher.log(3, 12, "Expected: " + PatchInfo.PATCH_RESOURCE);
+            EuphoriaPatcher.log(3, 12, "");
+            EuphoriaPatcher.log(3, 12, "This indicates the mod was built incorrectly.");
+            EuphoriaPatcher.log(3, 12, "The patch file should be in the JAR resources.");
+            EuphoriaPatcher.log(3, 12, "");
+            EuphoriaPatcher.log(3, 12, "Please report this issue to the mod developer");
+            EuphoriaPatcher.log(3, 12, "at: https://github.com/EuphoriaPatches/EuphoriaPatcher/issues");
+            EuphoriaPatcher.log(3, 12, "========================");
+        }
     }
 
     public static void copyLinkMessage(){

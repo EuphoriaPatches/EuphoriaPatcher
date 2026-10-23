@@ -42,20 +42,23 @@ tasks.withType(JavaCompile).configureEach {
 	])
 }
 
-// Replace buildDate placeholder in randomUtil.json during resource processing
+// Replace the buildDate and ciBuild placeholders in randomUtil.json during resource processing
+// GitHub Actions sets GITHUB_ACTIONS=true. CI jars have no patch file by design, the mod uses the flag to pick the matching error message
 processResources {
 	outputs.upToDateWhen {false} // Always run this task
 
 	def buildDate = new Date().format('yyyy-MM-dd')
+	def ciBuild = System.getenv('GITHUB_ACTIONS') == 'true'
 
 	filesMatching('randomUtil.json') {
 		filter { line ->
 			line.replace('"buildDate": "year-month-day"', "\"buildDate\": \"${buildDate}\"")
+				.replace('"ciBuild": "unknown"', "\"ciBuild\": \"${ciBuild}\"")
 		}
 	}
 
 	doLast {
-		println "\u001B[32m✓ Set buildDate to: ${buildDate}\u001B[0m"
+		println "\u001B[32m✓ Set buildDate to: ${buildDate}, ciBuild to: ${ciBuild}\u001B[0m"
 	}
 }
 

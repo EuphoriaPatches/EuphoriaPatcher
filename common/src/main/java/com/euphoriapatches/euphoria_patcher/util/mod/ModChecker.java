@@ -165,7 +165,8 @@ public class ModChecker {
 							debugLog("Detected Iris via MODNAME='Iris'");
 							return IRIS;
 						case "Oculus":
-							debugLog("Detected Oculus via MODNAME='Oculus'");
+						case "Emberlens":
+							debugLog("Detected Oculus via MODNAME='" + modName + "'");
 							return OCULUS;
 						case "AngelicaShaders":
 							debugLog("Detected Angelica via MODNAME='AngelicaShaders'");

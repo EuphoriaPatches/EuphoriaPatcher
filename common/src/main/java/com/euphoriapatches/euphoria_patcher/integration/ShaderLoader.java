@@ -77,8 +77,8 @@ public class ShaderLoader {
         if (fileName.startsWith("iris")) {
             debugLog("Detected IRIS via filename");
             return IRIS;
-        } else if (fileName.startsWith("oculus") || fileName.startsWith("mekalus")) {
-            debugLog("Detected OCULUS via filename" + (fileName.startsWith("mekalus") ? " (Mekalus fork)" : ""));
+        } else if (fileName.startsWith("oculus") || fileName.startsWith("mekalus") || fileName.startsWith("emberlens")) {
+            debugLog("Detected OCULUS via filename" + (fileName.startsWith("mekalus") ? " (Mekalus fork)" : fileName.startsWith("emberlens") ? " (Emberlens fork)" : ""));
             return OCULUS;
         } else if (fileName.startsWith("optifine")) {
             debugLog("Detected OPTIFINE via filename");
@@ -125,6 +125,7 @@ public class ShaderLoader {
                     if ((fileName.startsWith("iris") && ((fileName.contains("fabric") || fileName.contains("neoforge") || fileName.contains("+mc")))) ||
                         fileName.startsWith("oculus-mc") ||
                         fileName.startsWith("mekalus-mc") ||
+                        fileName.startsWith("emberlens-mc") ||
                         fileName.startsWith("optifine_") ||
                         fileName.startsWith("neoculus-mc") ||
                         fileName.startsWith("angelica")) {
@@ -243,9 +244,9 @@ public class ShaderLoader {
                     }
                 }
             }
-            // Handle Oculus/Mekalus format: oculus-mc1.20.1-1.8.0.jar or mekalus-mc1.20.1-1.7.0.3.jar
-            else if (lowerFileName.startsWith("oculus") || lowerFileName.startsWith("mekalus")) {
-                debugLog("Detected " + (lowerFileName.startsWith("mekalus") ? "Mekalus" : "Oculus") + " format");
+            // Handle Oculus/Mekalus/Emberlens format: oculus-mc1.20.1-1.8.0.jar, mekalus-mc1.20.1-1.7.0.3.jar or emberlens-mc1.20.1-1.8.6.jar
+            else if (lowerFileName.startsWith("oculus") || lowerFileName.startsWith("mekalus") || lowerFileName.startsWith("emberlens")) {
+                debugLog("Detected Oculus-like format (" + lowerFileName + ")");
                 int mcIndex = lowerFileName.indexOf("-mc");
                 if (mcIndex != -1) {
                     int dashAfterMc = fileName.indexOf('-', mcIndex + 3);
@@ -357,9 +358,9 @@ public class ShaderLoader {
                     debugLog("Extracted Iris version: " + extractedVersion);
                 }
             }
-            // Handle Oculus/Mekalus format: oculus-mc1.20.1-1.8.0.jar or mekalus-mc1.20.1-1.7.0.3.jar
-            else if (lowerFileName.startsWith("oculus") || lowerFileName.startsWith("mekalus")) {
-                debugLog("Detected " + (lowerFileName.startsWith("mekalus") ? "Mekalus" : "Oculus") + " format");
+            // Handle Oculus/Mekalus/Emberlens format: oculus-mc1.20.1-1.8.0.jar, mekalus-mc1.20.1-1.7.0.3.jar or emberlens-mc1.20.1-1.8.6.jar
+            else if (lowerFileName.startsWith("oculus") || lowerFileName.startsWith("mekalus") || lowerFileName.startsWith("emberlens")) {
+                debugLog("Detected Oculus-like format (" + lowerFileName + ")");
                 // Find the last dash before .jar to get the version
                 int lastDashIndex = fileName.lastIndexOf('-');
                 int jarIndex = lowerFileName.indexOf(".jar");

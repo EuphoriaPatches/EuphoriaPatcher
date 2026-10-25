@@ -37,7 +37,7 @@ public class ForgeModLoaderSpecifics extends ModLoaderSpecifics {
     private static final Biomes.Cache biomeCache = new Biomes.Cache();
 
     public ForgeModLoaderSpecifics() {
-        this.shaderpacksPath = FMLPaths.GAMEDIR.get().resolve("shaderpacks");
+        this.shaderpacksPath = resolveShaderpacks(FMLPaths.GAMEDIR.get().resolve("shaderpacks"));
         this.configDirectory = FMLPaths.CONFIGDIR.get();
     }
 

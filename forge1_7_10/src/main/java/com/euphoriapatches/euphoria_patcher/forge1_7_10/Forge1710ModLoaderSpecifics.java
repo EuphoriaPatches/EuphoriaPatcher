@@ -14,7 +14,7 @@ public class Forge1710ModLoaderSpecifics extends ModLoaderSpecifics {
 
     public Forge1710ModLoaderSpecifics() {
         File gameDirectory = Loader.instance().getConfigDir().getParentFile();
-        this.shaderpacksPath = new File(gameDirectory, "shaderpacks").toPath();
+        this.shaderpacksPath = resolveShaderpacks(new File(gameDirectory, "shaderpacks").toPath());
         this.configDirectory = Loader.instance().getConfigDir().toPath();
     }
 

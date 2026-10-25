@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.util;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import com.google.gson.*;
 import com.euphoriapatches.euphoria_patcher.config.Config;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
@@ -516,7 +517,9 @@ public class UserPersistentData {
         debugLog("Validating shaderpacks directory hash");
         setDataFileWritable();
 
-        String currentShadersDir = EuphoriaPatcher.shaderpacks.toString();
+        // The default path, not the live one: profiles sharing a config dir (Dawn) can redirect shaderpacks to
+        // different folders, which would reset the data file on every switch. Still unique per user and instance.
+        String currentShadersDir = ModLoaderSpecifics.defaultShaderpacks().toString();
         debugLog("Current shaderpacks directory: " + currentShadersDir);
 
         String currentShaderHash = HashUtils.calculateSHA256(currentShadersDir);

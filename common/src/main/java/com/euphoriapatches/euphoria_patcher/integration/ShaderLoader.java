@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.integration;
 
 import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModChecker;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModsDirectory;
@@ -489,7 +490,7 @@ public class ShaderLoader {
                 }
                 break;
             case OPTIFINE:
-                configPath = EuphoriaPatcher.shaderpacks.getParent().resolve("optionsshaders.txt");
+                configPath = ModLoaderSpecifics.gameDirectory().resolve("optionsshaders.txt");
                 if (Files.exists(configPath)) {
                     debugLog("Found OptiFine config at: " + configPath);
                     shaderLoaderConfigPath = configPath;
@@ -515,7 +516,7 @@ public class ShaderLoader {
                     shaderLoaderConfigPath = configPath;
                     return shaderLoaderConfigPath;
                 }
-                configPath = EuphoriaPatcher.shaderpacks.getParent().resolve("optionsshaders.txt");
+                configPath = ModLoaderSpecifics.gameDirectory().resolve("optionsshaders.txt");
                 if (Files.exists(configPath)) {
                     shaderLoaderConfigPath = configPath;
                     return shaderLoaderConfigPath;

@@ -14,7 +14,7 @@ public class ForgeLegacyModLoaderSpecifics extends ModLoaderSpecifics {
     private final Path configDirectory;
 
     public ForgeLegacyModLoaderSpecifics() {
-        this.shaderpacksPath = Minecraft.getMinecraft().gameDir.toPath().resolve("shaderpacks");
+        this.shaderpacksPath = resolveShaderpacks(Minecraft.getMinecraft().gameDir.toPath().resolve("shaderpacks"));
         this.configDirectory = Minecraft.getMinecraft().gameDir.toPath().resolve("config");
     }
 

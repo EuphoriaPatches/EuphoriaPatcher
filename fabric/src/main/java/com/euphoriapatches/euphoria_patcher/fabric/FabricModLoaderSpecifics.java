@@ -37,7 +37,7 @@ public class FabricModLoaderSpecifics extends ModLoaderSpecifics {
             new Biomes.ReflectiveLookup(new String[]{"getBiome"}, "net.minecraft.core.Holder", "unwrapKey");
 
     public FabricModLoaderSpecifics() {
-        this.shaderpacksPath = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
+        this.shaderpacksPath = resolveShaderpacks(FabricLoader.getInstance().getGameDir().resolve("shaderpacks"));
         this.configDirectory = FabricLoader.getInstance().getConfigDir();
     }
 

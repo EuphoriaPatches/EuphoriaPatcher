@@ -1,5 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.util.mod;
 
+import com.euphoriapatches.euphoria_patcher.util.ReflectionUtils;
+
 import java.nio.file.Path;
 
 /**
@@ -16,6 +18,8 @@ public abstract class ModLoaderSpecifics {
 
     private static ModLoaderSpecifics instance;
     private static boolean instanceLogged = false;
+
+    private Path defaultShaderpacksPath;
 
     /**
      * Set the mod loader-specific instance.
@@ -125,10 +129,46 @@ public abstract class ModLoaderSpecifics {
     }
 
     /**
+     * Asks Iris (or forks) where the shaderpacks folder is. Dawn Client and maybe others change that folder
+     * from {@code <gameDir>/shaderpacks} to a custom path. And Iris answer will always be correct.
+     * Any failure at all returns {@code fallback}.
+     *
+     * @param fallback the loader's own {@code <gameDir>/shaderpacks}, remembered as the default shaderpacks path
+     */
+    protected Path resolveShaderpacks(Path fallback) {
+        defaultShaderpacksPath = fallback;
+        try {
+            Class<?> irisClass = ReflectionUtils.firstClass("net.irisshaders.iris.Iris", "net.coderbot.iris.Iris");
+            if (irisClass == null) {
+                return fallback;
+            }
+            Object result = irisClass.getMethod("getShaderpacksDirectory").invoke(null);
+            return result instanceof Path ? (Path) result : fallback;
+        } catch (Throwable t) {
+            return fallback;
+        }
+    }
+
+    /**
      * Get the path to the shaderpacks directory.
      */
     public static Path shaderpacks() {
         return getInstance().getShaderpacksPath();
+    }
+
+    /**
+     * The {@code <gameDir>/shaderpacks} path, ignoring any shaderpscks folder redirects.
+     * Unlike {@link #shaderpacks()} it is the same for every profile that shares a game dir.
+     */
+    public static Path defaultShaderpacks() {
+        return getInstance().defaultShaderpacksPath;
+    }
+
+    /**
+     * The real game directory, even when the shaderpacks folder lives elsewhere.
+     */
+    public static Path gameDirectory() {
+        return defaultShaderpacks().getParent();
     }
 
     /**

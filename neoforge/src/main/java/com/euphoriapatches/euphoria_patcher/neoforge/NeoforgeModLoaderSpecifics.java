@@ -24,7 +24,7 @@ public class NeoforgeModLoaderSpecifics extends ModLoaderSpecifics {
     private static final Biomes.Cache biomeCache = new Biomes.Cache();
 
     public NeoforgeModLoaderSpecifics() {
-        this.shaderpacksPath = FMLPaths.GAMEDIR.get().resolve("shaderpacks");
+        this.shaderpacksPath = resolveShaderpacks(FMLPaths.GAMEDIR.get().resolve("shaderpacks"));
         this.configDirectory = FMLPaths.CONFIGDIR.get();
     }
 

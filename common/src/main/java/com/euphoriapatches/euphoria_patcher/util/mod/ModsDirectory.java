@@ -9,7 +9,7 @@ import java.nio.file.Path;
 public class ModsDirectory {
 
     private static Path modsDirectory;
-    private static final Path defaultModsDir = EuphoriaPatcher.shaderpacks.getParent().resolve("mods");
+    private static final Path defaultModsDir = ModLoaderSpecifics.gameDirectory().resolve("mods");
 
 
     /**

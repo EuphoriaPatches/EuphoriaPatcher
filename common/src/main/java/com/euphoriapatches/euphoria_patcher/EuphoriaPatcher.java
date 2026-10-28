@@ -17,7 +17,6 @@ import com.euphoriapatches.euphoria_patcher.services.ShaderDetector.ShaderInfo;
 import com.euphoriapatches.euphoria_patcher.util.*;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import com.euphoriapatches.euphoria_patcher.util.shader.BootShaderModificator;
-import com.euphoriapatches.euphoria_patcher.util.shader.SettingsFileDefinesUpdater;
 import com.euphoriapatches.euphoria_patcher.util.shader.ShaderVersionComparator;
 import com.euphoriapatches.shaderpatcher.exception.ShaderPatcherException;
 
@@ -83,7 +82,6 @@ public class EuphoriaPatcher {
 
         // Initialize services
         initializeServices();
-        SettingsFileDefinesUpdater.ensureVersionDefine(shaderDetector);
         new ShaderpacksWatcherUtils();
 
         // Detect installed Complementary Shaders versions

@@ -11,11 +11,11 @@ import com.euphoriapatches.euphoria_patcher.PatchInfo;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -309,6 +309,7 @@ public class GeneratePatch {
         // The Euphoria-Patches folder is the working copy, so it is brought to the versions of PatchInfo
         if (Files.isDirectory(shaderPair.patchedShader)) {
             syncVersions(shaderPair.patchedShader);
+            ensureVersionDefine(shaderPair.patchedShader);
         }
 
         // Ensure output directories exist
@@ -383,15 +384,36 @@ public class GeneratePatch {
                         || !relative.matches(".+\\.(json|lang|glsl|txt|md|properties)")) {
                     continue;
                 }
-                String text = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
+                String text = Files.readString(file);
                 String updated = patchPattern.matcher(text).replaceAll("${p}" + Matcher.quoteReplacement(patchVersion));
                 updated = basePattern.matcher(updated).replaceAll("${p}" + Matcher.quoteReplacement(baseVersion));
                 if (!updated.equals(text)) {
-                    Files.write(file, updated.getBytes(StandardCharsets.UTF_8));
+                    Files.writeString(file, updated);
                     System.out.println("  Updated " + relative);
                 }
             }
         }
+    }
+
+    /**
+     * Adds the {@code AAB_FOR_EUPHORIA_PATCHES_VERSION_} define of {@link PatchInfo#PATCH_VERSION} to
+     * settingsFileDefines.glsl if it is not in there yet.
+     */
+    private static void ensureVersionDefine(Path folder) throws IOException {
+        Path defines = folder.resolve("shaders/lib/shaderSettings/settingsFileDefines.glsl");
+        if (!Files.isRegularFile(defines)) {
+            System.out.println(YELLOW + "settingsFileDefines.glsl not found, skipping version define" + RESET);
+            return;
+        }
+        String define = "AAB_FOR_EUPHORIA_PATCHES_VERSION_" + PATCH_VERSION.replace("_", "").replace('.', '_');
+
+        if (Files.readString(defines).contains(define)) {
+            return;
+        }
+
+        String lines = "//#define " + define + "\n#ifdef " + define + "\n#endif\n";
+        Files.writeString(defines, lines, StandardOpenOption.APPEND);
+        System.out.println("  Added " + define + " to settingsFileDefines.glsl");
     }
 
     /**

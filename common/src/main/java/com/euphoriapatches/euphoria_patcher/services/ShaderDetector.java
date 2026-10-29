@@ -1,9 +1,9 @@
 package com.euphoriapatches.euphoria_patcher.services;
 
 import com.euphoriapatches.euphoria_patcher.io.ArchiveOperations;
-import com.euphoriapatches.euphoria_patcher.io.FileOperations;
 import com.euphoriapatches.euphoria_patcher.io.JsonUtilReader;
 import com.euphoriapatches.euphoria_patcher.util.UserPersistentData;
+import com.euphoriapatches.euphoria_patcher.util.shader.PackVersionReader;
 import com.euphoriapatches.euphoria_patcher.util.shader.ShaderPropertyReader;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
@@ -28,9 +28,6 @@ public class ShaderDetector {
 
     // Static cache to store whether shaders are Euphoria Patches shaders (persists across instances)
     private static final Map<Path, Boolean> euphoriaShaderCache = new ConcurrentHashMap<>();
-    // Static cache to store shader versions read from pack.json (persists across instances)
-    // Uses Optional to distinguish between "not checked" (not in map), "no version" (Optional.empty()), and "version found" (Optional.of(version))
-    private static final Map<Path, Optional<String>> versionCache = new ConcurrentHashMap<>();
     private final String brandName;
     private final String patchName;
     private final String version;
@@ -818,75 +815,12 @@ public class ShaderDetector {
     }
 
     /**
-     * Reads the version from pack.json in a shader directory or zip file
-     * Uses static cache to avoid redundant reads across instances
+     * Reads the version from pack.json in a shader directory or zip file, see {@link PackVersionReader#readVersion(Path)}
      * @param shaderPath Path to shader (directory or zip file)
      * @return Version string from pack.json, or null if not found
      */
     public String readVersionFromPackJson(Path shaderPath) {
-        if (shaderPath == null) {
-            debugLog("readVersionFromPackJson called with null path, returning null");
-            return null;
-        }
-
-        // Check cache first
-        Optional<String> cached = versionCache.get(shaderPath);
-        if (cached != null) {
-            debugLog("Version cache hit for " + shaderPath.getFileName() + ": " + cached.orElse("null"));
-            return cached.orElse(null);
-        }
-
-        // Not in cache, perform the read
-        String version = null;
-        Path packJsonPath;
-
-        try {
-            if (Files.isDirectory(shaderPath)) {
-                // For directories, read directly from pack.json
-                packJsonPath = shaderPath.resolve("shaders/pack.json");
-                if (Files.exists(packJsonPath)) {
-                    version = readVersionFromFile(packJsonPath);
-                    debugLog("Read version from directory " + shaderPath.getFileName() + ": " + version);
-                } else {
-                    debugLog("pack.json not found at " + packJsonPath);
-                }
-            } else if (Files.isRegularFile(shaderPath) && shaderPath.toString().endsWith(".zip")) {
-                // For zip files, read from archive
-                String packJsonContent = ArchiveOperations.readFileFromZip(shaderPath, "shaders/pack.json");
-                if (packJsonContent != null) {
-                    version = parseVersionFromJson(packJsonContent);
-                    debugLog("Read version from zip " + shaderPath.getFileName() + ": " + version);
-                } else {
-                    debugLog("pack.json not found in zip " + shaderPath.getFileName());
-                }
-            }
-        } catch (Exception e) {
-            debugLog("Error reading version from pack.json: " + e.getMessage());
-        }
-
-        // Cache the result (including null)
-        versionCache.put(shaderPath, Optional.ofNullable(version));
-        return version;
-    }
-
-    /**
-     * Reads version string from a pack.json file
-     */
-    private String readVersionFromFile(Path packJsonPath) {
-        String jsonContent = FileOperations.readFileAsString(packJsonPath);
-        return parseVersionFromJson(jsonContent);
-    }
-
-    /**
-     * Parses version string from pack.json content
-     */
-    private String parseVersionFromJson(String jsonContent) {
-        Pattern versionPattern = Pattern.compile("\"version\"\\s*:\\s*\"([^\"]+)\"");
-        Matcher matcher = versionPattern.matcher(jsonContent);
-        if (matcher.find()) {
-            return matcher.group(1);
-        }
-        return null;
+        return PackVersionReader.readVersion(shaderPath);
     }
 
     /**

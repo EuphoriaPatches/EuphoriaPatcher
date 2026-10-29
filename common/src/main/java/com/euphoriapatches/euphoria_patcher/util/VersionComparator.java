@@ -50,6 +50,27 @@ public class VersionComparator {
     }
 
     /**
+     * Splits a dotted version string into its numbers (e.g., "1.7.4" to [1, 7, 4]), without throwing on bad input.
+     * @param version Version string with at least 2 numeric parts separated by dots
+     * @return The numbers, or null if the version is null, has fewer than 2 parts, or has a part that is not a number
+     */
+    public static int[] parseVersionToIntArray(String version) {
+        if (version == null) {
+            return null;
+        }
+        String[] parts = version.split("\\.");
+        int[] numbers = new int[parts.length];
+        try {
+            for (int i = 0; i < parts.length; i++) {
+                numbers[i] = Integer.parseInt(parts[i]);
+            }
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        return numbers.length >= 2 ? numbers : null;
+    }
+
+    /**
      * Compare two version arrays (e.g., [5, 3, 2] vs [5, 1, 0])
      * @param v1 First version array [major, minor, patch]
      * @param v2 Second version array [major, minor, patch]

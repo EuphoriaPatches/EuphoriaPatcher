@@ -7,10 +7,12 @@ import com.euphoriapatches.shaderpatcher.exception.ShaderPatcherException;
 import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Enumeration;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -72,19 +74,26 @@ public class ArchiveOperations {
         }
     }
 
-    public static void deleteRecursively(Path path) throws IOException { // needed to delete folders
-        if (Files.isDirectory(path)) {
-            try (Stream<Path> entries = Files.list(path)) {
-                entries.forEach(entry -> {
-                    try {
-                        deleteRecursively(entry);
-                    } catch (IOException e) {
-                        EuphoriaPatcher.log(2, 0, "Error deleting entry: " + entry + " - " + e.getMessage());
-                    }
-                });
+    /**
+     * Deletes a file, or a folder with everything in it. A symbolic link or junction is only removed itself, what it
+     * points to is never entered, so a linked shaderpacks folder cannot lose its real contents.
+     * Stops at the first entry that cannot be deleted, which is reported by the thrown exception.
+     */
+    public static void deleteRecursively(Path path) throws IOException {
+        if (isRealDirectory(path)) {
+            try (DirectoryStream<Path> entries = Files.newDirectoryStream(path)) {
+                for (Path entry : entries) {
+                    deleteRecursively(entry);
+                }
             }
         }
         Files.delete(path);
+    }
+
+    // Java reports a Windows junction as isDirectory + isOther (not as a symbolic link), so both have to be checked
+    private static boolean isRealDirectory(Path path) throws IOException {
+        BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        return attributes.isDirectory() && !attributes.isSymbolicLink() && !attributes.isOther();
     }
 
     /**

@@ -32,6 +32,7 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 compileJava {
     sourceCompatibility = "8"
     targetCompatibility = "8"
+    options.encoding = 'UTF-8'
 }
 
 repositories {

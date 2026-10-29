@@ -31,10 +31,56 @@ dependencies {
 	// Using it for native image processing
 	compileOnly 'org.lwjgl:lwjgl:3.3.3'
 	compileOnly 'org.lwjgl:lwjgl-stb:3.3.3'
+
+	// Unit tests for everything that does not need the game. JUnit 5.x still runs on Java 8
+	testImplementation platform('org.junit:junit-bom:5.10.2')
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.withType(Test).configureEach { testTask ->
+	useJUnitPlatform()
+	testLogging {
+		events 'failed', 'skipped'
+		exceptionFormat 'full'
+		showStandardStreams = false
+	}
+
+	// The tests are quick and they are the gate of buildAll, so they always run and always report
+	outputs.upToDateWhen { false }
+
+	// One line per test task, otherwise a passing run prints nothing at all
+	afterSuite { descriptor, result ->
+		if (descriptor.parent == null) {
+			def passed = result.failedTestCount == 0
+			def line = "${testTask.path}: ${result.testCount} tests, ${result.successfulTestCount} passed, ${result.failedTestCount} failed, ${result.skippedTestCount} skipped"
+			println passed ? "\u001B[32m✓ ${line}\u001B[0m" : "\u001B[31m✗ ${line}\u001B[0m"
+		}
+	}
+}
+
+// The plain 'test' task runs on the Java that Gradle itself runs on. The mod runs on Java 8 (legacy Forge, 1.7.10), 17, 21 and
+// 25 (newest Minecraft versions), so the same tests also run on each of those, the same way ShaderPatcher does it.
+['8', '17', '21', '25'].each { jdk ->
+	tasks.register("testJava${jdk}", Test) {
+		group = 'verification'
+		description = "Runs the unit tests on Java ${jdk}"
+		testClassesDirs = sourceSets.test.output.classesDirs
+		classpath = sourceSets.test.runtimeClasspath
+		javaLauncher = javaToolchains.launcherFor {
+			languageVersion = JavaLanguageVersion.of(jdk.toInteger())
+		}
+	}
+}
+
+tasks.named('check') {
+	dependsOn 'testJava8', 'testJava17', 'testJava21', 'testJava25'
 }
 
 tasks.withType(JavaCompile).configureEach {
 	it.options.release = 8
+	// Some sources contain non-ASCII characters, so this must not depend on the default encoding of the JDK Gradle runs on
+	it.options.encoding = 'UTF-8'
 
 	it.options.compilerArgs.addAll([
 		"-Xlint:-options",

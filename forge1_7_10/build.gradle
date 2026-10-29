@@ -39,6 +39,10 @@ tasks.injectTags.configure {
     outputClassName.set("${project.group}.Tags")
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
 // Template mcmod.info with version
 processResources {
     def projVersion = project.version.toString()

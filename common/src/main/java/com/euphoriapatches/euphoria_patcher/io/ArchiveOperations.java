@@ -190,7 +190,7 @@ public class ArchiveOperations {
             // Read the file content
             StringBuilder content = new StringBuilder();
             try (java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(zipFile.getInputStream(entry)))) {
+                    new java.io.InputStreamReader(zipFile.getInputStream(entry), java.nio.charset.StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     content.append(line).append("\n");

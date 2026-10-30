@@ -10,12 +10,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -271,7 +273,7 @@ public class EuphoriaLogger {
                 String separator = "\n--------------------------------------\n" +
                                     "Restart happened\n" +
                                     "--------------------------------------\n";
-                Files.write(errorLogFilePath, separator.getBytes(),
+                Files.write(errorLogFilePath, separator.getBytes(StandardCharsets.UTF_8),
                             java.nio.file.StandardOpenOption.APPEND);
                 log(0, "Added restart separator to error log file");
             }
@@ -292,7 +294,7 @@ public class EuphoriaLogger {
             }
 
             // Format with timestamp
-            String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+            String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT).format(new Date());
             String logEntry = timestamp + " " + message + System.lineSeparator();
 
             // Create or append to file
@@ -300,7 +302,7 @@ public class EuphoriaLogger {
                 ? java.nio.file.StandardOpenOption.APPEND
                 : java.nio.file.StandardOpenOption.CREATE;
 
-            Files.write(errorLogFilePath, logEntry.getBytes(), option);
+            Files.write(errorLogFilePath, logEntry.getBytes(StandardCharsets.UTF_8), option);
         } catch (IOException e) {
             log(0,"Failed to write to error log file: " + e.getMessage());
         }

@@ -180,7 +180,7 @@ public class Dimensions {
      * @param shaderPackPath The path to the active shader pack
      * @return Map of dimension IDs to dimension categories
      */
-    private static Map<String, String> parseDimensionProperties(Path shaderPackPath) {
+    static Map<String, String> parseDimensionProperties(Path shaderPackPath) {
         Map<String, String> dimensionMap = new HashMap<>();
 
         if (shaderPackPath == null) {
@@ -236,7 +236,7 @@ public class Dimensions {
      * @return Map of dimension IDs to dimension categories
      * @throws IOException If there's an error reading from the reader
      */
-    private static Map<String, String> parseDimensionPropertiesFromReader(BufferedReader reader) throws IOException {
+    static Map<String, String> parseDimensionPropertiesFromReader(BufferedReader reader) throws IOException {
         Map<String, String> dimensionMap = new HashMap<>();
         StringBuilder segment = new StringBuilder();
         String line;

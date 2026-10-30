@@ -166,7 +166,7 @@ tasks.register('buildAll') {
 
     // buildAll fails when a unit test fails. The tests run on every Java the mod supports. Run them alone with
     // ./gradlew :common:check (all Java versions) or ./gradlew :common:test (the Java that Gradle runs on)
-    dependsOn ":common:testJava8", ":common:testJava17", ":common:testJava21", ":common:testJava25"
+    dependsOn ":common:testJava8", ":common:testJava8Cp1252", ":common:testJava17", ":common:testJava21", ":common:testJava25"
 
     if (project.findProject(":forge1_7_10") != null) {
         println "Building Forge 1.7.10 variant..."

@@ -4,6 +4,7 @@ import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -87,6 +88,7 @@ public class ModifyPatchedShaderpacks {
         debugLog("Modifying file: " + filePath.getFileName());
 
         // For larger files (>100KB), use line-by-line processing
+        // Make sure that a regex only matches 1 line. Because bigger files only the 1st one is matched
         if (Files.size(filePath) > 100_000) {
             debugLog("File size is larger than 100KB, using line-by-line modification for: " + filePath.getFileName());
             try {
@@ -96,9 +98,9 @@ public class ModifyPatchedShaderpacks {
             }
         } else {
             // Use existing approach for smaller files
-            String content = new String(Files.readAllBytes(filePath));
+            String content = new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8);
             String modifiedContent = applyReplacements(content, regexAndReplacements);
-            Files.write(filePath, modifiedContent.getBytes());
+            Files.write(filePath, modifiedContent.getBytes(StandardCharsets.UTF_8));
         }
 
         debugLog("Successfully modified file: " + filePath.getFileName());

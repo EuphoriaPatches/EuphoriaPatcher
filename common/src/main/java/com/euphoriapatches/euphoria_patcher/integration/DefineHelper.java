@@ -264,12 +264,13 @@ public final class DefineHelper {
         return versionBuilder.toString();
     }
 
-    private static String getFormattedEPVersion() {
+    static String getFormattedEPVersion() {
         String[] parts = EuphoriaPatcher.PATCH_VERSION.replace("_", "").split("\\.");
         int major = Integer.parseInt(parts[0]);
         int minor = Integer.parseInt(parts[1]);
         int patch = Integer.parseInt(parts[2]);
-        return String.format("%d%02d%02d", major, minor, patch);
+        // Locale.ROOT: the default locale can use other digits (e.g. Arabic) which are no valid GLSL number
+        return String.format(Locale.ROOT, "%d%02d%02d", major, minor, patch);
     }
 
     private static boolean isSkyboxModInstalled() {

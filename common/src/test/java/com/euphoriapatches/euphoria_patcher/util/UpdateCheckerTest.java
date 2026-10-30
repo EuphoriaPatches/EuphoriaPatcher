@@ -183,7 +183,8 @@ class UpdateCheckerTest {
 
         evaluate(ConfigHandler.UpdateMode.ALL, "1.7.4", fake);
 
-        // shouldUserUpdate() is not read here: in this mode reading it would start a real check on the network
+        // shouldUserUpdate() is not read here: evaluate() leaves the mode at NONE (so no real check can start), and with that mode
+        // it would no longer take its update mode ALL branch
         assertTrue(UpdateChecker.isUpdateAvailable());
         assertEquals("1.7.6", UpdateChecker.getNewModVersion());
         assertEquals(1, fake.plainFetches);

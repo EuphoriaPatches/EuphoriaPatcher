@@ -57,14 +57,14 @@ public class UpdateShaderConfig {
     }
 
     // Create version identifier from a version string
-    private static String createVersionIdentifier(String version) {
+    static String createVersionIdentifier(String version) {
         // Convert version (like "1.5.2") to format "1_5_2" for the identifier
         String formattedVersion = version.replace(".", "_"); // Replace dots with underscores
         return VERSION_IDENTIFIER_PREFIX + formattedVersion + VERSION_IDENTIFIER_SUFFIX;
     }
 
     // Extract version from identifier line
-    private static String extractVersionFromIdentifier(String line) {
+    static String extractVersionFromIdentifier(String line) {
         if (line.startsWith(VERSION_IDENTIFIER_PREFIX) && line.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
             String versionPart = line.substring(VERSION_IDENTIFIER_PREFIX.length(),
                                               line.length() - VERSION_IDENTIFIER_SUFFIX.length());
@@ -301,7 +301,7 @@ public class UpdateShaderConfig {
         }
     }
 
-    private static void addIdentifierToSettingsFile(Path configFile, String versionIdentifierToAdd, boolean allowSettingsConversion) {
+    static void addIdentifierToSettingsFile(Path configFile, String versionIdentifierToAdd, boolean allowSettingsConversion) {
         // Try with increasing delay between attempts
         for (int attempt = 0; attempt < 3; attempt++) {
             try {
@@ -368,7 +368,7 @@ public class UpdateShaderConfig {
                     (existingVersionIdentifier != null && existingVersionIdentifier.equals(versionIdentifierToAdd))) &&
                     identifiersAtTop && !hasDuplicateVersionIdentifiers) {
 
-                    debugLog(allowSettingsConversion ? "No settings changes needed and" : "" + "Identifiers are correctly positioned for: " + configFile.getFileName());
+                    debugLog((allowSettingsConversion ? "No settings changes needed and identifiers" : "Identifiers") + " are correctly positioned for: " + configFile.getFileName());
                     return; // Nothing to do
                 } else if (hasDuplicateVersionIdentifiers) {
                     debugLog("Found duplicate version identifiers - will collapse to one marker for: " + configFile.getFileName());
@@ -438,7 +438,7 @@ public class UpdateShaderConfig {
             }
         }
     }
-    private static boolean areIdentifiersAtTop(List<String> lines) {
+    static boolean areIdentifiersAtTop(List<String> lines) {
         boolean foundMainIdentifier = false;
 
         for (String line : lines) {
@@ -701,7 +701,7 @@ public class UpdateShaderConfig {
         return "0|0"; // Default version if no pattern matches
     }
 
-    private static int compareConfigFileVersions(String v1, String v2) {
+    static int compareConfigFileVersions(String v1, String v2) {
         String[] fullVersion1 = v1.split("\\|");
         String[] fullVersion2 = v2.split("\\|");
 
@@ -718,7 +718,7 @@ public class UpdateShaderConfig {
         return result;
     }
 
-    private static int compareVersionParts(String p1, String p2) {
+    static int compareVersionParts(String p1, String p2) {
         String[] parts1 = p1.split("[.\\-]");
         String[] parts2 = p2.split("[.\\-]");
         int length = Math.max(parts1.length, parts2.length);
@@ -739,7 +739,7 @@ public class UpdateShaderConfig {
                 if (mainCompare != 0) {
                     return mainCompare;
                 }
-                return Integer.parseInt(devParts1[1]);
+                // Same dev number, so the next part decides
             } else if (isP1Dev) {
                 // p1 is a dev version, p2 is not. p2 is considered newer.
                 return -1;

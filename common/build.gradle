@@ -40,6 +40,11 @@ dependencies {
 
 tasks.withType(Test).configureEach { testTask ->
 	useJUnitPlatform()
+
+	// Gradle gives the test JVM the default encoding of its own JVM, so it would depend on the machine. Every task names it
+	// instead: UTF-8 here, and the testJava8Cp1252 task below covers Windows with Java 8, where the default is not UTF-8.
+	defaultCharacterEncoding = 'UTF-8'
+
 	testLogging {
 		events 'failed', 'skipped'
 		exceptionFormat 'full'
@@ -73,8 +78,20 @@ tasks.withType(Test).configureEach { testTask ->
 	}
 }
 
+// Test windows-1252 encoding which is used on older JDK versions instead of UTF8
+tasks.register('testJava8Cp1252', Test) {
+	group = 'verification'
+	description = 'Runs the unit tests on Java 8 with windows-1252 as the default encoding'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	javaLauncher = javaToolchains.launcherFor {
+		languageVersion = JavaLanguageVersion.of(8)
+	}
+	defaultCharacterEncoding = 'windows-1252'
+}
+
 tasks.named('check') {
-	dependsOn 'testJava8', 'testJava17', 'testJava21', 'testJava25'
+	dependsOn 'testJava8', 'testJava8Cp1252', 'testJava17', 'testJava21', 'testJava25'
 }
 
 tasks.withType(JavaCompile).configureEach {

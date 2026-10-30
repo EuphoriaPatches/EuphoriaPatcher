@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.util.shader;
 
 import com.euphoriapatches.euphoria_patcher.TestEnvironment;
+import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -209,5 +210,43 @@ class BootShaderModificatorTest {
         run("removeColoredLighting", reimagined, false, true);
 
         assertTrue(line(unbound, "profile2.POPULAR").contains("COLORED_LIGHTING=192"));
+    }
+
+    // ---- when the macOS workarounds are needed ----
+
+    @Test
+    void macOSNeedsTheWorkaroundsForEveryLoaderExceptNewIris() {
+        assertTrue(BootShaderModificator.needsMacOSWorkarounds("Mac OS X", ShaderLoader.OPTIFINE, 0));
+        assertTrue(BootShaderModificator.needsMacOSWorkarounds("Mac OS X", ShaderLoader.IRIS, 10808), "Iris before 1.12.0");
+        assertTrue(BootShaderModificator.needsMacOSWorkarounds("Mac OS X", ShaderLoader.IRIS, 11199));
+        assertTrue(BootShaderModificator.needsMacOSWorkarounds("Mac OS X", ShaderLoader.IRIS, 0), "an Iris version that could not be read");
+        assertTrue(BootShaderModificator.needsMacOSWorkarounds("Mac OS X", ShaderLoader.UNKNOWN, 0));
+    }
+
+    @Test
+    void irisFrom1_12_0OnNeedsNoWorkaroundsOnMacOS() {
+        assertFalse(BootShaderModificator.needsMacOSWorkarounds("Mac OS X", ShaderLoader.IRIS, 11200));
+        assertFalse(BootShaderModificator.needsMacOSWorkarounds("Mac OS X", ShaderLoader.IRIS, 11201));
+        assertFalse(BootShaderModificator.needsMacOSWorkarounds("Mac OS X", ShaderLoader.IRIS, 20000));
+    }
+
+    @Test
+    void anotherLoaderWithAHighVersionNumberIsNotLetOff() {
+        // Oculus and the others count their own versions, 1.12.0 of one of them says nothing about Iris
+        assertTrue(BootShaderModificator.needsMacOSWorkarounds("Mac OS X", ShaderLoader.OCULUS, 11200));
+        assertTrue(BootShaderModificator.needsMacOSWorkarounds("Mac OS X", ShaderLoader.NEOCULUS, 20000));
+    }
+
+    @Test
+    void otherSystemsNeverNeedTheMacOSWorkarounds() {
+        assertFalse(BootShaderModificator.needsMacOSWorkarounds("Windows 11", ShaderLoader.IRIS, 10808));
+        assertFalse(BootShaderModificator.needsMacOSWorkarounds("Linux", ShaderLoader.OPTIFINE, 0));
+        assertFalse(BootShaderModificator.needsMacOSWorkarounds(null, ShaderLoader.IRIS, 0));
+    }
+
+    @Test
+    void macOSIsRecognisedWhateverTheCapitalisation() {
+        assertTrue(BootShaderModificator.needsMacOSWorkarounds("macOS", ShaderLoader.IRIS, 10808));
+        assertTrue(BootShaderModificator.needsMacOSWorkarounds("MAC OS X", ShaderLoader.IRIS, 10808));
     }
 }

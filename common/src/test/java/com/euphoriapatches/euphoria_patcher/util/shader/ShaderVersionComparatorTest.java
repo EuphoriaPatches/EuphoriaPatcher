@@ -62,24 +62,6 @@ class ShaderVersionComparatorTest {
         assertFalse(comparator().isNewerShaderVersion("BSL_v8.2.09_r9.0.0.zip"));
     }
 
-    // ---- packing a version into one number ----
-
-    @Test
-    void packsAVersionIntoOneNumber() {
-        assertEquals(10808, ShaderVersionComparator.convertVersionNumberToInt("1.8.8"));
-        assertEquals(20001, ShaderVersionComparator.convertVersionNumberToInt("2.0.1"));
-        assertEquals(12111, ShaderVersionComparator.convertVersionNumberToInt("1.21.11"));
-        assertTrue(ShaderVersionComparator.convertVersionNumberToInt("1.21.11") > ShaderVersionComparator.convertVersionNumberToInt("1.9.0"));
-    }
-
-    @Test
-    void anInvalidVersionPacksToZero() {
-        assertEquals(0, ShaderVersionComparator.convertVersionNumberToInt("1.8"));
-        assertEquals(0, ShaderVersionComparator.convertVersionNumberToInt("abc"));
-        assertEquals(0, ShaderVersionComparator.convertVersionNumberToInt("1.8.8-beta"));
-        assertEquals(0, ShaderVersionComparator.convertVersionNumberToInt(""));
-    }
-
     // ---- dev and test versions ----
 
     @Test

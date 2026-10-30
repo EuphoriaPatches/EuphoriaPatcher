@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests the version number that is written into the shader as a define. A GLSL number has to be made of plain digits,
  * whatever language the player's system is set to.
- * Tests have been mostly written with the help of LLMs but they have been reviewed manually.
  */
 class DefineHelperVersionTest {
 

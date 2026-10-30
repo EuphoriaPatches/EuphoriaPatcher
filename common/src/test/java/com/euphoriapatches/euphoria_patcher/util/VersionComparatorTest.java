@@ -64,4 +64,45 @@ class VersionComparatorTest {
         assertNull(VersionComparator.parseVersionToIntArray("1.x.3"));
         assertNull(VersionComparator.parseVersionToIntArray("1.7.4-dev"));
     }
+
+    @Test
+    void packsAVersionIntoOneNumber() {
+        assertEquals(10808, VersionComparator.toPackedInt("1.8.8"));
+        assertEquals(20001, VersionComparator.toPackedInt("2.0.1"));
+        assertEquals(12111, VersionComparator.toPackedInt("1.21.11"));
+        assertEquals(11200, VersionComparator.toPackedInt("1.12.0"));
+        assertTrue(VersionComparator.toPackedInt("1.21.11") > VersionComparator.toPackedInt("1.9.0"));
+    }
+
+    @Test
+    void anInvalidVersionPacksToZero() {
+        assertEquals(0, VersionComparator.toPackedInt("1.8"));
+        assertEquals(0, VersionComparator.toPackedInt("abc"));
+        assertEquals(0, VersionComparator.toPackedInt("1.8.8-beta"));
+        assertEquals(0, VersionComparator.toPackedInt("1.8.8.1"));
+        assertEquals(0, VersionComparator.toPackedInt(""));
+        assertEquals(0, VersionComparator.toPackedInt(null));
+    }
+
+    @Test
+    void aPackedVersionIsComparedWithAVersionString() {
+        assertTrue(VersionComparator.isNewerOrEqual(11200, "1.12.0"), "equal");
+        assertTrue(VersionComparator.isNewerOrEqual(11201, "1.12.0"));
+        assertTrue(VersionComparator.isNewerOrEqual(20000, "1.12.0"));
+        assertFalse(VersionComparator.isNewerOrEqual(11199, "1.12.0"));
+        assertFalse(VersionComparator.isNewerOrEqual(10808, "1.12.0"));
+    }
+
+    @Test
+    void anUnknownPackedVersionIsOlderThanAnyRealVersion() {
+        assertFalse(VersionComparator.isNewerOrEqual(0, "1.0.0"));
+        assertFalse(VersionComparator.isNewerOrEqual(0, "0.0.1"));
+    }
+
+    @Test
+    void aPackedVersionCannotBeComparedWithSomethingThatIsNotAThreePartVersion() {
+        assertThrows(IllegalArgumentException.class, () -> VersionComparator.isNewerOrEqual(11200, "1.12"));
+        assertThrows(IllegalArgumentException.class, () -> VersionComparator.isNewerOrEqual(11200, "abc"));
+        assertThrows(IllegalArgumentException.class, () -> VersionComparator.isNewerOrEqual(11200, null));
+    }
 }

@@ -1,9 +1,14 @@
 package com.euphoriapatches.euphoria_patcher.util;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Utility for comparing version strings and version number arrays
  */
 public class VersionComparator {
+
+    public static final Pattern PLAIN_VERSION = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+)");
 
     /**
      * Compare two version strings (e.g., "1.7.4" vs "1.7.3")
@@ -47,6 +52,37 @@ public class VersionComparator {
      */
     public static boolean isNewerOrEqual(String newVersion, String oldVersion) {
         return compareVersionStrings(newVersion, oldVersion) >= 0;
+    }
+
+    /**
+     * Check if a packed version (see {@link #toPackedInt(String)}) is newer than or equal to oldVersion
+     * @param packedVersion A version packed into one integer, 0 stands for an unknown version
+     * @param oldVersion The version to compare with, in the format "X.Y.Z"
+     * @return true if packedVersion is newer than or equal to oldVersion
+     * @throws IllegalArgumentException if oldVersion is not in the format "X.Y.Z"
+     */
+    public static boolean isNewerOrEqual(int packedVersion, String oldVersion) {
+        if (oldVersion == null || !PLAIN_VERSION.matcher(oldVersion).matches()) {
+            throw new IllegalArgumentException("Not a version of the format X.Y.Z: " + oldVersion);
+        }
+        return packedVersion >= toPackedInt(oldVersion);
+    }
+
+    /**
+     * Packs a version of three numbers into one integer (major * 10000 + minor * 100 + patch), the way the version of a
+     * shader loader is kept, e.g. "1.8.8" gives 10808 and "2.0.1" gives 20001. Minor and patch have to stay below 100.
+     * @param version Version in the format "X.Y.Z"
+     * @return The packed version, or 0 if the version is not exactly three numbers
+     */
+    public static int toPackedInt(String version) {
+        if (version == null) {
+            return 0;
+        }
+        Matcher matcher = PLAIN_VERSION.matcher(version);
+        if (!matcher.matches()) {
+            return 0;
+        }
+        return Integer.parseInt(matcher.group(1)) * 10000 + Integer.parseInt(matcher.group(2)) * 100 + Integer.parseInt(matcher.group(3));
     }
 
     /**

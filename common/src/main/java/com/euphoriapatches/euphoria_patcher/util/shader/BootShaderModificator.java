@@ -9,6 +9,7 @@ import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.services.ShaderNamingService;
 import com.euphoriapatches.euphoria_patcher.util.SpacEagle17;
 import com.euphoriapatches.euphoria_patcher.util.UpdateChecker;
+import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModChecker;
 
 import java.io.IOException;
@@ -70,10 +71,22 @@ public class BootShaderModificator {
         }
     }
 
+    /**
+     * Iris 1.12.0 Vulkan supports these features where they did not work on OpenGL only Iris
+     */
+    static boolean needsMacOSWorkarounds(String osName, String shaderLoader, int shaderLoaderVersion) {
+        if (osName == null || !osName.toLowerCase(Locale.ROOT).contains("mac")) {
+            return false;
+        }
+        boolean irisSupportsMacOS = ShaderLoader.IRIS.equals(shaderLoader)
+                && VersionComparator.isNewerOrEqual(shaderLoaderVersion, "1.12.0");
+        return !irisSupportsMacOS;
+    }
+
     private static void applyCompatibilityModifications(Path shader, boolean styleUnbound, boolean styleReimagined) {
         boolean isOptifine = ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE);
         boolean isAngelica = ShaderLoader.getShaderLoader().equals(ShaderLoader.ANGELICA);
-        boolean isMacOS = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("mac");
+        boolean isMacOS = needsMacOSWorkarounds(System.getProperty("os.name"), ShaderLoader.getShaderLoader(), ShaderLoader.getShaderLoaderVersion());
         boolean isPhotonicsInstalled = ModChecker.isModPresent(ModChecker.ModNames.PHOTONICS);
 
         // This changes the popular settings profile dynamically

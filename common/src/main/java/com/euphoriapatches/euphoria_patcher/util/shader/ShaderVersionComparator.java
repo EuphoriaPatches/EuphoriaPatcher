@@ -21,9 +21,6 @@ public class ShaderVersionComparator {
     private final Path shaderpacks;
     private ShaderVersionComparator instance;
 
-    // Pattern for general version format
-    public static final Pattern VERSION_PATTERN = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+)");
-
     // Pattern for Complementary shader version extraction
     private static final Pattern COMPLEMENTARY_VERSION_PATTERN = Pattern.compile("_r(\\d+)\\.(\\d+)(?:\\.(\\d+))?");
 
@@ -90,27 +87,6 @@ public class ShaderVersionComparator {
         }
 
         return version;
-    }
-
-    /**
-     * Converts a shader loader version string to integer representation
-     * @param versionString Version in format "X.Y.Z" (e.g., "1.8.8" or "2.0.1")
-     * @return Integer representation (e.g., 10808 for 1.8.8, 20001 for 2.0.1)
-     */
-    public static int convertVersionNumberToInt(String versionString) {
-        Matcher matcher = VERSION_PATTERN.matcher(versionString);
-        if (!matcher.matches()) {
-            debugLog("Invalid version format: " + versionString);
-            return 0;
-        }
-
-        // Extract parts from X.Y.Z format
-        int major = Integer.parseInt(matcher.group(1));
-        int minor = Integer.parseInt(matcher.group(2));
-        int patch = Integer.parseInt(matcher.group(3));
-
-        // Convert to format XYYPP (major * 10000 + minor * 100 + patch)
-        return (major * 10000) + (minor * 100) + patch;
     }
 
     /**

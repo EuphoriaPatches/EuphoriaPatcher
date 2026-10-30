@@ -14,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests how the version of a settings file is compared, for picking the newest one and for the markers inside a file.
  * Dev versions look like {@code 1.10.5-dev3}, a version in the format {@code patchVersion|baseVersion}.
- * Tests have been mostly written with the help of LLMs but they have been reviewed manually.
  */
 class UpdateShaderConfigVersionCompareTest {
 

@@ -14,6 +14,7 @@ import java.nio.file.Path;
  * <p>
  * The config folder is a private temporary folder that is removed when the test JVM exits, so the tests never write
  * into a real config folder.
+ *
  * Tests have been mostly written with the help of LLMs but they have been reviewed manually.
  */
 public final class TestEnvironment {

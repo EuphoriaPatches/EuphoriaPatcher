@@ -5,7 +5,6 @@ import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModChecker;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModsDirectory;
-import com.euphoriapatches.euphoria_patcher.util.shader.ShaderVersionComparator;
 import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 
 import java.io.BufferedReader;
@@ -19,6 +18,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -38,6 +38,13 @@ public class ShaderLoader {
     public static final String ANGELICA = "angelica";
     public static final String NEOCULUS = "neoculus";
     public static final String UNKNOWN = "unknown";
+
+    private static final Pattern MINECRAFT_VERSION = Pattern.compile("\\d+\\.\\d+(?:\\.\\d+)?");
+    // The numbers after +mc, anything after them (like -local or .jar) is not part of the version
+    private static final Pattern IRIS_MC_AFTER_PLUS_FILE = Pattern.compile("\\+mc(\\d+(?:\\.\\d+)+)");
+    private static final Pattern IRIS_MC_FIRST_FILE = Pattern.compile("^iris-mc(\\d+(?:\\.\\d+)+)-");
+    // The three numbers of the Iris version, with or without the loader or the Minecraft version in front of them
+    private static final Pattern IRIS_FILE_VERSION = Pattern.compile("^iris-(?:[a-z]+-|mc\\d+(?:\\.\\d+)+-)?(\\d+\\.\\d+\\.\\d+)");
 
     // Cache variables
     private static File cachedShaderFile = null;
@@ -96,6 +103,21 @@ public class ShaderLoader {
         return UNKNOWN;
     }
 
+    /**
+     * Whether a jar name (any capitalisation) is the one of a shader loader. Iris has two name schemes:
+     * iris-fabric-1.8.8+mc1.21.4.jar and iris-mc1.20.1-1.6.9.jar
+     */
+    static boolean isShaderLoaderFileName(String fileName) {
+        fileName = fileName.toLowerCase(Locale.ROOT);
+        return (fileName.startsWith("iris") && (fileName.contains("fabric") || fileName.contains("neoforge") || fileName.contains("+mc") || fileName.startsWith("iris-mc"))) ||
+                fileName.startsWith("oculus-mc") ||
+                fileName.startsWith("mekalus-mc") ||
+                fileName.startsWith("emberlens-mc") ||
+                fileName.startsWith("optifine_") ||
+                fileName.startsWith("neoculus-mc") ||
+                fileName.startsWith("angelica");
+    }
+
     private static File findShaderLoaderFile() {
         // Return cached result if we've already searched
         if (shaderFileSearched) {
@@ -123,13 +145,7 @@ public class ShaderLoader {
                         continue;
                     }
 
-                    if ((fileName.startsWith("iris") && ((fileName.contains("fabric") || fileName.contains("neoforge") || fileName.contains("+mc")))) ||
-                        fileName.startsWith("oculus-mc") ||
-                        fileName.startsWith("mekalus-mc") ||
-                        fileName.startsWith("emberlens-mc") ||
-                        fileName.startsWith("optifine_") ||
-                        fileName.startsWith("neoculus-mc") ||
-                        fileName.startsWith("angelica")) {
+                    if (isShaderLoaderFileName(fileName)) {
                         cachedShaderFile = modFile;
                         shaderFileSearched = true;
                         debugLog("Found shader loader file: " + modFile.getName());
@@ -236,14 +252,8 @@ public class ShaderLoader {
             // Handle Iris format: iris-fabric-1.8.8+mc1.21.4.jar
             else if (lowerFileName.startsWith("iris")) {
                 debugLog("Detected Iris format");
-                int mcIndex = lowerFileName.indexOf("+mc");
-                if (mcIndex != -1) {
-                    int jarIndex = lowerFileName.indexOf(".jar");
-                    if (jarIndex != -1 && jarIndex > mcIndex) {
-                        extractedVersion = fileName.substring(mcIndex + 3, jarIndex);
-                        debugLog("Extracted version: " + extractedVersion);
-                    }
-                }
+                extractedVersion = extractIrisMinecraftVersion(fileName);
+                debugLog("Extracted version: " + extractedVersion);
             }
             // Handle Oculus/Mekalus/Emberlens format: oculus-mc1.20.1-1.8.0.jar, mekalus-mc1.20.1-1.7.0.3.jar or emberlens-mc1.20.1-1.8.6.jar
             else if (lowerFileName.startsWith("oculus") || lowerFileName.startsWith("mekalus") || lowerFileName.startsWith("emberlens")) {
@@ -260,8 +270,7 @@ public class ShaderLoader {
 
             // Validate the extracted version format
             if (extractedVersion != null) {
-                Matcher matcher = ShaderVersionComparator.VERSION_PATTERN.matcher(extractedVersion);
-                if (matcher.matches()) {
+                if (isMinecraftVersion(extractedVersion)) {
                     debugLog("Valid version format: " + extractedVersion);
                     cachedMCVersion = extractedVersion;
                     return cachedMCVersion;
@@ -285,36 +294,55 @@ public class ShaderLoader {
     }
 
     /**
-     * Compares two Minecraft versions to determine if the first version is greater than or equal to the second.
-     * For example, isVersionGreaterOrEqual("1.21.2", "1.21.1") returns true.
+     * Utility method to check if the detected shader loader's Minecraft version is
+     * greater than or equal to a specific version.
      *
-     * @param version The version to check (e.g., "1.21.2")
      * @param minVersion The minimum required version (e.g., "1.21.1")
-     * @return true if version >= minVersion, false otherwise or if any version is invalid
+     * @return true if the detected version >= minVersion, false otherwise or if a version is unknown or invalid
      */
-    public static boolean isVersionGreaterOrEqual(String version, String minVersion) {
-        if (version == null || minVersion == null || UNKNOWN.equals(version) || UNKNOWN.equals(minVersion)) {
+    public static boolean isMinecraftVersionAtLeast(String minVersion) {
+        String currentVersion = getShaderLoaderMCVersion();
+        if (minVersion == null || UNKNOWN.equals(currentVersion) || UNKNOWN.equals(minVersion)) {
             return false;
         }
 
         try {
-            return VersionComparator.compareVersionStrings(version, minVersion) >= 0;
-        } catch (Exception e) {
+            return VersionComparator.isNewerOrEqual(currentVersion, minVersion);
+        } catch (NumberFormatException e) {
             EuphoriaPatcher.log(1, 0, "Error comparing versions: " + e.getMessage());
             return false;
         }
     }
 
     /**
-     * Utility method to check if the detected shader loader's Minecraft version is
-     * greater than or equal to a specific version.
+     * Reads the Minecraft version from the name of an Iris jar.
      *
-     * @param minVersion The minimum required version (e.g., "1.21.1")
-     * @return true if the detected version >= minVersion, false otherwise
+     * @return The Minecraft version as written in the name, or null if the name has none
      */
-    public static boolean isMinecraftVersionAtLeast(String minVersion) {
-        String currentVersion = getShaderLoaderMCVersion();
-        return isVersionGreaterOrEqual(currentVersion, minVersion);
+    static String extractIrisMinecraftVersion(String fileName) {
+        String lowerFileName = fileName.toLowerCase(Locale.ROOT);
+        Matcher matcher = IRIS_MC_AFTER_PLUS_FILE.matcher(lowerFileName);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        matcher = IRIS_MC_FIRST_FILE.matcher(lowerFileName);
+        return matcher.find() ? matcher.group(1) : null;
+    }
+
+    /**
+     * Whether a text is a Minecraft version
+     */
+    static boolean isMinecraftVersion(String version) {
+        return version != null && MINECRAFT_VERSION.matcher(version).matches();
+    }
+
+    /**
+     * Reads the Iris version from the file name
+     * @return The version as "X.Y.Z", or null if the name has none
+     */
+    static String extractIrisVersion(String fileName) {
+        Matcher matcher = IRIS_FILE_VERSION.matcher(fileName.toLowerCase(Locale.ROOT));
+        return matcher.find() ? matcher.group(1) : null;
     }
 
     /**
@@ -348,16 +376,11 @@ public class ShaderLoader {
             String extractedVersion = null;
             debugLog("Parsing shader loader version from filename: " + fileName);
 
-            // Handle Iris format: iris-fabric-1.8.8+mc1.21.4.jar
+            // Handle Iris format: iris-fabric-1.8.8+mc1.21.4.jar or iris-neoforge-1.8.14-beta.1+mc1.21.1.jar
             if (lowerFileName.startsWith("iris")) {
                 debugLog("Detected Iris format");
-                // Find version between "iris-fabric-" and "+mc"
-                int fabricIndex = lowerFileName.indexOf("-fabric-");
-                int mcIndex = lowerFileName.indexOf("+mc");
-                if (fabricIndex != -1 && mcIndex != -1 && mcIndex > fabricIndex) {
-                    extractedVersion = fileName.substring(fabricIndex + 8, mcIndex);
-                    debugLog("Extracted Iris version: " + extractedVersion);
-                }
+                extractedVersion = extractIrisVersion(fileName);
+                debugLog("Extracted Iris version: " + extractedVersion);
             }
             // Handle Oculus/Mekalus/Emberlens format: oculus-mc1.20.1-1.8.0.jar, mekalus-mc1.20.1-1.7.0.3.jar or emberlens-mc1.20.1-1.8.6.jar
             else if (lowerFileName.startsWith("oculus") || lowerFileName.startsWith("mekalus") || lowerFileName.startsWith("emberlens")) {
@@ -412,7 +435,7 @@ public class ShaderLoader {
             // Convert the extracted version to integer
             if (extractedVersion != null) {
                 try {
-                    int versionInt = ShaderVersionComparator.convertVersionNumberToInt(extractedVersion);
+                    int versionInt = VersionComparator.toPackedInt(extractedVersion);
                     debugLog("Converted shader loader version to integer: " + versionInt);
                     cachedShaderLoaderVersion = versionInt;
                     return cachedShaderLoaderVersion;

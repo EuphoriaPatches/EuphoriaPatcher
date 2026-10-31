@@ -78,11 +78,11 @@ public class EuphoriaPatcher {
 
         log(0, JsonUtilReader.getRandomMessage("startupMessages"));
 
-        UpdateShaderConfig.markAllEPSettingsFiles();
-
         // Initialize services
         initializeServices();
         new ShaderpacksWatcherUtils();
+
+        UpdateShaderConfig.markAllEPSettingsFiles();
 
         // Detect installed Complementary Shaders versions
         ShaderInfo shaderInfo = shaderDetector.detectInstalledShaders(namingService);
@@ -196,7 +196,6 @@ public class EuphoriaPatcher {
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
-                UpdateShaderConfig.shutdownFileWriter();
                 Config.stopConfigWatcher();
                 ShaderpacksWatcherUtils.getInstance().getShaderpacksWatcher().stopWatching();
                 PotatoFileMonitor.stopMonitoring();

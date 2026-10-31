@@ -4,6 +4,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -76,5 +81,50 @@ class ShaderVersionComparatorTest {
     void releaseNamesAreNotDevVersions() {
         assertFalse(ShaderVersionComparator.isTestOrDevVersion("ComplementaryReimagined_r5.9.3.zip"));
         assertFalse(ShaderVersionComparator.isTestOrDevVersion("ComplementaryUnbound_r5.9.3"));
+    }
+
+    // ---- comparing the versions of settings files, in the format patchVersion|baseVersion ----
+
+    private static int sign(int value) {
+        return Integer.signum(value);
+    }
+
+    @Test
+    void thePatchVersionDecidesBeforeTheBaseVersion() {
+        assertEquals(1, sign(ShaderVersionComparator.compareConfigFileVersions("1.10.6|5.9.0", "1.10.5|5.9.3")));
+        assertEquals(-1, sign(ShaderVersionComparator.compareConfigFileVersions("1.10.5|5.9.3", "1.10.6|5.9.0")));
+    }
+
+    @Test
+    void theBaseVersionDecidesWhenThePatchVersionsAreEqual() {
+        assertEquals(-1, sign(ShaderVersionComparator.compareConfigFileVersions("1.10.5|5.9.2", "1.10.5|5.9.3")));
+        assertEquals(1, sign(ShaderVersionComparator.compareConfigFileVersions("1.10.5|5.9.3", "1.10.5|5.9.2")));
+    }
+
+    @Test
+    void theBaseVersionStillDecidesWhenThePatchVersionsAreTheSameDevVersion() {
+        assertEquals(-1, sign(ShaderVersionComparator.compareConfigFileVersions("1.10.5-dev3|5.9.2", "1.10.5-dev3|5.9.3")));
+        assertEquals(1, sign(ShaderVersionComparator.compareConfigFileVersions("1.10.5-dev3|5.9.3", "1.10.5-dev3|5.9.2")));
+        assertEquals(0, ShaderVersionComparator.compareConfigFileVersions("1.10.5-dev3|5.9.3", "1.10.5-dev3|5.9.3"));
+    }
+
+    @Test
+    void comparingSettingsFileVersionsIsConsistentSoSortingNeverThrows() {
+        List<String> versions = new ArrayList<>(Arrays.asList(
+                "1.10.5-dev3|5.9.3", "1.10.5-dev3|5.9.2", "1.10.5-dev3|5.9.3", "1.10.5-dev2|5.9.3", "1.10.5|5.9.1",
+                "1.10.4|5.9.3", "1.10.5-dev3|5.9.2", "0|5.9.3", "1.10.5-dev10|5.9.0", "1.10.5-dev3|5.9.3"));
+        // Many shuffled entries so that the sort has to compare lots of pairs, a broken comparator would show up
+        for (int i = 0; i < 5; i++) {
+            versions.addAll(new ArrayList<>(versions));
+        }
+        Collections.shuffle(versions, new Random(7));
+
+        assertDoesNotThrow(() -> versions.sort(ShaderVersionComparator::compareConfigFileVersions));
+
+        for (int i = 1; i < versions.size(); i++) {
+            assertTrue(ShaderVersionComparator.compareConfigFileVersions(versions.get(i - 1), versions.get(i)) <= 0,
+                    versions.get(i - 1) + " has to come before " + versions.get(i));
+        }
+        assertEquals("1.10.5|5.9.1", versions.get(versions.size() - 1), "the release is newer than any of its dev versions");
     }
 }

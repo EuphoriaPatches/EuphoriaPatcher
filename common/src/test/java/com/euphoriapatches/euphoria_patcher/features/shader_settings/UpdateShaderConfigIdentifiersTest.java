@@ -14,6 +14,9 @@ import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -109,7 +112,7 @@ class UpdateShaderConfigIdentifiersTest {
 
     @Test
     void markersWithSpacesAroundThemAreNotCopiedWhenTheFileIsRewrittenAnyway() throws IOException {
-        Path file = settings("SHADOW_QUALITY=2", "  " + MAIN + "  ", "  " + V1_10_5);
+        Path file = settings("SHADOW_QUALITY=2", "  " + V1_10_5 + "  ");
 
         UpdateShaderConfig.addIdentifierToSettingsFile(file, V1_10_5, false);
 
@@ -117,12 +120,13 @@ class UpdateShaderConfigIdentifiersTest {
     }
 
     @Test
-    void markersThatAreNotAtTheTopAreMovedThere() throws IOException {
-        Path file = settings("SHADOW_QUALITY=2", MAIN, V1_10_5, "CLOUD_STYLE=3");
+    void markersThatAreNotAtTheTopAreLeftWhereTheyAre() throws IOException {
+        // Iris saves the settings in any order, so the order of the markers does not matter
+        Path file = settings("SHADOW_QUALITY=2", V1_10_5, "CLOUD_STYLE=3", MAIN);
 
         UpdateShaderConfig.addIdentifierToSettingsFile(file, V1_10_5, false);
 
-        assertEquals(Arrays.asList(MAIN, V1_10_5, "SHADOW_QUALITY=2", "CLOUD_STYLE=3"), lines(file));
+        assertUntouched(file);
     }
 
     @Test
@@ -245,23 +249,117 @@ class UpdateShaderConfigIdentifiersTest {
         assertEquals(Arrays.asList(text, MAIN, V1_10_5, "SHADOW_QUALITY=2"), lines(file));
     }
 
-    // ---- areIdentifiersAtTop ----
+    // ---- a file that Iris is not done with, or that is not a settings file at all ----
 
     @Test
-    void identifiersAreAtTheTopWhenTheMainMarkerIsTheFirstLineThatIsNoCommentOrBlank() {
-        assertTrue(UpdateShaderConfig.areIdentifiersAtTop(Arrays.asList(MAIN, "A=1")));
-        assertTrue(UpdateShaderConfig.areIdentifiersAtTop(Arrays.asList("#comment", "", "  # another", MAIN, V1_10_5, "A=1")));
-        assertTrue(UpdateShaderConfig.areIdentifiersAtTop(Arrays.asList("  " + MAIN + " ", "A=1")));
-        assertTrue(UpdateShaderConfig.areIdentifiersAtTop(Collections.singletonList(MAIN)));
+    void anEmptyFileIsNotWritten() throws IOException {
+        Path file = settings();
+
+        UpdateShaderConfig.addIdentifierToSettingsFile(file, V1_10_5, false);
+
+        assertEquals(0, Files.size(file));
+        assertUntouched(file);
     }
 
     @Test
-    void identifiersAreNotAtTheTopWhenASettingComesFirstOrTheMainMarkerIsMissing() {
-        assertFalse(UpdateShaderConfig.areIdentifiersAtTop(Arrays.asList("A=1", MAIN)));
-        assertFalse(UpdateShaderConfig.areIdentifiersAtTop(Arrays.asList(V1_10_5, MAIN, "A=1")));
-        assertFalse(UpdateShaderConfig.areIdentifiersAtTop(Arrays.asList("#comment", "A=1")));
-        assertFalse(UpdateShaderConfig.areIdentifiersAtTop(Collections.<String>emptyList()));
-        assertFalse(UpdateShaderConfig.areIdentifiersAtTop(Arrays.asList("#only a comment", "")));
+    void aFileWithOnlyCommentsAndBlankLinesIsNotWritten() throws IOException {
+        Path file = settings("#Tue Oct 28 12:00:00 CET 2026", "", "  # another comment");
+
+        UpdateShaderConfig.addIdentifierToSettingsFile(file, V1_10_5, false);
+
+        assertEquals(Arrays.asList("#Tue Oct 28 12:00:00 CET 2026", "", "  # another comment"), lines(file));
+        assertUntouched(file);
+    }
+
+    @Test
+    void noTempFileIsLeftBehind() throws IOException {
+        Path file = settings("SHADOW_QUALITY=2");
+
+        UpdateShaderConfig.addIdentifierToSettingsFile(file, V1_10_5, false);
+
+        try (Stream<Path> files = Files.list(tempDir)) {
+            assertEquals(Collections.singletonList("settings.txt"),
+                files.map(p -> p.getFileName().toString()).collect(Collectors.toList()));
+        }
+    }
+
+    // ---- reading the version back out of a file ----
+
+    @Test
+    void theVersionIsReadFromAFileWhateverTheOrderOfTheMarkers() throws IOException {
+        assertEquals("_1.10.5", UpdateShaderConfig.getEuphoriaPatchesVersionFromFile(settings(MAIN, V1_10_5, "A=1")));
+        assertEquals("_1.10.5", UpdateShaderConfig.getEuphoriaPatchesVersionFromFile(settings("A=1", V1_10_5, "B=2", MAIN)));
+        assertEquals("_1.10.5", UpdateShaderConfig.getEuphoriaPatchesVersionFromFile(settings(V1_9_0, MAIN, V1_10_5)));
+    }
+
+    @Test
+    void aFileWithTheMainMarkerButNoVersionIsVersionOnePointZero() throws IOException {
+        assertEquals("_1.0.0", UpdateShaderConfig.getEuphoriaPatchesVersionFromFile(settings("A=1", MAIN)));
+    }
+
+    @Test
+    void aFileWithoutTheMainMarkerHasNoVersion() throws IOException {
+        assertNull(UpdateShaderConfig.getEuphoriaPatchesVersionFromFile(settings("A=1", V1_10_5)));
+    }
+
+    // ---- the settings that Iris is about to save ----
+
+    private static Properties properties(String... keysAndValues) {
+        Properties properties = new Properties();
+        for (int i = 0; i < keysAndValues.length; i += 2) {
+            properties.setProperty(keysAndValues[i], keysAndValues[i + 1]);
+        }
+        return properties;
+    }
+
+    private static final String MAIN_KEY = "AAA_THIS_IS_A_EUPHORIA_PATCHES_SETTINGS_FILE";
+    private static final String V1_9_0_KEY = "AAB_FOR_EUPHORIA_PATCHES_VERSION_1_9_0";
+    private static final String V1_10_5_KEY = "AAB_FOR_EUPHORIA_PATCHES_VERSION_1_10_5";
+
+    @Test
+    void bothIdentifiersAreAddedToTheSettingsThatIrisSaves() {
+        Properties settings = properties("SHADOW_QUALITY", "2");
+
+        UpdateShaderConfig.addIdentifiersToProperties(settings, V1_10_5);
+
+        assertEquals(properties("SHADOW_QUALITY", "2", MAIN_KEY, "true", V1_10_5_KEY, "true"), settings);
+    }
+
+    @Test
+    void anOldVersionIdentifierIsReplacedInTheSettingsThatIrisSaves() {
+        Properties settings = properties("SHADOW_QUALITY", "2", MAIN_KEY, "true", V1_9_0_KEY, "true");
+
+        UpdateShaderConfig.addIdentifiersToProperties(settings, V1_10_5);
+
+        assertEquals(properties("SHADOW_QUALITY", "2", MAIN_KEY, "true", V1_10_5_KEY, "true"), settings);
+    }
+
+    @Test
+    void theHighestExistingVersionIdentifierIsKeptWhenThereIsNoVersionToAdd() {
+        Properties settings = properties("SHADOW_QUALITY", "2", V1_9_0_KEY, "true", V1_10_5_KEY, "true");
+
+        UpdateShaderConfig.addIdentifiersToProperties(settings, null);
+
+        assertEquals(properties("SHADOW_QUALITY", "2", MAIN_KEY, "true", V1_10_5_KEY, "true"), settings);
+    }
+
+    @Test
+    void onlyTheMainIdentifierIsAddedWithoutAnyVersion() {
+        Properties settings = properties("SHADOW_QUALITY", "2");
+
+        UpdateShaderConfig.addIdentifiersToProperties(settings, null);
+
+        assertEquals(properties("SHADOW_QUALITY", "2", MAIN_KEY, "true"), settings);
+    }
+
+    @Test
+    void settingsThatIrisSavesAreLeftAloneWhenTheyAreEmpty() {
+        // Iris deletes the file for empty settings, so it must not be created with only the identifiers in it
+        Properties settings = new Properties();
+
+        UpdateShaderConfig.addIdentifiersToSavedSettings(tempDir.resolve("Euphoria-Patches.txt"), settings);
+
+        assertTrue(settings.isEmpty());
     }
 
     // ---- the version marker text ----

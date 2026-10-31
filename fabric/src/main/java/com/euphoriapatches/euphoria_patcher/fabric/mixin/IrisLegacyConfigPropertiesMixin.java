@@ -1,12 +1,15 @@
 package com.euphoriapatches.euphoria_patcher.fabric.mixin;
 
 import com.euphoriapatches.euphoria_patcher.features.shader_settings.SettingsConverterUtil;
+import com.euphoriapatches.euphoria_patcher.features.shader_settings.UpdateShaderConfig;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,10 +19,14 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
+import java.util.Properties;
 
 /**
  * Legacy-Iris counterpart to {@link IrisConfigPropertiesMixin}. See that class for the full
  * explanation of why conversion needs to happen here rather than after the pack is loaded.
+ *
+ * It also adds the Euphoria Patches identifiers right before Iris saves the settings, so the file is only ever
+ * written once, by Iris.
  */
 @Pseudo
 @Mixin(targets = EuphoriaMixinPlugin.LEGACY_IRIS_MAIN_CLASS, remap = false)
@@ -38,6 +45,11 @@ public class IrisLegacyConfigPropertiesMixin {
         List<String> lines = Files.readAllLines(settingFile, StandardCharsets.ISO_8859_1);
         euphoriaPatcher$debugLog("Applied settings conversions before Iris read: " + settingFile.getFileName());
         return SettingsConverterUtil.convertToInputStreamAndUpdateSettings(lines);
+    }
+
+    @Inject(method = "tryUpdateConfigPropertiesFile", at = @At("HEAD"), remap = false, require = 0)
+    private static void euphoriaPatcher$addIdentifiersBeforeSave(Path settingFile, Properties settings, CallbackInfo ci) {
+        UpdateShaderConfig.addIdentifiersToSavedSettings(settingFile, settings);
     }
 
     @Unique

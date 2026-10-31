@@ -124,4 +124,51 @@ public class VersionComparator {
         // If all compared parts are equal, the longer array is considered newer
         return v1.length - v2.length;
     }
+
+    /**
+     * Compare two versions that can be dev versions (e.g., "1.10.5-dev3" vs "1.10.5"). The parts are separated by dots
+     * or dashes. A missing part counts as zero, so "1.10" equals "1.10.0", and a dev version is older than the release
+     * it belongs to.
+     * @param p1 First version
+     * @param p2 Second version
+     * @return positive if p1 > p2, 0 if equal, negative if p1 < p2
+     * @throws NumberFormatException if a part that is not a dev part is not a number
+     */
+    public static int compareVersionsWithDev(String p1, String p2) {
+        String[] parts1 = p1.split("[.\\-]");
+        String[] parts2 = p2.split("[.\\-]");
+        int length = Math.max(parts1.length, parts2.length);
+
+        for (int i = 0; i < length; i++) {
+            String part1 = i < parts1.length ? parts1[i] : "0";
+            String part2 = i < parts2.length ? parts2[i] : "0";
+
+            boolean isP1Dev = part1.contains("dev");
+            boolean isP2Dev = part2.contains("dev");
+
+            if (isP1Dev && isP2Dev) {
+                // Both are dev versions, compare them
+                String[] devParts1 = part1.split("dev");
+                String[] devParts2 = part2.split("dev");
+                int mainCompare = Integer.compare(Integer.parseInt(devParts1[1]), Integer.parseInt(devParts2[1]));
+                if (mainCompare != 0) {
+                    return mainCompare;
+                }
+                // Same dev number, so the next part decides
+            } else if (isP1Dev) {
+                // p1 is a dev version, p2 is not. p2 is considered newer.
+                return -1;
+            } else if (isP2Dev) {
+                // p2 is a dev version, p1 is not. p1 is considered newer.
+                return 1;
+            } else {
+                // Neither is a dev version, compare as integers
+                int compare = Integer.compare(Integer.parseInt(part1), Integer.parseInt(part2));
+                if (compare != 0) {
+                    return compare;
+                }
+            }
+        }
+        return 0;
+    }
 }

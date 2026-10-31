@@ -105,4 +105,45 @@ class VersionComparatorTest {
         assertThrows(IllegalArgumentException.class, () -> VersionComparator.isNewerOrEqual(11200, "abc"));
         assertThrows(IllegalArgumentException.class, () -> VersionComparator.isNewerOrEqual(11200, null));
     }
+
+    // ---- compareVersionsWithDev: versions that can be dev versions, like 1.10.5-dev3 ----
+
+    @Test
+    void equalVersionsWithDevAreEqual() {
+        assertEquals(0, VersionComparator.compareVersionsWithDev("1.10.5", "1.10.5"));
+        assertEquals(0, VersionComparator.compareVersionsWithDev("1.10.5-dev3", "1.10.5-dev3"));
+        assertEquals(0, VersionComparator.compareVersionsWithDev("1.10.5-dev0", "1.10.5-dev0"));
+    }
+
+    @Test
+    void partsAreComparedAsNumbersNotAsText() {
+        assertEquals(1, Integer.signum(VersionComparator.compareVersionsWithDev("1.10", "1.9")));
+        assertEquals(-1, Integer.signum(VersionComparator.compareVersionsWithDev("1.9.9", "1.10.0")));
+    }
+
+    @Test
+    void missingPartsCountAsZeroUnlikeInThePlainComparison() {
+        assertEquals(0, VersionComparator.compareVersionsWithDev("1.10", "1.10.0"));
+        assertEquals(1, Integer.signum(VersionComparator.compareVersionsWithDev("1.10.1", "1.10")));
+        assertTrue(VersionComparator.compareVersionStrings("1.10", "1.10.0") < 0, "the plain comparison counts the longer one as newer");
+    }
+
+    @Test
+    void aHigherDevNumberIsNewer() {
+        assertEquals(-1, Integer.signum(VersionComparator.compareVersionsWithDev("1.10.5-dev3", "1.10.5-dev4")));
+        assertEquals(1, Integer.signum(VersionComparator.compareVersionsWithDev("1.10.5-dev4", "1.10.5-dev3")));
+        assertEquals(1, Integer.signum(VersionComparator.compareVersionsWithDev("1.10.5-dev10", "1.10.5-dev9")));
+    }
+
+    @Test
+    void aDevVersionIsOlderThanTheReleaseItBelongsTo() {
+        assertEquals(-1, Integer.signum(VersionComparator.compareVersionsWithDev("1.10.5-dev3", "1.10.5")));
+        assertEquals(1, Integer.signum(VersionComparator.compareVersionsWithDev("1.10.5", "1.10.5-dev3")));
+    }
+
+    @Test
+    void whenTheDevNumbersAreEqualTheFollowingPartsDecide() {
+        assertEquals(-1, Integer.signum(VersionComparator.compareVersionsWithDev("1.10.5-dev3-1", "1.10.5-dev3-2")));
+        assertEquals(1, Integer.signum(VersionComparator.compareVersionsWithDev("1.10.5-dev3-2", "1.10.5-dev3-1")));
+    }
 }

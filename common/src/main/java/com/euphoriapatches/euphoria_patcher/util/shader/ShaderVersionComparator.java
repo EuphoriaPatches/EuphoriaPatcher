@@ -233,6 +233,28 @@ public class ShaderVersionComparator {
                 fileNameLower.contains("dev") || fileNameLower.contains("pre");
     }
 
+    /**
+     * Compares the versions of two settings files, each in the format {@code patchVersion|baseVersion} (e.g.,
+     * "1.10.5-dev3|5.9.3"). The Euphoria Patches version decides first, the version of the base shader breaks a tie.
+     * @return positive if v1 is newer, 0 if equal, negative if v1 is older
+     */
+    public static int compareConfigFileVersions(String v1, String v2) {
+        String[] fullVersion1 = v1.split("\\|");
+        String[] fullVersion2 = v2.split("\\|");
+
+        // Compare Euphoria Patches versions first
+        int epCompare = VersionComparator.compareVersionsWithDev(fullVersion1[0], fullVersion2[0]);
+        if (epCompare != 0) {
+            debugLog("Comparing versions: " + v1 + " vs " + v2 + " - patch versions differ: " + epCompare);
+            return epCompare;
+        }
+
+        // If Euphoria Patches versions are the same, compare main versions
+        int result = VersionComparator.compareVersionsWithDev(fullVersion1[1], fullVersion2[1]);
+        debugLog("Comparing versions: " + v1 + " vs " + v2 + " - main versions: " + result);
+        return result;
+    }
+
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[ShaderVersionComparator] " + message);
     }

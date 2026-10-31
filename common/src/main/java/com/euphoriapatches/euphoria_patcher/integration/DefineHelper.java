@@ -233,7 +233,10 @@ public final class DefineHelper {
                 }
             }
 
-            UpdateShaderConfig.markCurrentEPSettingsFile();
+            // Iris and Oculus add the identifiers themselves right before they save the settings, see the config properties mixins
+            if (ShaderLoader.getShaderLoader().equals(ShaderLoader.OPTIFINE)) {
+                UpdateShaderConfig.markCurrentEPSettingsFile();
+            }
 
             if (injectCount == 1) {
                 EuphoriaPatcher.log(0, "Added Euphoria Patches defines to " +

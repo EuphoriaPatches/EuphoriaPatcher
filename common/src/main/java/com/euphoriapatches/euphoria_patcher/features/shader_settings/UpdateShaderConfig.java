@@ -11,10 +11,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,6 +38,17 @@ public class UpdateShaderConfig {
             t.setDaemon(true); // Make sure it doesn't prevent game exit
             return t;
         });
+
+    // Don't touch the file when iris just did
+    static volatile long writeDelayMs = 1000;
+    static volatile long settleMs = 500;
+    static volatile long[] retryDelaysMs = {250, 500, 1000};
+    // Lets a test change the settings file between writing the temp file and the final check
+    static volatile Runnable beforeFinalCheckHook = null;
+
+    private static final String TEMP_FILE_SUFFIX = ".ep-tmp";
+    // Latest scheduled update per settings file
+    private static final Map<Path, ScheduledFuture<?>> pendingWrites = new ConcurrentHashMap<>();
 
     public static void shutdownFileWriter() {
         scheduler.shutdown();
@@ -176,7 +192,7 @@ public class UpdateShaderConfig {
                         debugLog("Delayed processing of file: " + configFile.getFileName());
                         addIdentifierToSettingsFile(configFile, versionIdentifier, false);
                     }
-                }, 1000, java.util.concurrent.TimeUnit.MILLISECONDS);
+                }, writeDelayMs, TimeUnit.MILLISECONDS);
             }
         } catch (IOException e) {
             EuphoriaPatcher.log(2, 0, "Error preparing to mark settings files: " + e.getMessage());
@@ -227,15 +243,30 @@ public class UpdateShaderConfig {
 
             boolean allowSettingsConversion = SettingsConverterUtil.shouldConvertSettings(currentShaderpack);
 
-            // Schedule the update
-            scheduler.schedule(() -> {
-                debugLog("Delayed processing of current settings file: " + configFile.getFileName());
-                addIdentifierToSettingsFile(configFile, versionIdentifier, allowSettingsConversion);
-            }, 1000, java.util.concurrent.TimeUnit.MILLISECONDS);
+            scheduleSettingsFileUpdate(configFile, versionIdentifier, allowSettingsConversion);
 
         } catch (Exception e) {
             EuphoriaPatcher.log(2, 0, "Error marking current settings file: " + e.getMessage());
         }
+    }
+
+    /**
+     * Schedules the update of one settings file. Only 1 at a time per file, and replaces any previous pending update for the same file.
+     */
+    static ScheduledFuture<?> scheduleSettingsFileUpdate(Path configFile, String versionIdentifier, boolean allowSettingsConversion) {
+        return pendingWrites.compute(configFile, (file, previous) -> {
+            if (previous != null && previous.cancel(false)) {
+                debugLog("Replacing pending update of settings file: " + file.getFileName());
+            }
+            return scheduler.schedule(() -> {
+                debugLog("Delayed processing of current settings file: " + file.getFileName());
+                addIdentifierToSettingsFile(file, versionIdentifier, allowSettingsConversion);
+            }, writeDelayMs, TimeUnit.MILLISECONDS);
+        });
+    }
+
+    static long pendingWriteCount() {
+        return pendingWrites.values().stream().filter(future -> !future.isDone()).count();
     }
 
     /**
@@ -302,140 +333,221 @@ public class UpdateShaderConfig {
     }
 
     static void addIdentifierToSettingsFile(Path configFile, String versionIdentifierToAdd, boolean allowSettingsConversion) {
-        // Try with increasing delay between attempts
-        for (int attempt = 0; attempt < 3; attempt++) {
+        addIdentifierToSettingsFile(configFile, versionIdentifierToAdd, allowSettingsConversion, true);
+    }
+
+    /**
+     * Tries again with increasing delays while the file is not safe to rewrite, see {@link #tryAddIdentifiers}.
+     *
+     * @param waitForSettled {@code false} for a file that was just created by us and that nobody else writes to
+     */
+    private static void addIdentifierToSettingsFile(Path configFile, String versionIdentifierToAdd, boolean allowSettingsConversion, boolean waitForSettled) {
+        long[] retryDelays = retryDelaysMs;
+        String lastProblem = null;
+
+        for (int attempt = 0; attempt <= retryDelays.length; attempt++) {
             try {
                 if (attempt > 0) {
-                    // Wait before retrying
-                    Thread.sleep(200 * attempt);
+                    Thread.sleep(retryDelays[attempt - 1]);
                     EuphoriaPatcher.log(0, "Retry attempt " + attempt + " for file: " + configFile.getFileName());
                 }
 
-                debugLog("Starting to process file: " + configFile.getFileName());
-
-                if (!Files.isWritable(configFile)) {
-                    debugLog("File is not writable: " + configFile.getFileName());
+                lastProblem = tryAddIdentifiers(configFile, versionIdentifierToAdd, allowSettingsConversion, waitForSettled);
+                if (lastProblem == null) {
                     return;
                 }
-
-                List<String> lines = Files.readAllLines(configFile, StandardCharsets.UTF_8);
-
-                boolean settingsChanged = false;
-                if (allowSettingsConversion) {
-                    List<String> convertedLines = ShaderSettingsConverter.convertLines(lines);
-                    settingsChanged = !lines.equals(convertedLines);
-                    lines = convertedLines;
-
-                    debugLog("Applied settings conversions to file: " + configFile.getFileName() +
-                             (settingsChanged ? " (changes applied)" : " (no changes needed)"));
-                }
-
-                // Check for identifiers
-                boolean mainIdentifierExists = false;
-                String existingVersionIdentifier = null;
-                int versionIdentifierCount = 0;
-
-                // First scan the file to check what identifiers exist
-                for (String line : lines) {
-                    String trimmed = line.trim();
-
-                    if (trimmed.equals(EUPHORIA_IDENTIFIER)) { // Use trim() for safety
-                        mainIdentifierExists = true;
-                    } else if (trimmed.startsWith(VERSION_IDENTIFIER_PREFIX) && trimmed.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
-                        versionIdentifierCount++;
-
-                        // Keep highest embedded version if multiple markers are present.
-                        if (existingVersionIdentifier == null) {
-                            existingVersionIdentifier = trimmed;
-                        } else {
-                            String existingVersion = extractVersionFromIdentifier(existingVersionIdentifier);
-                            String candidateVersion = extractVersionFromIdentifier(trimmed);
-                            if (existingVersion != null && candidateVersion != null &&
-                                compareVersionParts(candidateVersion.substring(1), existingVersion.substring(1)) > 0) {
-                                existingVersionIdentifier = trimmed;
-                            }
-                        }
-                    }
-                }
-
-                // Only return early if both conditions are true:
-                // 1. No settings were changed
-                // 2. Identifiers are already correct AND are at the top of the file after comments
-                boolean identifiersAtTop = areIdentifiersAtTop(lines);
-                boolean hasDuplicateVersionIdentifiers = versionIdentifierCount > 1;
-                if (!settingsChanged && mainIdentifierExists &&
-                    (versionIdentifierToAdd == null ||
-                    (existingVersionIdentifier != null && existingVersionIdentifier.equals(versionIdentifierToAdd))) &&
-                    identifiersAtTop && !hasDuplicateVersionIdentifiers) {
-
-                    debugLog((allowSettingsConversion ? "No settings changes needed and identifiers" : "Identifiers") + " are correctly positioned for: " + configFile.getFileName());
-                    return; // Nothing to do
-                } else if (hasDuplicateVersionIdentifiers) {
-                    debugLog("Found duplicate version identifiers - will collapse to one marker for: " + configFile.getFileName());
-                } else if (!identifiersAtTop) {
-                    debugLog("Identifiers exist but are not at the top - will reposition them for: " + configFile.getFileName());
-                }
-
-                // We need to modify the file - create new content with reorganized structure
-                List<String> newLines = new ArrayList<>();
-
-                // Phase 1: Add all comment lines that start with #
-                // Usually the first line is a timestamp comment
-                for (String line : lines) {
-                    if (line.trim().startsWith("#")) {
-                        newLines.add(line);
-                    }
-                }
-
-                // Phase 2: Add identifiers right after comments
-                newLines.add(EUPHORIA_IDENTIFIER);
-
-                if (versionIdentifierToAdd != null) {
-                    newLines.add(versionIdentifierToAdd);
-                } else if (existingVersionIdentifier != null) {
-                    newLines.add(existingVersionIdentifier);
-                    debugLog("Preserved existing version identifier: " + existingVersionIdentifier);
-                }
-
-                // Phase 3: Add all remaining lines except comments and identifiers
-                for (String line : lines) {
-                    String trimmed = line.trim();
-                    // Skip comments (already added), and identifiers (also already added)
-                    if (!trimmed.startsWith("#") &&
-                        !trimmed.equals(EUPHORIA_IDENTIFIER) &&
-                        !(trimmed.startsWith(VERSION_IDENTIFIER_PREFIX) && trimmed.endsWith(VERSION_IDENTIFIER_SUFFIX))) {
-                        newLines.add(line);
-                    }
-                }
-
-                debugLog("About to write to file: " + configFile.getFileName());
-
-                // Use try-with-resources to ensure streams are properly closed
-                try (java.io.BufferedWriter writer = Files.newBufferedWriter(
-                        configFile, StandardCharsets.UTF_8)) {
-
-                    for (String line : newLines) {
-                        writer.write(line);
-                        writer.newLine();
-                    }
-
-                    // Make sure to flush
-                    writer.flush();
-                }
-
-                debugLog("Updated identifiers in settings file: " + configFile.getFileName());
-
-                // If we got here without errors, break the retry loop
-                break;
+                debugLog("Skipping rewrite of " + configFile.getFileName() + ": " + lastProblem);
             } catch (IOException e) {
-                if (attempt == 2) { // The Last attempt failed
-                    EuphoriaPatcher.log(2, 0, "Error adding identifier to settings file " +
-                                        configFile.getFileName() + ": " + e.getMessage());
-                }
+                lastProblem = e.getMessage();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                break;
+                return;
             }
+        }
+
+        EuphoriaPatcher.log(2, 0, "Error adding identifier to settings file " + configFile.getFileName() +
+                            " after " + (retryDelays.length + 1) + " attempts: " + lastProblem);
+    }
+
+    /**
+     * Iris truncates and rewrites this file when it saves the settings of the shaderpack, and reads an empty file as
+     * "all defaults". So the file is only rewritten when it has settled and has settings in it, and only if it is
+     * still the same right before the (atomic) write.
+     *
+     * @return why the file was not rewritten and a later attempt could work, or {@code null} if there is nothing
+     *         left to do
+     */
+    private static String tryAddIdentifiers(Path configFile, String versionIdentifierToAdd, boolean allowSettingsConversion, boolean waitForSettled) throws IOException {
+        debugLog("Starting to process file: " + configFile.getFileName());
+
+        if (!Files.isWritable(configFile)) {
+            debugLog("File is not writable: " + configFile.getFileName());
+            return null;
+        }
+
+        BasicFileAttributes attributesWhenRead = Files.readAttributes(configFile, BasicFileAttributes.class);
+        long millisSinceModified = System.currentTimeMillis() - attributesWhenRead.lastModifiedTime().toMillis();
+        if (waitForSettled && millisSinceModified >= 0 && millisSinceModified < settleMs) {
+            return "it was modified " + millisSinceModified + " ms ago, Iris may still be writing it";
+        }
+
+        List<String> lines = Files.readAllLines(configFile, StandardCharsets.UTF_8);
+        if (!hasSettingLines(lines)) {
+            return "it has no settings, Iris may be in the middle of writing it";
+        }
+
+        List<String> newLines = addIdentifiers(configFile, lines, versionIdentifierToAdd, allowSettingsConversion);
+        if (newLines == null) {
+            return null;
+        }
+
+        debugLog("About to write to file: " + configFile.getFileName());
+        if (!writeAtomicallyIfUnchanged(configFile, newLines, attributesWhenRead)) {
+            return "it changed while it was processed";
+        }
+
+        debugLog("Updated identifiers in settings file: " + configFile.getFileName());
+        return null;
+    }
+
+    /**
+     * @return the lines with the identifiers right after the leading comments, or {@code null} if the file is
+     *         already right
+     */
+    private static List<String> addIdentifiers(Path configFile, List<String> lines, String versionIdentifierToAdd, boolean allowSettingsConversion) {
+        boolean settingsChanged = false;
+        if (allowSettingsConversion) {
+            List<String> convertedLines = ShaderSettingsConverter.convertLines(lines);
+            settingsChanged = !lines.equals(convertedLines);
+            lines = convertedLines;
+
+            debugLog("Applied settings conversions to file: " + configFile.getFileName() +
+                     (settingsChanged ? " (changes applied)" : " (no changes needed)"));
+        }
+
+        // Check for identifiers
+        boolean mainIdentifierExists = false;
+        String existingVersionIdentifier = null;
+        int versionIdentifierCount = 0;
+
+        // First scan the file to check what identifiers exist
+        for (String line : lines) {
+            String trimmed = line.trim();
+
+            if (trimmed.equals(EUPHORIA_IDENTIFIER)) { // Use trim() for safety
+                mainIdentifierExists = true;
+            } else if (trimmed.startsWith(VERSION_IDENTIFIER_PREFIX) && trimmed.endsWith(VERSION_IDENTIFIER_SUFFIX)) {
+                versionIdentifierCount++;
+
+                // Keep highest embedded version if multiple markers are present.
+                if (existingVersionIdentifier == null) {
+                    existingVersionIdentifier = trimmed;
+                } else {
+                    String existingVersion = extractVersionFromIdentifier(existingVersionIdentifier);
+                    String candidateVersion = extractVersionFromIdentifier(trimmed);
+                    if (existingVersion != null && candidateVersion != null &&
+                        compareVersionParts(candidateVersion.substring(1), existingVersion.substring(1)) > 0) {
+                        existingVersionIdentifier = trimmed;
+                    }
+                }
+            }
+        }
+
+        // Only return early if both conditions are true:
+        // 1. No settings were changed
+        // 2. Identifiers are already correct AND are at the top of the file after comments
+        boolean identifiersAtTop = areIdentifiersAtTop(lines);
+        boolean hasDuplicateVersionIdentifiers = versionIdentifierCount > 1;
+        if (!settingsChanged && mainIdentifierExists &&
+            (versionIdentifierToAdd == null ||
+            (existingVersionIdentifier != null && existingVersionIdentifier.equals(versionIdentifierToAdd))) &&
+            identifiersAtTop && !hasDuplicateVersionIdentifiers) {
+
+            debugLog((allowSettingsConversion ? "No settings changes needed and identifiers" : "Identifiers") + " are correctly positioned for: " + configFile.getFileName());
+            return null; // Nothing to do
+        } else if (hasDuplicateVersionIdentifiers) {
+            debugLog("Found duplicate version identifiers - will collapse to one marker for: " + configFile.getFileName());
+        } else if (!identifiersAtTop) {
+            debugLog("Identifiers exist but are not at the top - will reposition them for: " + configFile.getFileName());
+        }
+
+        // We need to modify the file - create new content with reorganized structure
+        List<String> newLines = new ArrayList<>();
+
+        // Phase 1: Add all comment lines that start with #
+        // Usually the first line is a timestamp comment
+        for (String line : lines) {
+            if (line.trim().startsWith("#")) {
+                newLines.add(line);
+            }
+        }
+
+        // Phase 2: Add identifiers right after comments
+        newLines.add(EUPHORIA_IDENTIFIER);
+
+        if (versionIdentifierToAdd != null) {
+            newLines.add(versionIdentifierToAdd);
+        } else if (existingVersionIdentifier != null) {
+            newLines.add(existingVersionIdentifier);
+            debugLog("Preserved existing version identifier: " + existingVersionIdentifier);
+        }
+
+        // Phase 3: Add all remaining lines except comments and identifiers
+        for (String line : lines) {
+            String trimmed = line.trim();
+            // Skip comments (already added), and identifiers (also already added)
+            if (!trimmed.startsWith("#") &&
+                !trimmed.equals(EUPHORIA_IDENTIFIER) &&
+                !(trimmed.startsWith(VERSION_IDENTIFIER_PREFIX) && trimmed.endsWith(VERSION_IDENTIFIER_SUFFIX))) {
+                newLines.add(line);
+            }
+        }
+        return newLines;
+    }
+
+    /**
+     * A settings file with only comments and blank lines is never a valid state
+     */
+    private static boolean hasSettingLines(List<String> lines) {
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (!trimmed.isEmpty() && !trimmed.startsWith("#")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Writes the lines to a temp file next to the target and moves it over the target after
+     *
+     * @return {@code false} if the target changed in the meantime and was left alone
+     */
+    private static boolean writeAtomicallyIfUnchanged(Path configFile, List<String> newLines, BasicFileAttributes attributesWhenRead) throws IOException {
+        Path tempFile = configFile.resolveSibling(configFile.getFileName() + TEMP_FILE_SUFFIX);
+        try {
+            try (java.io.BufferedWriter writer = Files.newBufferedWriter(tempFile, StandardCharsets.UTF_8)) {
+                for (String line : newLines) {
+                    writer.write(line);
+                    writer.newLine();
+                }
+            }
+
+            Runnable hook = beforeFinalCheckHook;
+            if (hook != null) {
+                hook.run();
+            }
+
+            BasicFileAttributes attributesNow = Files.readAttributes(configFile, BasicFileAttributes.class);
+            if (attributesNow.size() != attributesWhenRead.size()
+                    || !attributesNow.lastModifiedTime().equals(attributesWhenRead.lastModifiedTime())) {
+                return false;
+            }
+
+            Files.move(tempFile, configFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            return true;
+        } finally {
+            Files.deleteIfExists(tempFile);
         }
     }
     static boolean areIdentifiersAtTop(List<String> lines) {
@@ -492,7 +604,7 @@ public class UpdateShaderConfig {
             Files.copy(configFilePath, newPath); // Copy old config and rename it to current PATCH_VERSION
 
             // Add our identifiers to the new config file - include version since the name has current version
-            addIdentifierToSettingsFile(newPath, getVersionIdentifier(), true);
+            addIdentifierToSettingsFile(newPath, getVersionIdentifier(), true, false);
 
             EuphoriaPatcher.log(0, "Successfully updated the " + style + " shader config file to the latest version!");
         } catch (IOException e) {

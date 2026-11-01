@@ -22,6 +22,16 @@ public class IrisPipelinesTransformMixin {
 
     @Inject(method = "getPipeline", at = @At("RETURN"), cancellable = true, remap = false, require = 0)
     private static void euphoriaPatcher$transformPipeline(@Coerce Object irisPipeline, @Coerce Object pipeline, CallbackInfoReturnable<Object> cir) {
+        euphoriaPatcher$transform(irisPipeline, pipeline, cir);
+    }
+
+    @Inject(method = "getPipeline", at = @At("RETURN"), cancellable = true, remap = false, require = 0)
+    private static void euphoriaPatcher$transformPhasePipeline(@Coerce Object irisPipeline, @Coerce Object pipeline, @Coerce Object phase, CallbackInfoReturnable<Object> cir) {
+        euphoriaPatcher$transform(irisPipeline, pipeline, cir);
+    }
+
+    @Unique
+    private static void euphoriaPatcher$transform(Object irisPipeline, Object pipeline, CallbackInfoReturnable<Object> cir) {
         if (euphoriaPatcher$failed || cir.getReturnValue() != null) {
             return;
         }

@@ -1,0 +1,23 @@
+{
+  "euphoria_patcher.button.support": "EP'yi Destekle",
+  "euphoria_patcher.button.update": "EP'yi Güncelle!",
+  "euphoria_patcher.tooltip.support": "Euphoria Patches'ı Destekle!",
+  "euphoria_patcher.tooltip.update": "Euphoria Patches'ı Güncelle!",
+  "euphoria_patcher.tooltip.remove": "Destekle Düğmesi Kaldırılsın Mı?",
+  "euphoria_patcher.tooltip.remove.hint": "(Kaldırmak için SHIFT Tıkla)",
+  "euphoria_patcher.donation.line1": "Selam!",
+  "euphoria_patcher.donation.line2": "%s'in hoşuna gitmesi ne hoş!",
+  "euphoria_patcher.donation.line2.highlight": "Euphoria Patches",
+  "euphoria_patcher.donation.line3": "Yeni ayarlar, efektler ve özellikler eklemek %s alıyor.",
+  "euphoria_patcher.donation.line3.highlight": "sayısız saat",
+  "euphoria_patcher.donation.line4": "Dünyanızın atmosferine bayılıyorsanız, %s'i de düşünebilirsiniz.",
+  "euphoria_patcher.donation.line4.highlight": "proje destekleniyor",
+  "euphoria_patcher.donation.line5": "Euphoria Patches'ı kullandığın için teşekkürler <3",
+  "euphoria_patcher.donation.button": "Projeyi Destekle",
+  "euphoria_patcher.shader_error.failed": "Gölgelendirici paketi derlenemedi! Lütfen hatayı paket geliştiricisine bildirin. %s",
+  "euphoria_patcher.shader_error.copy": "Bilgiyi Kopyala",
+  "euphoria_patcher.shader_error.report": "Şuradan Paket Geliştiricisine bildirin: %s",
+  "euphoria_patcher.shader_error.report.link": "Discord'da bildir",
+  "fml.menu.mods.info.description.euphoria_patcher": "Complimentary Gölgelendirici Paketine Euphoria Patches eklentisini uygulayan bir mod. Gölgelendirici paketi ayarları menüsünden Euphoria Pathces'ı aktifleştirin ve ayarlayın. Sorunları Discord'dan bildirin!",
+  "modmenu.descriptionTranslation.euphoria_patcher": "Complimentary Gölgelendirici Paketine Euphoria Patches eklentisini uygulayan bir mod. Gölgelendirici paketi ayarları menüsünden Euphoria Pathces'ı aktifleştirin ve ayarlayın. Sorunları Discord'dan bildirin!"
+}

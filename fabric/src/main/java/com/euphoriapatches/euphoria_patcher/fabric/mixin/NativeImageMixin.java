@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.File;
+import java.nio.file.Path;
 
 import static com.euphoriapatches.euphoria_patcher.fabric.mixin.EuphoriaMixinPlugin.NATIVE_IMAGE_CLASS;
 
@@ -18,14 +19,27 @@ import static com.euphoriapatches.euphoria_patcher.fabric.mixin.EuphoriaMixinPlu
 @Mixin(targets = NATIVE_IMAGE_CLASS, remap = false)
 public class NativeImageMixin {
     @Dynamic("Bypasses compiler checks for alternative mapping variants")
-    @Inject(method = "writeToFile", at = @At("HEAD"), remap = false, require = 0)
+    @Inject(method = "writeToFile(Ljava/io/File;)V", at = @At("HEAD"), remap = false, require = 0)
     private void euphoriaPatcher$onWriteToFile(File file, CallbackInfo ci) {
         NativeImageEmbedHelper.embed(this, file);
     }
 
     @Dynamic("Bypasses compiler checks for alternative mapping variants")
-    @Inject(method = "writeToFile", at = @At("RETURN"), remap = false, require = 0)
+    @Inject(method = "writeToFile(Ljava/io/File;)V", at = @At("RETURN"), remap = false, require = 0)
     private void euphoriaPatcher$onWriteToFileReturn(File file, CallbackInfo ci) {
         NativeImageEmbedHelper.createDebugScreenshot(this, file);
+    }
+
+    // 26.x+ saves screenshots through the Path overload (the File one only delegates to it)
+    @Dynamic("Bypasses compiler checks for alternative mapping variants")
+    @Inject(method = "writeToFile(Ljava/nio/file/Path;)V", at = @At("HEAD"), remap = false, require = 0)
+    private void euphoriaPatcher$onWriteToPath(Path path, CallbackInfo ci) {
+        NativeImageEmbedHelper.embed(this, path);
+    }
+
+    @Dynamic("Bypasses compiler checks for alternative mapping variants")
+    @Inject(method = "writeToFile(Ljava/nio/file/Path;)V", at = @At("RETURN"), remap = false, require = 0)
+    private void euphoriaPatcher$onWriteToPathReturn(Path path, CallbackInfo ci) {
+        NativeImageEmbedHelper.createDebugScreenshot(this, path);
     }
 }

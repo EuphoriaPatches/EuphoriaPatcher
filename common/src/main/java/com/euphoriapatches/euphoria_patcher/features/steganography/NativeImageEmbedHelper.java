@@ -7,6 +7,7 @@ import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.nio.file.Path;
 import java.util.WeakHashMap;
 import java.util.Collections;
 import java.util.Set;
@@ -26,6 +27,18 @@ public final class NativeImageEmbedHelper {
         if (nativeImage != null) {
             MARKED_SCREENSHOTS.add(nativeImage);
         }
+    }
+
+    // Newer versions have both writeToFile(File) and writeToFile(Path), with the File one delegating to
+    // the Path one, so both hooks fire for a single write. Embedding must only happen once per image.
+    private static final Set<Object> EMBEDDED = Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
+
+    public static void embed(Object nativeImage, Path path) {
+        embed(nativeImage, path.toFile());
+    }
+
+    public static void createDebugScreenshot(Object nativeImage, Path path) {
+        createDebugScreenshot(nativeImage, path.toFile());
     }
 
     /**
@@ -56,6 +69,7 @@ public final class NativeImageEmbedHelper {
      */
     public static void embed(Object nativeImage, File file) {
         if (isNotScreenshotFile(nativeImage, file)) return;
+        if (!EMBEDDED.add(nativeImage)) return;
 
         if (ConfigHandler.EmbedShaderSettingsMode.DISABLED.equals(ConfigHandler.doEmbedShaderSettingsInScreenshots)) {
             debugLog("Screenshot settings embedding is disabled in config, skipping embed");

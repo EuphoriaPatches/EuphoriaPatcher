@@ -25,7 +25,7 @@ public class IrisPipelinesTransformMixin {
         euphoriaPatcher$transform(irisPipeline, pipeline, cir);
     }
 
-    @Inject(method = "getPipeline", at = @At("RETURN"), cancellable = true, remap = false, require = 0)
+    @Inject(method = "getPipeline(Lnet/irisshaders/iris/pipeline/IrisRenderingPipeline;Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/irisshaders/iris/targets/WorldRenderTargets$Phase;)Lnet/irisshaders/iris/pipeline/programs/ShaderKey;", at = @At("RETURN"), cancellable = true, remap = false, require = 0)
     private static void euphoriaPatcher$transformPhasePipeline(@Coerce Object irisPipeline, @Coerce Object pipeline, @Coerce Object phase, CallbackInfoReturnable<Object> cir) {
         euphoriaPatcher$transform(irisPipeline, pipeline, cir);
     }

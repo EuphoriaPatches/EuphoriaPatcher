@@ -362,6 +362,16 @@ class UpdateShaderConfigIdentifiersTest {
         assertTrue(settings.isEmpty());
     }
 
+    @Test
+    void identifiersLoadedFromTheOldFileAreRemovedWhenNoSettingsAreLeft() {
+        // Iris loads the old file and drops the settings that are back to default, our identifiers are all that remain
+        Properties settings = properties(MAIN_KEY, "true", V1_10_5_KEY, "true");
+
+        UpdateShaderConfig.addIdentifiersToSavedSettings(tempDir.resolve("Euphoria-Patches.txt"), settings);
+
+        assertTrue(settings.isEmpty());
+    }
+
     // ---- the version marker text ----
 
     @Test

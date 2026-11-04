@@ -8,6 +8,7 @@ import com.euphoriapatches.euphoria_patcher.util.VersionComparator;
 import com.euphoriapatches.euphoria_patcher.util.shader.ShaderVersionComparator;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -264,9 +265,15 @@ public class UpdateShaderConfig {
      */
     public static void addIdentifiersToSavedSettings(Path settingsFile, Properties settings) {
         try {
-            // Iris deletes the file when there are no settings, don't make it exist with only the identifiers in it
             String fileName = settingsFile.getFileName().toString();
-            if (settings.isEmpty() || !fileName.endsWith(".txt")) {
+            if (!fileName.endsWith(".txt")) {
+                return;
+            }
+
+            // To ensure iris deletes teh file if it only has our identifiers
+            if (hasOnlyIdentifiers(settings)) {
+                settings.clear();
+                debugLog("No settings left besides the identifiers, letting Iris delete: " + fileName);
                 return;
             }
 
@@ -281,6 +288,22 @@ public class UpdateShaderConfig {
         } catch (Exception e) {
             EuphoriaPatcher.log(2, 0, "Error adding identifiers to the saved settings: " + e.getMessage());
         }
+    }
+
+    private static boolean isIdentifierKey(String key) {
+        return key.equals(EUPHORIA_IDENTIFIER_KEY) || key.startsWith(VERSION_IDENTIFIER_PREFIX);
+    }
+
+    /**
+     * @return true if there are no settings, or nothing but identifiers
+     */
+    static boolean hasOnlyIdentifiers(Properties settings) {
+        for (String key : settings.stringPropertyNames()) {
+            if (!isIdentifierKey(key)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     static void addIdentifiersToProperties(Properties settings, String versionIdentifierToAdd) {
@@ -449,16 +472,12 @@ public class UpdateShaderConfig {
     }
 
     /**
-     * A settings file with only comments and blank lines is never a valid state
+     * A settings file with only comments, blank lines and our identifiers is never a valid state
      */
-    private static boolean hasSettingLines(List<String> lines) {
-        for (String line : lines) {
-            String trimmed = line.trim();
-            if (!trimmed.isEmpty() && !trimmed.startsWith("#")) {
-                return true;
-            }
-        }
-        return false;
+    private static boolean hasSettingLines(List<String> lines) throws IOException {
+        Properties settings = new Properties();
+        settings.load(new StringReader(String.join("\n", lines)));
+        return !hasOnlyIdentifiers(settings);
     }
 
     /**

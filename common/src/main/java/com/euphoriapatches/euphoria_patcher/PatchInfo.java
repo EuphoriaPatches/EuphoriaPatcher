@@ -10,7 +10,7 @@ public class PatchInfo {
     public static final String BRAND_NAME = "Complementary";
     public static final String PATCH_NAME = "EuphoriaPatches";
     public static final String VERSION = "_r5.10";
-    public static final String PATCH_VERSION = "_1.11.0";
+    public static final String PATCH_VERSION = "_1.11.1";
 
     public static final PatchSpec SPEC = PatchSpec.builder()
             .patchName(PATCH_NAME).patchVersion(PATCH_VERSION)

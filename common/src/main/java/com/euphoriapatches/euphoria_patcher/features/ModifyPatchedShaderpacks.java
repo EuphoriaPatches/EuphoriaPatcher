@@ -100,7 +100,9 @@ public class ModifyPatchedShaderpacks {
             // Use existing approach for smaller files
             String content = new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8);
             String modifiedContent = applyReplacements(content, regexAndReplacements);
-            Files.write(filePath, modifiedContent.getBytes(StandardCharsets.UTF_8));
+            if (!modifiedContent.equals(content)) {
+                Files.write(filePath, modifiedContent.getBytes(StandardCharsets.UTF_8));
+            }
         }
 
         debugLog("Successfully modified file: " + filePath.getFileName());

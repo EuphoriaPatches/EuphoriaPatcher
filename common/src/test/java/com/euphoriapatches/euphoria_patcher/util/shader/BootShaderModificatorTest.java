@@ -1,5 +1,6 @@
 package com.euphoriapatches.euphoria_patcher.util.shader;
 
+import com.euphoriapatches.euphoria_patcher.EuphoriaPatcher;
 import com.euphoriapatches.euphoria_patcher.TestEnvironment;
 import com.euphoriapatches.euphoria_patcher.integration.ShaderLoader;
 import org.junit.jupiter.api.BeforeAll;
@@ -248,5 +249,72 @@ class BootShaderModificatorTest {
     void macOSIsRecognisedWhateverTheCapitalisation() {
         assertTrue(BootShaderModificator.needsMacOSWorkarounds("macOS", ShaderLoader.IRIS, 10808));
         assertTrue(BootShaderModificator.needsMacOSWorkarounds("MAC OS X", ShaderLoader.IRIS, 10808));
+    }
+
+    // ---- removing a leftover update notification ----
+
+    private static final String SECTION = String.valueOf((char) 0xA7);
+    private static final String BANNER_LANG = "value.info19.0=" + SECTION + "c1.9.3 " + SECTION + "r->" + SECTION + "a 1.11.1";
+    private static final String PLACEHOLDER_LANG = "value.info19.0=" + SECTION + "cX.Y.Z " + SECTION + "r->" + SECTION + "a X.Y.Z";
+    private static final String BANNER_JSON = "  \"shaderDescription\": \"\\u00A7aUPDATE AVAILABLE!\\u00A7r\\nCurrent version: \\u00A7c1.9.3\\u00A7r -> New version: \\u00A7a1.11.1\\u00A7r\\n"
+            + "----------------\\n\\u00A7cComplementary Shaders r5.8.1\\u00A7r + \\u00A7dEuphoria Patches 1.9.3\\u00A7r Complementary add-on.\",";
+
+    private Path bannerPack(boolean bigLang) throws IOException {
+        Path pack = Files.createDirectories(shaderpacks.resolve("ComplementaryUnbound_r5.10 + EuphoriaPatches_1.11.1"));
+        Path shaders = Files.createDirectories(pack.resolve("shaders"));
+        Files.write(shaders.resolve("shaders.properties"), "    screen=info19 info20 [EP_VERSION] SHADER_STYLE\n    other=1\n".getBytes(StandardCharsets.UTF_8));
+        Files.write(shaders.resolve("pack.json"), ("{\n  \"name\": \"Complementary + Euphoria Patches 1.11.1\",\n" + BANNER_JSON + "\n  \"version\": \"1.11.1\"\n}\n").getBytes(StandardCharsets.UTF_8));
+        StringBuilder lang = new StringBuilder("option.a=before\n").append(BANNER_LANG).append("\noption.b=after\n");
+        if (bigLang) {
+            for (int i = 0; i < 3000; i++) lang.append("filler line number ").append(i).append(" with some padding to make the file big\n");
+        }
+        Files.createDirectories(shaders.resolve("lang"));
+        Files.write(shaders.resolve("lang/en_US.lang"), lang.toString().getBytes(StandardCharsets.UTF_8));
+        return pack;
+    }
+
+    private static String read(Path file) throws IOException {
+        return new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
+    }
+
+    @Test
+    void aLeftoverUpdateNotificationIsRemovedFromAllThreeFiles() throws IOException {
+        Path pack = bannerPack(false);
+
+        BootShaderModificator.clearUpdateNotification(pack, true, false);
+
+        assertEquals("    screen=<empty> <empty> [EP_VERSION] SHADER_STYLE\n    other=1\n", read(pack.resolve("shaders/shaders.properties")));
+        assertEquals("option.a=before\n" + PLACEHOLDER_LANG + "\noption.b=after\n", read(pack.resolve("shaders/lang/en_US.lang")));
+        String version = EuphoriaPatcher.PATCH_VERSION.replace("_", "");
+        String json = read(pack.resolve("shaders/pack.json"));
+        assertFalse(json.contains("UPDATE AVAILABLE"));
+        assertTrue(json.contains("  \"shaderDescription\": \"\\u00A7cComplementary Shaders " + EuphoriaPatcher.VERSION.replace("_", "")
+                + "\\u00A7r + \\u00A7dEuphoria Patches " + version + "\\u00A7r Complementary add-on by SpacEagle17"), json);
+        assertTrue(json.contains("\"name\": \"Complementary + Euphoria Patches 1.11.1\""));
+        assertTrue(json.endsWith("\",\n  \"version\": \"1.11.1\"\n}\n"), "the comma and the next property have to stay: " + json);
+    }
+
+    @Test
+    void theLeftoverNotificationIsRemovedFromABigLangFileToo() throws IOException {
+        Path pack = bannerPack(true);
+
+        BootShaderModificator.clearUpdateNotification(pack, true, false);
+
+        assertTrue(Files.readAllLines(pack.resolve("shaders/lang/en_US.lang"), StandardCharsets.UTF_8).contains(PLACEHOLDER_LANG));
+    }
+
+    @Test
+    void filesWithoutANotificationAreLeftAlone() throws IOException {
+        Path pack = bannerPack(false);
+        BootShaderModificator.clearUpdateNotification(pack, true, false);
+        String properties = read(pack.resolve("shaders/shaders.properties"));
+        String lang = read(pack.resolve("shaders/lang/en_US.lang"));
+        String json = read(pack.resolve("shaders/pack.json"));
+
+        BootShaderModificator.clearUpdateNotification(pack, true, false);
+
+        assertEquals(properties, read(pack.resolve("shaders/shaders.properties")));
+        assertEquals(lang, read(pack.resolve("shaders/lang/en_US.lang")));
+        assertEquals(json, read(pack.resolve("shaders/pack.json")));
     }
 }

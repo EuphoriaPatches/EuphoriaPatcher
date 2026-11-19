@@ -43,6 +43,10 @@ public class BootShaderModificator {
 
     private static void applyUpdateNotification(Path shader, boolean styleUnbound, boolean styleReimagined) {
         if (!UpdateChecker.shouldUserUpdate()) {
+            // Remove a notification left over from an older version, unless the check failed
+            if (ConfigHandler.updateMode.equals(ConfigHandler.UpdateMode.NONE) || UpdateChecker.getNewModVersion() != null) {
+                clearUpdateNotification(shader, styleUnbound, styleReimagined);
+            }
             return;
         }
 
@@ -60,14 +64,28 @@ public class BootShaderModificator {
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, EuphoriaPatcher.LANG_LOCATION, ".lang", "value\\.info19\\.0=.*", newVersionText);
 
             // Iris Shader Folder Mod Description
-            // 4 \\\\ have to be used to represent 1 \ in the final JSON due to multiple layers of escaping
-            String shaderDescriptionText = "\\\\u00A7cComplementary Shaders " + EuphoriaPatcher.VERSION.replace("_", "") + "\\\\u00A7r + \\\\u00A7dEuphoria Patches " + EuphoriaPatcher.PATCH_VERSION.replace("_", "") + "\\\\u00A7r Complementary add-on by SpacEagle17 extending it with many more unique optional features and settings.\\\\nDev versions: \\\\u00A7dwww.euphoriapatches.com/support\\\\u00A7r";
 
             ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, "shaders/pack.json", null,
-                    "\"shaderDescription\":.*", "\"shaderDescription\": \"" + "\\\\u00A7aUPDATE AVAILABLE!\\\\u00A7r\\\\nCurrent version: \\\\u00A7c" + EuphoriaPatcher.PATCH_VERSION.replace("_", "") + "\\\\u00A7r -> " + "New version: \\\\u00A7a" + UpdateChecker.getNewModVersion() + "\\\\u00A7r\\\\n----------------\\\\n" + shaderDescriptionText + "\",");
+                    "\"shaderDescription\":.*", "\"shaderDescription\": \"" + "\\\\u00A7aUPDATE AVAILABLE!\\\\u00A7r\\\\nCurrent version: \\\\u00A7c" + EuphoriaPatcher.PATCH_VERSION.replace("_", "") + "\\\\u00A7r -> " + "New version: \\\\u00A7a" + UpdateChecker.getNewModVersion() + "\\\\u00A7r\\\\n----------------\\\\n" + shaderDescriptionText() + "\",");
 
         } catch (IOException e) {
             EuphoriaPatcher.log(3, 0, "Could not modify the shader to show the user that a new version is available" + e.getMessage());
+        }
+    }
+
+    private static String shaderDescriptionText() {
+        // 4 \\\\ have to be used to represent 1 \ in the final JSON due to multiple layers of escaping
+        return "\\\\u00A7cComplementary Shaders " + EuphoriaPatcher.VERSION.replace("_", "") + "\\\\u00A7r + \\\\u00A7dEuphoria Patches " + EuphoriaPatcher.PATCH_VERSION.replace("_", "") + "\\\\u00A7r Complementary add-on by SpacEagle17 extending it with many more unique optional features and settings.\\\\nDev versions: \\\\u00A7dwww.euphoriapatches.com/support\\\\u00A7r";
+    }
+
+    static void clearUpdateNotification(Path shader, boolean styleUnbound, boolean styleReimagined) {
+        try {
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, EuphoriaPatcher.SHADERS_PROPERTIES_LOCATION, null, "screen=info19 info20", "screen=<empty> <empty>");
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, EuphoriaPatcher.LANG_LOCATION, ".lang", "value\\.info19\\.0=.*", "value.info19.0=§cX.Y.Z §r->§a X.Y.Z");
+            ModifyPatchedShaderpacks.modifyFiles(shader, styleUnbound, styleReimagined, "shaders/pack.json", null,
+                    "\"shaderDescription\":.*UPDATE AVAILABLE.*", "\"shaderDescription\": \"" + shaderDescriptionText() + "\",");
+        } catch (IOException e) {
+            EuphoriaPatcher.log(3, 0, "Could not remove the outdated update notification from the shader: " + e.getMessage());
         }
     }
 

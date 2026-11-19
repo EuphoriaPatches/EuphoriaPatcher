@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.integration.uniforms;
 
 import com.euphoriapatches.euphoria_patcher.integration.clouds.CloudTracker;
+import com.euphoriapatches.euphoria_patcher.integration.FrozenTimeTracker;
 import com.euphoriapatches.euphoria_patcher.integration.mace.MaceTracker;
 import com.euphoriapatches.euphoria_patcher.integration.seasons.SeasonsProvider;
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
@@ -34,7 +35,11 @@ public final class EuphoriaUniforms {
 
     // All uniforms go here :)
     private static void register(UniformDeclarer declarer) {
+        // legacy, the below one is used now
         declarer.uniform1b("euphoriaPatchesIsDayAdvancing", ModLoaderSpecifics::isTimeAdvancingStatic);
+
+        // Seconds the daylight cycle has been stopped, added to the world-age clock so it never freezes or jumps
+        declarer.uniform1f("euphoriaPatchesFrozenTimeOffset", FrozenTimeTracker::getOffsetSeconds);
 
         declarer.uniform1b("euphoriaPatchesIsCurrentBiomeModded", ModLoaderSpecifics::isCurrentBiomeModdedStatic, UniformDeclarer.Frequency.PER_TICK);
 

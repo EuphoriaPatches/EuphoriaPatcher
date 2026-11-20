@@ -57,6 +57,14 @@ public class GeneratePatch {
     private static final Path RESOURCES_DIR = INTELLIJ_BASE_DIR.resolve("common/src/main/resources");
     private static final Path PATCH_FILES_DIR = INTELLIJ_BASE_DIR.resolve("EuphoriaPatchFiles");
     private static final Path SHADERPACKS_DIR = INTELLIJ_BASE_DIR.resolve("shaderpacks");
+    // Optional clone of the lang repository, it gets the same version updates as the Euphoria-Patches folder
+    private static final Path LANG_FILES_DIR = SHADERPACKS_DIR.resolve("langFiles");
+
+    // Names can contain non-breaking spaces (U+00A0), the color code is "§d" in lang files and written out in pack.json
+    private static final String SPACE = "[ \\u00A0]+";
+    private static final Pattern PATCH_VERSION_PATTERN = Pattern.compile("(?<p>\"version\"\\s*:\\s*\"|Euphoria" + SPACE + "Patches" + SPACE
+            + "(?:\\u00A7d|\\\\u00A7d)?)\\d+(?:\\.\\d+)*");
+    private static final Pattern BASE_VERSION_PATTERN = Pattern.compile("(?<p>Complementary(?:" + SPACE + "Shaders)?" + SPACE + ")r\\d+(?:\\.\\d+)*");
 
     public static void main(String[] args) {
         System.out.println(BLUE + "=== Euphoria Patches - Dev Patch Generator ===" + RESET);
@@ -311,6 +319,7 @@ public class GeneratePatch {
             syncVersions(shaderPair.patchedShader);
             ensureVersionDefine(shaderPair.patchedShader);
         }
+        syncLangRepoVersions();
 
         // Ensure output directories exist
         ensureDirectoryExists(RESOURCES_DIR);
@@ -362,14 +371,7 @@ public class GeneratePatch {
      * Sets the versions in the Euphoria-Patches folder to the ones of {@link PatchInfo}.
      */
     private static void syncVersions(Path folder) throws IOException {
-        String patchVersion = PATCH_VERSION.replace("_", "");
         String baseVersion = VERSION.replace("_", "");
-
-        // Names can contain non-breaking spaces (U+00A0), the color code is "§d" in lang files and written out in pack.json
-        String space = "[ \\u00A0]+";
-        Pattern patchPattern = Pattern.compile("(?<p>\"version\"\\s*:\\s*\"|Euphoria" + space + "Patches" + space
-                + "(?:\\u00A7d|\\\\u00A7d)?)\\d+(?:\\.\\d+)*");
-        Pattern basePattern = Pattern.compile("(?<p>Complementary(?:" + space + "Shaders)?" + space + ")r\\d+(?:\\.\\d+)*");
 
         try (DirectoryStream<Path> madeFor = Files.newDirectoryStream(folder, "Made for Complementary Shaders *.txt")) {
             for (Path file : madeFor) {
@@ -384,14 +386,33 @@ public class GeneratePatch {
                         || !relative.matches(".+\\.(json|lang|glsl|txt|md|properties)")) {
                     continue;
                 }
-                String text = Files.readString(file);
-                String updated = patchPattern.matcher(text).replaceAll("${p}" + Matcher.quoteReplacement(patchVersion));
-                updated = basePattern.matcher(updated).replaceAll("${p}" + Matcher.quoteReplacement(baseVersion));
-                if (!updated.equals(text)) {
-                    Files.writeString(file, updated);
-                    System.out.println("  Updated " + relative);
-                }
+                updateVersionsInFile(file, relative);
             }
+        }
+    }
+
+    private static void syncLangRepoVersions() throws IOException {
+        if (!Files.isDirectory(LANG_FILES_DIR)) {
+            return;
+        }
+        System.out.println(YELLOW + "Updating versions in lang repository: " + BLUE + LANG_FILES_DIR + RESET);
+        try (DirectoryStream<Path> langFiles = Files.newDirectoryStream(LANG_FILES_DIR, "*.lang")) {
+            for (Path file : langFiles) {
+                updateVersionsInFile(file, file.getFileName().toString());
+            }
+        }
+    }
+
+    private static void updateVersionsInFile(Path file, String relative) throws IOException {
+        String patchVersion = PATCH_VERSION.replace("_", "");
+        String baseVersion = VERSION.replace("_", "");
+
+        String text = Files.readString(file);
+        String updated = PATCH_VERSION_PATTERN.matcher(text).replaceAll("${p}" + Matcher.quoteReplacement(patchVersion));
+        updated = BASE_VERSION_PATTERN.matcher(updated).replaceAll("${p}" + Matcher.quoteReplacement(baseVersion));
+        if (!updated.equals(text)) {
+            Files.writeString(file, updated);
+            System.out.println("  Updated " + relative);
         }
     }
 

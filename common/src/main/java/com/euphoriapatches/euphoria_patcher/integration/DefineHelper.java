@@ -124,9 +124,15 @@ public final class DefineHelper {
                 debugLog("Not adding EUPHORIA_PATCHES_DIMENSION_IN_PROPERTIES define - dimension not in dimensions.properties");
             }
 
-            String currentDimension = "CURRENT_EUPHORIA_PATCHES_DIMENSION_" + ModLoaderSpecifics.getCurrentDimensionStatic().toUpperCase(Locale.ROOT);
-            emitter.define(currentDimension);
-            debugLog("Adding " + currentDimension + " define");
+            if (ModChecker.isModPresent(ModChecker.ModNames.IMMERSIVE_PORTALS)) {
+                // Immersive Portals renders several dimensions in one frame, so there is no single "current" dimension
+                emitter.define("EUPHORIA_PATCHES_IMMERSIVE_PORTALS");
+                debugLog("Adding EUPHORIA_PATCHES_IMMERSIVE_PORTALS define, skipping CURRENT_EUPHORIA_PATCHES_DIMENSION_* define");
+            } else {
+                String currentDimension = "CURRENT_EUPHORIA_PATCHES_DIMENSION_" + ModLoaderSpecifics.getCurrentDimensionStatic().toUpperCase(Locale.ROOT);
+                emitter.define(currentDimension);
+                debugLog("Adding " + currentDimension + " define");
+            }
 
             String shaderLoader = ShaderLoader.getShaderLoader().toUpperCase(Locale.ROOT);
             emitter.define("EUPHORIA_PATCHES_" + shaderLoader);

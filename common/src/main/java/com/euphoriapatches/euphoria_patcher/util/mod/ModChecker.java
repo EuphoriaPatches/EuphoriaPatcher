@@ -41,7 +41,8 @@ public class ModChecker {
 		CAELUM(Registers.classes("nuparu.caelum.Caelum", "space.ajcool.Caelum")),
 		SERENE_SEASONS(Registers.classes("sereneseasons.api.season.SeasonHelper")),
 		FABRIC_SEASONS(Registers.classes("io.github.lucaargolo.seasons.FabricSeasons")),
-		ECLIPTIC_SEASONS(Registers.classes("com.teamtea.eclipticseasons.api.EclipticSeasonsApi"));
+		ECLIPTIC_SEASONS(Registers.classes("com.teamtea.eclipticseasons.api.EclipticSeasonsApi")),
+		IMMERSIVE_PORTALS(Registers.classes("qouteall.imm_ptl.core.IPModMain", "com.qouteall.immersive_portals.ModMain"));
 
 		private final Registers register;
 

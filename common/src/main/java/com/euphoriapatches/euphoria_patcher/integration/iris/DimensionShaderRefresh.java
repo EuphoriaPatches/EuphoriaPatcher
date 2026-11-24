@@ -1,6 +1,7 @@
 package com.euphoriapatches.euphoria_patcher.integration.iris;
 
 import com.euphoriapatches.euphoria_patcher.logging.EuphoriaLogger;
+import com.euphoriapatches.euphoria_patcher.util.mod.ModChecker;
 import com.euphoriapatches.euphoria_patcher.util.mod.ModLoaderSpecifics;
 
 /**
@@ -25,13 +26,32 @@ public final class DimensionShaderRefresh {
     private static volatile long fastPathHeartbeat = 0L;
     private static volatile String pendingSetLevelDim = null;
     private static volatile boolean fallbackScheduled = false;
+    private static volatile Boolean immersivePortalsPresent = null;
 
     private static void debugLog(String message) {
         EuphoriaLogger.debugLog("[DimensionShaderRefresh] " + message);
     }
 
+    /**
+     * Disable with immersive portals as it reloads shaders every frame otherwise
+     */
+    private static boolean disabled() {
+        Boolean cached = immersivePortalsPresent;
+        if (cached == null) {
+            cached = ModChecker.isModPresent(ModChecker.ModNames.IMMERSIVE_PORTALS);
+            immersivePortalsPresent = cached;
+            if (cached) {
+                debugLog("Immersive Portals detected - dimension define refresh disabled");
+            }
+        }
+        return cached;
+    }
+
     // Fast path
     public static void beforePreparePipeline() {
+        if (disabled()) {
+            return;
+        }
         fastPathHeartbeat = System.currentTimeMillis();
         try {
             Object level = ModLoaderSpecifics.getLevelStatic();
@@ -59,6 +79,9 @@ public final class DimensionShaderRefresh {
 
     // Client tick when fast path was bypassed/failed
     public static void processPending() {
+        if (disabled()) {
+            return;
+        }
         String pending = pendingSetLevelDim;
         if (pending == null) {
             return;
@@ -82,6 +105,9 @@ public final class DimensionShaderRefresh {
 
 
     public static void onSetLevelReturn() {
+        if (disabled()) {
+            return;
+        }
         try {
             String dim = safeDimension();
             if (dim == null) {
